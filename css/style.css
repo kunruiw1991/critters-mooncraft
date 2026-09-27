@@ -1,0 +1,461 @@
+/* CritterCraft: Moonless Night — Tactile Voxel UI & Cutscene Overlay */
+:root {
+  --night: #120d29;
+  --panel: rgba(255, 253, 247, 0.94);
+  --ink: #342947;
+  --soft: #6f6387;
+  --gold: #ffd43b;
+  --gold-d: #f08c00;
+  --mint: #51cf66;
+  --mint-d: #2f9e44;
+  --lav: #9775fa;
+  --lav-d: #6741d9;
+  --shadow: 0 4px 0 rgba(20, 12, 42, 0.28), 0 10px 24px rgba(12, 8, 28, 0.32);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--night);
+  color: var(--ink);
+  font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  touch-action: manipulation;
+}
+button:active {
+  transform: scale(0.95);
+}
+.hidden {
+  display: none !important;
+}
+
+#scene {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+}
+
+/* ---------- Top Bar ---------- */
+#topBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.barGroup, .barCenter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  flex-wrap: wrap;
+}
+
+.pillBtn {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: var(--shadow);
+  border: 2px solid #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.pillBtn.accent {
+  background: #f3d9fa;
+  color: #5f3dc4;
+}
+.pillBtn.warn {
+  background: #fff3bf;
+  color: #d9480f;
+}
+.pillBtn.off {
+  opacity: 0.48;
+  filter: grayscale(1);
+}
+
+.statChip {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  font-weight: 900;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow);
+  border: 2px solid #fff;
+}
+.starChip {
+  background: #fff9db;
+  color: #e67700;
+}
+.hpChip {
+  background: #fff0f6;
+  color: #c2255c;
+}
+.synChip {
+  background: #f3f0ff;
+  color: #5f3dc4;
+  font-size: 14px;
+}
+.balChip {
+  background: #ebfbee;
+  color: #2b8a3e;
+  font-size: 14px;
+}
+
+.moonMeter {
+  position: relative;
+  width: 210px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(28, 21, 56, 0.88);
+  border: 2px solid #ffd43b;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.moonFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #7950f2, #f59f00, #ffd43b);
+  transition: width 0.35s ease;
+}
+.moonLabel {
+  position: relative;
+  z-index: 1;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
+}
+
+/* ---------- 10s Opening Cinematics Banner ---------- */
+#cineBanner {
+  position: fixed;
+  z-index: 7;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: min(760px, 92vw);
+  padding: 16px 22px;
+  border-radius: 24px;
+  background: rgba(24, 17, 48, 0.92);
+  border: 3px solid #ffd43b;
+  color: #fffdf7;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+}
+.cineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+#cinePhase {
+  font-size: 19px;
+  font-weight: 900;
+  color: #ffd43b;
+}
+.cineRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.timerPill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #5f3dc4;
+  color: #fff;
+  font-weight: 900;
+  font-size: 15px;
+}
+.skipBtn {
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--mint);
+  color: #fff;
+  font-weight: 900;
+  font-size: 15px;
+  box-shadow: 0 3px 0 var(--mint-d);
+}
+#cineSub {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.35;
+  color: #e5dbff;
+}
+
+body.inIntro #dock,
+body.inIntro .barCenter,
+body.inIntro #spawnWaveBtn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Floating Bubble ---------- */
+#bubble {
+  position: fixed;
+  z-index: 6;
+  top: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: #fffdf7;
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 16px;
+  border: 3px solid var(--gold);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  text-align: center;
+  max-width: 88vw;
+}
+
+/* ---------- Bottom Minecraft Voxel Build Dock ---------- */
+#dock {
+  position: fixed;
+  z-index: 5;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  background: var(--panel);
+  border-radius: 24px;
+  border: 3px solid #ffffff;
+  box-shadow: var(--shadow);
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  transition: opacity 0.3s ease;
+}
+
+.dockTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+#roleTabs {
+  display: flex;
+  gap: 6px;
+}
+.rtab {
+  padding: 5px 12px;
+  border-radius: 12px;
+  background: #ede6db;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--soft);
+}
+.rtab.sel {
+  background: var(--lav-d);
+  color: #ffffff;
+}
+#unitInfo {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  background: #fff9db;
+  padding: 5px 12px;
+  border-radius: 10px;
+  flex: 1;
+  min-width: 240px;
+  text-align: right;
+}
+
+#hotbar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 4px;
+  touch-action: pan-x;
+}
+
+.ucard {
+  position: relative;
+  flex: 0 0 82px;
+  height: 98px;
+  border-radius: 18px;
+  background: #fffdf7;
+  border: 3px solid #e9decb;
+  box-shadow: 0 3px 0 #d8cbb8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px;
+  transition: transform 0.14s, border-color 0.14s;
+}
+.ucard img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #FFFDF7;
+}
+.ucard b {
+  font-size: 11.5px;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 74px;
+}
+.ucard .cost {
+  font-style: normal;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #d9480f;
+  background: #fff3bf;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.ucard .rbadge {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  font-size: 12px;
+}
+.ucard.role-produce {
+  border-color: #ffd43b;
+}
+.ucard.role-defend {
+  border-color: #74c0fc;
+}
+.ucard.role-attack {
+  border-color: #b197fc;
+}
+.ucard.sel {
+  transform: translateY(-4px) scale(1.05);
+  border-color: #5f3dc4;
+  box-shadow: 0 0 0 3px #d0bfff, 0 6px 14px rgba(95, 61, 196, 0.28);
+}
+.ucard.toolCard .ticon {
+  font-size: 30px;
+  line-height: 48px;
+}
+
+/* ---------- Modals ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  background: rgba(14, 10, 32, 0.76);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.modalCard {
+  width: min(560px, 92vw);
+  background: #fffdf7;
+  border-radius: 30px;
+  padding: 26px 28px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  border: 4px solid #ffd43b;
+}
+.heroIcons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.heroIcons img {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #7950f2;
+  background: #FFFDF7;
+}
+.modalCard h1 {
+  margin: 0 0 10px;
+  font-size: 32px;
+  color: #3b1f7a;
+}
+.modalCard h1 span {
+  color: #f08c00;
+}
+.subtitle {
+  margin: 0 0 20px;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--soft);
+}
+.modalBtns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.bigBtn {
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 900;
+}
+.bigBtn.primary {
+  background: var(--mint);
+  color: #fff;
+  box-shadow: 0 5px 0 var(--mint-d);
+}
+.bigBtn.secondary {
+  background: #ede6db;
+  color: var(--ink);
+  box-shadow: 0 4px 0 #cfc3b2;
+}
+
+@media (max-width: 900px) {
+  #unitInfo {
+    text-align: left;
+    font-size: 13px;
+  }
+  .balChip {
+    display: none;
+  }
+}
