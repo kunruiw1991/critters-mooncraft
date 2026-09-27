@@ -7,36 +7,41 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CritterCraft">
 <meta name="theme-color" content="#140f2d">
-<title>CritterCraft: Moonless Night</title>
+<title>CritterCraft: Moonless Night (22x14 Tactical Citadel)</title>
 <link rel="apple-touch-icon" href="icons/catnap.jpg">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="inIntro">
 <canvas id="scene"></canvas>
 
-<!-- Top HUD Bar -->
+<!-- Single-Row Top HUD Bar -->
 <header id="topBar">
   <div class="barGroup">
     <button id="pauseBtn" class="pillBtn" title="Pause / Resume">⏸</button>
     <button id="stopBtn" class="pillBtn" title="Title Screen">⏹</button>
-    <button id="replayIntroBtn" class="pillBtn accent" title="Replay 10s Opening Movie">🎬 10s Intro</button>
-    <button id="speedBtn" class="pillBtn" title="Game Speed (5yo Gentle Default)">🐌 Gentle</button>
-    <button id="modeBtn" class="pillBtn" title="Switch Rescue / Sandbox">🌙 Rescue</button>
+    <button id="replayIntroBtn" class="pillBtn accent" title="Replay 10s Opening Movie">🎬 10s</button>
+    <button id="diffBtn" class="pillBtn warn" title="Switch Difficulty: Tactical / Nightmare / Cozy">🔥 Tactical</button>
+    <button id="camBtn" class="pillBtn" title="Toggle Wide Map / Citadel Zoom (or drag & pinch)">🗺️ Wide</button>
+    <button id="speedBtn" class="pillBtn" title="Game Speed">🚶 1.0x</button>
   </div>
 
   <div class="barCenter">
-    <div class="statChip starChip" title="Starlight (Build & Upgrade Currency)">🌟 <span id="starVal">125</span></div>
-    <div class="statChip hpChip" title="Moon Altar Health">❤️ <span id="hpVal">500/500</span></div>
-    <div class="moonMeter" title="Collect 100 Moon Shards to rebuild the Moon & turn Nightmare CatNap back into Cute CatNap!">
+    <div class="statChip starChip" title="Starlight (Mana & Light Currency)">🌟 <span id="starVal">110</span></div>
+    <div class="statChip oreChip" title="Redstone Ore (Walls, Bridges, Conduits & Tech Currency)">⚙️ <span id="oreVal">45</span></div>
+    <div class="statChip hpChip" title="Central Moon Altar Health">❤️ <span id="hpVal">600</span></div>
+    <div class="moonMeter" title="Collect 100 Moon Shards from Outer Geodes, Elites & Shard Refinery!">
       <div id="shardFill" class="moonFill"></div>
-      <span class="moonLabel">🌕 Moon Shards: <b id="shardText">0 / 100</b></span>
+      <span class="moonLabel">🌕 <b id="shardText">0 / 100</b></span>
     </div>
-    <div id="harmonyBadge" class="statChip synChip">✨ Lv.2 (+30%)</div>
-    <div id="balanceBadge" class="statChip balChip">⚖️ P=0.85 · Flow</div>
+    <button id="refineBtn" class="pillBtn refineBtn" title="Refine 35 🌟 + 20 ⚙️ into +5 🌙 Moon Shards!">🔬 +5🌙</button>
+    <div id="portalBadge" class="statChip portalChip" title="Active Zombie Invasion Portals (Wave & Directions)">⛩️ W1 · E</div>
+    <div id="harmonyBadge" class="statChip synChip">✨ Lv.1</div>
+    <div id="balanceBadge" class="statChip balChip">⚖️ P=1.00</div>
   </div>
 
   <div class="barGroup">
-    <button id="spawnWaveBtn" class="pillBtn warn" title="Call Bonus Zombie Wave (+25 🌟)">🧟 +Wave</button>
+    <button id="spawnWaveBtn" class="pillBtn warn" title="Call Early Multi-Portal Assault (+20 🌟 & +10 ⚙️)">🧟 +Wave</button>
+    <button id="modeBtn" class="pillBtn" title="Switch Tactical Rescue / Free Sandbox">🌙 Rescue</button>
     <button id="musicBtn" class="pillBtn" title="Toggle Music">🎵</button>
     <button id="soundBtn" class="pillBtn" title="Toggle Sound">🔔</button>
   </div>
@@ -61,7 +66,7 @@
 <footer id="dock">
   <div class="dockTop">
     <div id="roleTabs"></div>
-    <div id="unitInfo">Tap any voxel tile to build! Stack Attack Critters on Mikey & JJ's Watchtower!</div>
+    <div id="unitInfo">22×14 Valley: Build Maze Walls, Redstone Quarries, Anti-Air Towers & Outer Geode Outposts!</div>
   </div>
   <div id="hotbar"></div>
 </footer>
@@ -77,12 +82,13 @@
     </div>
     <h1>CritterCraft: <span>Moonless Night</span></h1>
     <p class="subtitle">
-      On a dark, windy night, Cute CatNap transforms into Nightmare CatNap and launches a rocket that shatters the Moon!
-      Zombies emerge from the ground — and the Smiling Critters rally to build, defend, and restore the Moon!
+      Nightmare CatNap shattered the Moon! Defend the <b>22×14 Multi-Biome Citadel</b> against 4-Direction Zombie Sieges,
+      TNT Creepers, Flying Balloons & Red-Smoke Sleep Storms! Harvest <b>🌟 Starlight</b> & <b>⚙️ Redstone Ore</b>, build maze walls,
+      and capture outer <b>🌙 Moon Geodes</b>!
     </p>
     <div class="modalBtns">
       <button id="startIntroBtn" class="bigBtn primary">🎬 Watch 10s Intro & Play</button>
-      <button id="quickPlayBtn" class="bigBtn secondary">⚡ Jump Straight to Build</button>
+      <button id="quickPlayBtn" class="bigBtn secondary">⚡ Jump Straight to 22×14 Citadel</button>
     </div>
   </div>
 </section>
@@ -95,14 +101,14 @@
       <img src="icons/lunabat.jpg" alt="LunaBat">
       <img src="icons/sunnyfox.jpg" alt="SunnyFox">
     </div>
-    <h1>🌕 The Moon Is Restored!</h1>
-    <p class="subtitle">
-      You collected 100 Moon Shards! The Full Moon shines bright again, all Zombies turned into starlight flowers,
+    <h1 id="endTitle">🌕 The Moon Is Restored!</h1>
+    <p id="endSub" class="subtitle">
+      You forged 100 Moon Shards across the 22×14 Citadel! The Full Moon shines bright again, all Zombies turned into starlight flowers,
       and Nightmare CatNap transformed back into cozy Cute CatNap!
     </p>
     <div class="modalBtns">
       <button id="keepPlayingBtn" class="bigBtn primary">🧱 Keep Building (Sandbox)</button>
-      <button id="playAgainBtn" class="bigBtn secondary">🎬 Replay 10s Movie & New Game</button>
+      <button id="playAgainBtn" class="bigBtn secondary">🎬 Replay 10s Movie & New Siege</button>
     </div>
   </div>
 </section>

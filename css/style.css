@@ -1,4 +1,4 @@
-/* CritterCraft: Moonless Night — Tactile Voxel UI & Cutscene Overlay */
+/* CritterCraft: Moonless Night — 22x14 Tactical Voxel UI & Cutscene Overlay */
 :root {
   --night: #120d29;
   --panel: rgba(255, 253, 247, 0.94);
@@ -63,37 +63,37 @@ button:active {
   left: 0;
   right: 0;
   z-index: 5;
-  padding: 8px 12px;
+  padding: 6px 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px;
   pointer-events: none;
 }
 
 .barGroup, .barCenter {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   pointer-events: auto;
   flex-wrap: nowrap;
 }
 
 .pillBtn {
-  height: 40px;
-  padding: 0 11px;
-  border-radius: 13px;
+  height: 34px;
+  padding: 0 7px;
+  border-radius: 10px;
   background: var(--panel);
   color: var(--ink);
   font-weight: 800;
-  font-size: 14px;
+  font-size: 11.5px;
   white-space: nowrap;
   box-shadow: var(--shadow);
   border: 2px solid #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
 }
 .pillBtn.accent {
   background: #f3d9fa;
@@ -103,22 +103,27 @@ button:active {
   background: #fff3bf;
   color: #d9480f;
 }
+.pillBtn.refineBtn {
+  background: #e5dbff;
+  color: #5f3dc4;
+  border-color: #b197fc;
+}
 .pillBtn.off {
   opacity: 0.48;
   filter: grayscale(1);
 }
 
 .statChip {
-  height: 40px;
-  padding: 0 11px;
-  border-radius: 13px;
+  height: 34px;
+  padding: 0 7px;
+  border-radius: 10px;
   background: var(--panel);
   font-weight: 900;
-  font-size: 14px;
+  font-size: 11.5px;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 3px;
   box-shadow: var(--shadow);
   border: 2px solid #fff;
 }
@@ -126,27 +131,36 @@ button:active {
   background: #fff9db;
   color: #e67700;
 }
+.oreChip {
+  background: #ffe3e3;
+  color: #c92a2a;
+}
 .hpChip {
   background: #fff0f6;
   color: #c2255c;
 }
+.portalChip {
+  background: #3b1f7a;
+  color: #ffd43b;
+  border-color: #9775fa;
+}
 .synChip {
   background: #f3f0ff;
   color: #5f3dc4;
-  font-size: 13px;
+  font-size: 11px;
 }
 .balChip {
   background: #ebfbee;
   color: #2b8a3e;
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .moonMeter {
   position: relative;
-  min-width: 190px;
-  padding: 0 12px;
-  height: 40px;
-  border-radius: 13px;
+  min-width: 108px;
+  padding: 0 8px;
+  height: 34px;
+  border-radius: 10px;
   background: rgba(28, 21, 56, 0.88);
   border: 2px solid #ffd43b;
   overflow: hidden;
@@ -168,7 +182,7 @@ button:active {
   position: relative;
   z-index: 1;
   color: #ffffff;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 900;
   white-space: nowrap;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.75);
@@ -241,37 +255,37 @@ body.inIntro #spawnWaveBtn {
 #bubble {
   position: fixed;
   z-index: 6;
-  top: 66px;
+  top: 54px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 10px 20px;
+  padding: 9px 18px;
   border-radius: 999px;
   background: #fffdf7;
   color: var(--ink);
   font-weight: 800;
-  font-size: 16px;
+  font-size: 15px;
   border: 3px solid var(--gold);
   box-shadow: var(--shadow);
   pointer-events: none;
   text-align: center;
-  max-width: 88vw;
+  max-width: 90vw;
 }
 
 /* ---------- Bottom Minecraft Voxel Build Dock ---------- */
 #dock {
   position: fixed;
   z-index: 5;
-  left: 12px;
-  right: 12px;
-  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 8px;
   background: var(--panel);
-  border-radius: 24px;
+  border-radius: 22px;
   border: 3px solid #ffffff;
   box-shadow: var(--shadow);
-  padding: 8px 12px 10px;
+  padding: 7px 11px 9px;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
   transition: opacity 0.3s ease;
 }
 
@@ -279,19 +293,19 @@ body.inIntro #spawnWaveBtn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 #roleTabs {
   display: flex;
-  gap: 6px;
+  gap: 5px;
 }
 .rtab {
-  padding: 5px 12px;
-  border-radius: 12px;
+  padding: 4px 10px;
+  border-radius: 10px;
   background: #ede6db;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--soft);
 }
 .rtab.sel {
@@ -299,12 +313,12 @@ body.inIntro #spawnWaveBtn {
   color: #ffffff;
 }
 #unitInfo {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--ink);
   background: #fff9db;
-  padding: 5px 12px;
-  border-radius: 10px;
+  padding: 4px 11px;
+  border-radius: 9px;
   flex: 1;
   min-width: 240px;
   text-align: right;
@@ -312,17 +326,17 @@ body.inIntro #spawnWaveBtn {
 
 #hotbar {
   display: flex;
-  gap: 8px;
+  gap: 7px;
   overflow-x: auto;
-  padding: 2px 2px 4px;
+  padding: 2px 2px 3px;
   touch-action: pan-x;
 }
 
 .ucard {
   position: relative;
-  flex: 0 0 82px;
-  height: 98px;
-  border-radius: 18px;
+  flex: 0 0 78px;
+  height: 94px;
+  border-radius: 16px;
   background: #fffdf7;
   border: 3px solid #e9decb;
   box-shadow: 0 3px 0 #d8cbb8;
@@ -330,39 +344,40 @@ body.inIntro #spawnWaveBtn {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 4px;
+  gap: 2px;
+  padding: 3px;
   transition: transform 0.14s, border-color 0.14s;
 }
 .ucard img {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   object-fit: cover;
   background: #FFFDF7;
 }
 .ucard b {
-  font-size: 11.5px;
+  font-size: 11px;
   line-height: 1.05;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 74px;
+  max-width: 72px;
 }
 .ucard .cost {
   font-style: normal;
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 900;
   color: #d9480f;
   background: #fff3bf;
-  padding: 1px 7px;
+  padding: 1px 5px;
   border-radius: 999px;
+  white-space: nowrap;
 }
 .ucard .rbadge {
   position: absolute;
-  top: 3px;
+  top: 2px;
   right: 4px;
-  font-size: 12px;
+  font-size: 11px;
 }
 .ucard.role-produce {
   border-color: #ffd43b;
@@ -374,13 +389,13 @@ body.inIntro #spawnWaveBtn {
   border-color: #b197fc;
 }
 .ucard.sel {
-  transform: translateY(-4px) scale(1.05);
+  transform: translateY(-3px) scale(1.04);
   border-color: #5f3dc4;
   box-shadow: 0 0 0 3px #d0bfff, 0 6px 14px rgba(95, 61, 196, 0.28);
 }
 .ucard.toolCard .ticon {
-  font-size: 30px;
-  line-height: 48px;
+  font-size: 26px;
+  line-height: 44px;
 }
 
 /* ---------- Modals ---------- */
@@ -395,7 +410,7 @@ body.inIntro #spawnWaveBtn {
   padding: 20px;
 }
 .modalCard {
-  width: min(560px, 92vw);
+  width: min(580px, 92vw);
   background: #fffdf7;
   border-radius: 30px;
   padding: 26px 28px;
@@ -419,7 +434,7 @@ body.inIntro #spawnWaveBtn {
 }
 .modalCard h1 {
   margin: 0 0 10px;
-  font-size: 32px;
+  font-size: 30px;
   color: #3b1f7a;
 }
 .modalCard h1 span {
@@ -427,7 +442,7 @@ body.inIntro #spawnWaveBtn {
 }
 .subtitle {
   margin: 0 0 20px;
-  font-size: 16px;
+  font-size: 15.5px;
   line-height: 1.45;
   color: var(--soft);
 }
@@ -438,9 +453,9 @@ body.inIntro #spawnWaveBtn {
   flex-wrap: wrap;
 }
 .bigBtn {
-  padding: 14px 22px;
+  padding: 13px 20px;
   border-radius: 999px;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
 }
 .bigBtn.primary {
@@ -454,12 +469,12 @@ body.inIntro #spawnWaveBtn {
   box-shadow: 0 4px 0 #cfc3b2;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 980px) {
   #unitInfo {
     text-align: left;
-    font-size: 13px;
+    font-size: 12px;
   }
-  .balChip {
+  .balChip, .synChip {
     display: none;
   }
 }
