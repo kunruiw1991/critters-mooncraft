@@ -324,7 +324,7 @@ function buildWorld() {
 
   // 3D Voxel Full Moon in the Sky
   moonMesh = buildVoxelMoon();
-  moonMesh.position.set(1.5, 6.4, -5.5);
+  moonMesh.position.set(1.4, 4.9, -5.4);
   cineGroup.add(moonMesh);
 
   // CatNap Transformation & Rocket Rig on the North Hilltop
@@ -353,7 +353,7 @@ function startIntroCutscene() {
   if (moonMesh) {
     moonMesh.visible = true;
     moonMesh.scale.setScalar(1);
-    moonMesh.position.set(1.5, 6.4, -5.5);
+    moonMesh.position.set(1.4, 4.9, -5.4);
   }
   const { cute, night, rocket, flame } = catnapRig.userData;
   cute.visible = true;
@@ -399,8 +399,8 @@ function stepIntroCutscene(dt) {
   // ---- PHASE 1 (0.0s -> 3.2s): Cute CatNap transforms into Nightmare CatNap ----
   if (t < 3.2) {
     S.introPhase = 1;
-    camera.position.set(-0.6 + Math.sin(t * 0.4) * 0.4, 3.2, 1.2);
-    camera.lookAt(-0.4, 1.8, -5.0);
+    camera.position.set(0.1 + Math.sin(t * 0.4) * 0.35, 3.4, 4.2);
+    camera.lookAt(0.2, 2.7, -5.2);
 
     if (t < 1.6) {
       cute.visible = true;

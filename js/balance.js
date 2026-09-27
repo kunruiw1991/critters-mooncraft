@@ -302,12 +302,13 @@ export function isTileIlluminated(gx, gz, placedUnits, moonRestored = false) {
  * Pillar 4: Real-Time Mathematical Balance State & Adaptive Flow Director
  * Keeps Pressure Index P = ZombieThreat / (DefensePower + 0.8 * EconomyRate) in [0.75, 1.15].
  */
-export function computeBalanceState({ placedUnits, zombies, starlight, moonShards, baseHp, baseMaxHp }) {
-  const harmony = computeHarmonyState(placedUnits);
+export function computeBalanceState({ placedUnits, units, zombies = [], starlight = 0, moonShards = 0, baseHp = 500, baseMaxHp = 500 }) {
+  const unitList = placedUnits || units || [];
+  const harmony = computeHarmonyState(unitList);
   let economyRate = 2.5; // baseline passive starlight/sec
   let defensePower = 18; // baseline altar guard power
 
-  for (const u of placedUnits) {
+  for (const u of unitList) {
     const lvMult = 1 + (u.level - 1) * 0.4;
     if (u.def.role === 'produce') {
       economyRate += ((u.def.prodAmount || 8) / (u.def.prodInterval || 4)) * lvMult * harmony.powerMult;
@@ -319,7 +320,7 @@ export function computeBalanceState({ placedUnits, zombies, starlight, moonShard
         defensePower += (u.mounted.def.atk / u.mounted.def.fireInterval) * 1.35 * mLv * harmony.powerMult;
       }
     } else if (u.def.role === 'attack') {
-      const lit = isTileIlluminated(u.gx, u.gz, placedUnits, moonShards >= 100);
+      const lit = isTileIlluminated(u.gx, u.gz, unitList, moonShards >= 100);
       const lightFactor = lit ? 1.0 : 0.72;
       defensePower += (u.def.atk / u.def.fireInterval) * lvMult * harmony.powerMult * lightFactor;
     }
@@ -340,10 +341,10 @@ export function computeBalanceState({ placedUnits, zombies, starlight, moonShard
   let shardDropBonus = 0;
 
   if (pressureIndex > 1.22 || baseHp < baseMaxHp * 0.55) {
-    directorMode = ' Care-Package Assist';
+    directorMode = '🎁 Care-Package Assist';
     spawnIntervalMult = 1.35; // slow down spawns gently
     carePackageGift = 18;
-  } else if (pressureIndex < 0.72 && placedUnits.length >= 5) {
+  } else if (pressureIndex < 0.72 && unitList.length >= 5) {
     directorMode = '🔥 Heroic Bonus Shards';
     spawnIntervalMult = 0.86;
     shardDropBonus = 1;
