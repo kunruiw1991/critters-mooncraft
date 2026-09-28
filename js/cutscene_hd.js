@@ -1,0 +1,875 @@
+// CritterCraft: Moonless Night — High-Resolution Non-Blocky 3D Plush & Storybook 10s Opening Cinematics.
+// Strictly uses smooth curved 3D primitives (SphereGeometry, CapsuleGeometry, CylinderGeometry,
+// TorusGeometry, ConeGeometry, RingGeometry, OctahedronGeometry, CatmullRomCurve3 + TubeGeometry).
+// ZERO BoxGeometry voxels are used in this module.
+
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+const hdMatCache = new Map();
+export function hdMat(THREE, color, opts = {}) {
+  const key = color + JSON.stringify(opts);
+  if (hdMatCache.has(key)) return hdMatCache.get(key);
+  const m = new THREE.MeshStandardMaterial({
+    color,
+    roughness: opts.roughness ?? 0.52,
+    metalness: opts.metalness ?? 0.06,
+    emissive: opts.emissive || '#000000',
+    emissiveIntensity: opts.emissiveIntensity ?? 0,
+    transparent: !!opts.transparent,
+    opacity: opts.opacity ?? 1,
+    side: opts.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
+  });
+  hdMatCache.set(key, m);
+  return m;
+}
+
+/** Smooth high-resolution procedural lunar surface texture (LinearFilter, zero pixelation) */
+export function makeSmoothMoonTexture(THREE = window.THREE) {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 256;
+  const ctx = c.getContext('2d');
+
+  const baseGrad = ctx.createLinearGradient(0, 0, 0, 256);
+  baseGrad.addColorStop(0, '#fff9db');
+  baseGrad.addColorStop(0.5, '#fff3bf');
+  baseGrad.addColorStop(1, '#ffec99');
+  ctx.fillStyle = baseGrad;
+  ctx.fillRect(0, 0, 512, 256);
+
+  const craters = [
+    [140, 95, 48, 'rgba(245, 159, 0, 0.22)'],
+    [290, 130, 62, 'rgba(240, 140, 0, 0.18)'],
+    [380, 78, 36, 'rgba(245, 159, 0, 0.24)'],
+    [210, 175, 40, 'rgba(230, 119, 0, 0.20)'],
+    [90, 170, 28, 'rgba(245, 159, 0, 0.25)'],
+    [445, 165, 32, 'rgba(245, 159, 0, 0.22)'],
+  ];
+  for (const [cx, cy, r, col] of craters) {
+    const rg = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
+    rg.addColorStop(0, col);
+    rg.addColorStop(0.75, 'rgba(252, 196, 25, 0.12)');
+    rg.addColorStop(0.92, 'rgba(255, 249, 219, 0.35)');
+    rg.addColorStop(1, 'rgba(255, 243, 191, 0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, TAU);
+    ctx.fill();
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** High-Res 3D Sculpted Full Moon (SphereGeometry 64x48 + sculpted crater rims + golden corona) */
+export function buildHighResMoon(THREE = window.THREE) {
+  const g = new THREE.Group();
+  const moonTex = makeSmoothMoonTexture(THREE);
+
+  const coreMat = new THREE.MeshStandardMaterial({
+    map: moonTex,
+    color: '#fff9db',
+    emissive: '#ffd43b',
+    emissiveIntensity: 0.72,
+    roughness: 0.32,
+    metalness: 0.04,
+  });
+  const core = new THREE.Mesh(new THREE.SphereGeometry(2.2, 64, 48), coreMat);
+  g.add(core);
+
+  const craterSpecs = [
+    [-0.65, 0.45, 1.98, 0.36, -0.32, 0.22],
+    [0.72, -0.38, 1.96, 0.44, 0.25, 0.34],
+    [0.18, 0.88, 1.94, 0.26, -0.42, -0.1],
+    [-0.35, -0.72, 1.97, 0.3, 0.38, -0.18],
+  ];
+  for (const [x, y, z, r, rx, ry] of craterSpecs) {
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(r, r * 0.18, 20, 48),
+      hdMat(THREE, '#fcc419', { emissive: '#f59f00', emissiveIntensity: 0.48, roughness: 0.4 })
+    );
+    rim.position.set(x, y, z);
+    rim.rotation.set(rx, ry, 0);
+    g.add(rim);
+  }
+
+  const innerGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(2.52, 48, 36),
+    hdMat(THREE, '#fff3bf', {
+      emissive: '#ffd43b',
+      emissiveIntensity: 0.55,
+      transparent: true,
+      opacity: 0.26,
+    })
+  );
+  g.add(innerGlow);
+
+  const outerGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(2.95, 48, 36),
+    hdMat(THREE, '#fff9db', {
+      emissive: '#ffe066',
+      emissiveIntensity: 0.38,
+      transparent: true,
+      opacity: 0.14,
+    })
+  );
+  g.add(outerGlow);
+
+  const coronaRing = new THREE.Mesh(
+    new THREE.RingGeometry(2.45, 3.35, 64),
+    hdMat(THREE, '#ffe066', {
+      emissive: '#ffd43b',
+      emissiveIntensity: 0.75,
+      transparent: true,
+      opacity: 0.32,
+      doubleSided: true,
+    })
+  );
+  g.add(coronaRing);
+
+  core.onBeforeRender = () => {
+    const now = performance.now() * 0.001;
+    const pulse = 1 + Math.sin(now * 2.2) * 0.035;
+    innerGlow.scale.setScalar(pulse);
+    outerGlow.scale.setScalar(1 + Math.cos(now * 1.6) * 0.05);
+    coronaRing.rotation.z = now * 0.25;
+  };
+
+  g.userData = { core, innerGlow, outerGlow, coronaRing };
+  return g;
+}
+
+/** High-Res Smooth 3D Cute CatNap (Plush spheres, capsules, curved ears, dual catchlights, S-curved tail) */
+export function buildHighResCuteCatNap(THREE = window.THREE) {
+  const cute = new THREE.Group();
+
+  const plushPurple = hdMat(THREE, '#845ef7', { roughness: 0.52, metalness: 0.04 });
+  const deepPurple = hdMat(THREE, '#6741d9', { roughness: 0.56, metalness: 0.05 });
+  const bellyLavender = hdMat(THREE, '#e5dbff', { roughness: 0.58, metalness: 0.02 });
+  const earPink = hdMat(THREE, '#faa2c1', { roughness: 0.5, emissive: '#f783ac', emissiveIntensity: 0.15 });
+  const eyeBlack = hdMat(THREE, '#120d1d', { roughness: 0.12, metalness: 0.25 });
+  const catchWhite = hdMat(THREE, '#ffffff', { emissive: '#ffffff', emissiveIntensity: 0.95, roughness: 0.05 });
+  const goldMoonMat = hdMat(THREE, '#ffd43b', {
+    emissive: '#fcc419',
+    emissiveIntensity: 0.75,
+    metalness: 0.55,
+    roughness: 0.2,
+  });
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.31, 0.34, 24, 36), plushPurple);
+  torso.position.set(0, 0.52, 0);
+  torso.castShadow = true;
+  cute.add(torso);
+
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.26, 36, 28), bellyLavender);
+  belly.scale.set(0.92, 1.12, 0.42);
+  belly.position.set(0, 0.5, 0.22);
+  cute.add(belly);
+
+  const zipperLine = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.014, 0.014, 0.36, 20),
+    hdMat(THREE, '#dee2e6', { metalness: 0.7, roughness: 0.25 })
+  );
+  zipperLine.position.set(0, 0.52, 0.32);
+  cute.add(zipperLine);
+
+  const crescentGroup = new THREE.Group();
+  crescentGroup.position.set(0, 0.56, 0.35);
+  const crescentArc = new THREE.Mesh(
+    new THREE.TorusGeometry(0.105, 0.034, 24, 48, Math.PI * 1.42),
+    goldMoonMat
+  );
+  crescentArc.rotation.z = Math.PI * 0.32;
+  crescentGroup.add(crescentArc);
+  const bail = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.012, 16, 28), goldMoonMat);
+  bail.position.set(0, 0.12, 0);
+  crescentGroup.add(bail);
+  cute.add(crescentGroup);
+
+  const cHead = new THREE.Group();
+  cHead.position.set(0, 1.08, 0.02);
+
+  const headSphere = new THREE.Mesh(new THREE.SphereGeometry(0.42, 48, 36), plushPurple);
+  headSphere.scale.set(1.12, 0.96, 0.98);
+  headSphere.castShadow = true;
+  cHead.add(headSphere);
+
+  for (const side of [-1, 1]) {
+    const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.21, 36, 28), plushPurple);
+    cheek.scale.set(1.15, 0.88, 0.95);
+    cheek.position.set(side * 0.25, -0.08, 0.16);
+    cHead.add(cheek);
+
+    const blush = new THREE.Mesh(
+      new THREE.SphereGeometry(0.075, 24, 18),
+      hdMat(THREE, '#ff8787', { emissive: '#fa5252', emissiveIntensity: 0.35, transparent: true, opacity: 0.65 })
+    );
+    blush.scale.set(1.2, 0.7, 0.35);
+    blush.position.set(side * 0.31, -0.05, 0.34);
+    cHead.add(blush);
+
+    const earGroup = new THREE.Group();
+    earGroup.position.set(side * 0.28, 0.34, -0.02);
+    earGroup.rotation.z = -side * 0.28;
+    earGroup.rotation.x = 0.1;
+
+    const outerEar = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.34, 36), deepPurple);
+    outerEar.position.y = 0.14;
+    earGroup.add(outerEar);
+
+    const earTip = new THREE.Mesh(new THREE.SphereGeometry(0.042, 24, 18), deepPurple);
+    earTip.position.y = 0.3;
+    earGroup.add(earTip);
+
+    const innerEar = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.24, 32), earPink);
+    innerEar.position.set(0, 0.12, 0.045);
+    earGroup.add(innerEar);
+    cHead.add(earGroup);
+
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.088, 32, 24), eyeBlack);
+    eye.scale.set(1.0, 1.12, 0.65);
+    eye.position.set(side * 0.16, 0.08, 0.37);
+    cHead.add(eye);
+
+    const catch1 = new THREE.Mesh(new THREE.SphereGeometry(0.028, 20, 16), catchWhite);
+    catch1.position.set(side * 0.14, 0.115, 0.425);
+    cHead.add(catch1);
+
+    const catch2 = new THREE.Mesh(new THREE.SphereGeometry(0.015, 16, 12), catchWhite);
+    catch2.position.set(side * 0.185, 0.055, 0.422);
+    cHead.add(catch2);
+
+    const browCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side * 0.08, 0.21, 0.36),
+      new THREE.Vector3(side * 0.16, 0.245, 0.37),
+      new THREE.Vector3(side * 0.24, 0.205, 0.34),
+    ]);
+    const brow = new THREE.Mesh(new THREE.TubeGeometry(browCurve, 24, 0.016, 12, false), deepPurple);
+    cHead.add(brow);
+  }
+
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.042, 24, 18), earPink);
+  nose.scale.set(1.25, 0.85, 0.75);
+  nose.position.set(0, 0.0, 0.42);
+  cHead.add(nose);
+
+  const smileCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.24, -0.04, 0.34),
+    new THREE.Vector3(-0.14, -0.15, 0.38),
+    new THREE.Vector3(0.0, -0.18, 0.4),
+    new THREE.Vector3(0.14, -0.15, 0.38),
+    new THREE.Vector3(0.24, -0.04, 0.34),
+  ]);
+  const smileRim = new THREE.Mesh(new THREE.TubeGeometry(smileCurve, 36, 0.022, 16, false), eyeBlack);
+  cHead.add(smileRim);
+
+  const smileInner = new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 24), eyeBlack);
+  smileInner.scale.set(1.25, 0.62, 0.35);
+  smileInner.position.set(0, -0.11, 0.35);
+  cHead.add(smileInner);
+
+  cute.add(cHead);
+
+  for (const side of [-1, 1]) {
+    const armGroup = new THREE.Group();
+    armGroup.position.set(side * 0.34, 0.62, 0.04);
+    armGroup.rotation.z = side * 0.35;
+    armGroup.rotation.x = -0.25;
+
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.095, 0.24, 16, 28), plushPurple);
+    arm.position.y = -0.1;
+    armGroup.add(arm);
+
+    const paw = new THREE.Mesh(new THREE.SphereGeometry(0.11, 28, 22), deepPurple);
+    paw.position.y = -0.24;
+    armGroup.add(paw);
+
+    for (let b = -1; b <= 1; b++) {
+      const bean = new THREE.Mesh(new THREE.SphereGeometry(0.028, 16, 12), earPink);
+      bean.position.set(b * 0.042, -0.26, 0.085);
+      armGroup.add(bean);
+    }
+    cute.add(armGroup);
+
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.115, 0.22, 16, 28), deepPurple);
+    leg.position.set(side * 0.17, 0.19, 0);
+    cute.add(leg);
+
+    const foot = new THREE.Mesh(new THREE.SphereGeometry(0.13, 28, 22), deepPurple);
+    foot.scale.set(1.0, 0.72, 1.35);
+    foot.position.set(side * 0.17, 0.08, 0.06);
+    cute.add(foot);
+  }
+
+  const tailCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.32, -0.26),
+    new THREE.Vector3(0.18, 0.42, -0.48),
+    new THREE.Vector3(-0.14, 0.72, -0.62),
+    new THREE.Vector3(0.22, 1.02, -0.54),
+    new THREE.Vector3(0.32, 1.18, -0.38),
+  ]);
+  const tailMesh = new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 48, 0.068, 24, false), plushPurple);
+  cute.add(tailMesh);
+
+  const tailTip = new THREE.Mesh(new THREE.SphereGeometry(0.078, 24, 20), deepPurple);
+  tailTip.position.set(0.32, 1.18, -0.38);
+  cute.add(tailTip);
+
+  cute.userData = { cHead, crescentGroup, tailMesh };
+  return cute;
+}
+
+/** High-Res Smooth 3D Nightmare CatNap (Sleek sculpted silhouette + vortex dream-mist rings) */
+export function buildHighResNightmareCatNap(THREE = window.THREE) {
+  const night = new THREE.Group();
+  night.visible = false;
+
+  const darkVelvet = hdMat(THREE, '#3b1f7a', {
+    roughness: 0.42,
+    metalness: 0.15,
+    emissive: '#5f3dc4',
+    emissiveIntensity: 0.32,
+  });
+  const ribGlowMat = hdMat(THREE, '#b197fc', {
+    emissive: '#7950f2',
+    emissiveIntensity: 0.7,
+    roughness: 0.3,
+  });
+  const eyeGlow = hdMat(THREE, '#ffffff', {
+    emissive: '#ffffff',
+    emissiveIntensity: 1.0,
+    roughness: 0.05,
+  });
+  const redMistMat = hdMat(THREE, '#ff6b6b', {
+    emissive: '#f03e3e',
+    emissiveIntensity: 0.85,
+    transparent: true,
+    opacity: 0.75,
+  });
+  const purpleMistMat = hdMat(THREE, '#d0bfff', {
+    emissive: '#9775fa',
+    emissiveIntensity: 0.75,
+    transparent: true,
+    opacity: 0.68,
+  });
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.86, 24, 36), darkVelvet);
+  torso.position.set(0, 1.05, 0);
+  torso.rotation.x = 0.08;
+  night.add(torso);
+
+  for (let i = 0; i < 4; i++) {
+    const rib = new THREE.Mesh(
+      new THREE.TorusGeometry(0.33 - i * 0.015, 0.036, 20, 48),
+      ribGlowMat
+    );
+    rib.position.set(0, 0.72 + i * 0.22, 0.02);
+    rib.rotation.x = Math.PI / 2 + 0.1;
+    night.add(rib);
+  }
+
+  const coreCrescent = new THREE.Mesh(
+    new THREE.TorusGeometry(0.15, 0.042, 20, 48, Math.PI * 1.45),
+    hdMat(THREE, '#ffd43b', { emissive: '#fcc419', emissiveIntensity: 0.9 })
+  );
+  coreCrescent.position.set(0, 1.18, 0.35);
+  coreCrescent.rotation.z = Math.PI * 0.3;
+  night.add(coreCrescent);
+
+  const nHead = new THREE.Group();
+  nHead.position.set(0, 1.92, 0.1);
+
+  const headGlobe = new THREE.Mesh(new THREE.SphereGeometry(0.48, 48, 36), darkVelvet);
+  headGlobe.scale.set(1.16, 0.94, 0.96);
+  nHead.add(headGlobe);
+
+  for (const side of [-1, 1]) {
+    const earGroup = new THREE.Group();
+    earGroup.position.set(side * 0.34, 0.38, -0.02);
+    earGroup.rotation.z = -side * 0.22;
+
+    const earCone = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.56, 36), darkVelvet);
+    earCone.position.y = 0.24;
+    earGroup.add(earCone);
+
+    const innerEar = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.4, 32), ribGlowMat);
+    innerEar.position.set(0, 0.2, 0.045);
+    earGroup.add(innerEar);
+    nHead.add(earGroup);
+
+    const eyeSocket = new THREE.Mesh(
+      new THREE.SphereGeometry(0.125, 32, 24),
+      hdMat(THREE, '#120924', { roughness: 0.2 })
+    );
+    eyeSocket.scale.set(1.15, 0.95, 0.55);
+    eyeSocket.position.set(side * 0.21, 0.1, 0.38);
+    nHead.add(eyeSocket);
+
+    const eyeOrb = new THREE.Mesh(new THREE.SphereGeometry(0.095, 32, 24), eyeGlow);
+    eyeOrb.scale.set(1.1, 0.85, 0.6);
+    eyeOrb.position.set(side * 0.21, 0.1, 0.42);
+    nHead.add(eyeOrb);
+
+    const browCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side * 0.06, 0.16, 0.41),
+      new THREE.Vector3(side * 0.21, 0.25, 0.42),
+      new THREE.Vector3(side * 0.35, 0.22, 0.36),
+    ]);
+    nHead.add(new THREE.Mesh(new THREE.TubeGeometry(browCurve, 24, 0.024, 14, false), ribGlowMat));
+  }
+
+  const mawInner = new THREE.Mesh(
+    new THREE.SphereGeometry(0.28, 36, 28),
+    hdMat(THREE, '#120924', { roughness: 0.9 })
+  );
+  mawInner.scale.set(1.38, 0.68, 0.42);
+  mawInner.position.set(0, -0.14, 0.36);
+  nHead.add(mawInner);
+
+  const grinCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.36, -0.02, 0.32),
+    new THREE.Vector3(-0.2, -0.22, 0.41),
+    new THREE.Vector3(0, -0.26, 0.43),
+    new THREE.Vector3(0.2, -0.22, 0.41),
+    new THREE.Vector3(0.36, -0.02, 0.32),
+  ]);
+  nHead.add(new THREE.Mesh(new THREE.TubeGeometry(grinCurve, 40, 0.026, 16, false), ribGlowMat));
+
+  const mawMist = new THREE.Mesh(new THREE.SphereGeometry(0.12, 24, 18), redMistMat);
+  mawMist.position.set(0, -0.15, 0.42);
+  nHead.add(mawMist);
+
+  night.add(nHead);
+
+  for (const side of [-1, 1]) {
+    const armGroup = new THREE.Group();
+    armGroup.position.set(side * 0.48, 1.38, 0.08);
+    armGroup.rotation.z = side * 0.22;
+    armGroup.rotation.x = -0.35;
+
+    const upperArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.095, 0.62, 16, 28), darkVelvet);
+    upperArm.position.y = -0.32;
+    armGroup.add(upperArm);
+
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.12, 24, 20), darkVelvet);
+    hand.position.y = -0.68;
+    armGroup.add(hand);
+
+    for (let c = -1; c <= 1; c++) {
+      const claw = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.18, 16), ribGlowMat);
+      claw.position.set(c * 0.05, -0.8, 0.05);
+      claw.rotation.x = Math.PI * 0.85;
+      armGroup.add(claw);
+    }
+    night.add(armGroup);
+
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.48, 16, 28), darkVelvet);
+    leg.position.set(side * 0.24, 0.34, 0);
+    night.add(leg);
+
+    const paw = new THREE.Mesh(new THREE.SphereGeometry(0.14, 24, 20), darkVelvet);
+    paw.scale.set(1.0, 0.65, 1.45);
+    paw.position.set(side * 0.24, 0.08, 0.08);
+    night.add(paw);
+  }
+
+  const nTailCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.55, -0.28),
+    new THREE.Vector3(-0.35, 0.85, -0.68),
+    new THREE.Vector3(0.32, 1.35, -0.82),
+    new THREE.Vector3(-0.22, 1.88, -0.65),
+    new THREE.Vector3(0.18, 2.25, -0.35),
+  ]);
+  night.add(new THREE.Mesh(new THREE.TubeGeometry(nTailCurve, 64, 0.065, 24, false), darkVelvet));
+
+  const smokeGroup = new THREE.Group();
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * TAU;
+    const rad = 0.78 + (i % 3) * 0.16;
+    const puff = new THREE.Mesh(
+      new THREE.SphereGeometry(0.16 + (i % 3) * 0.045, 28, 22),
+      i % 3 === 0 ? redMistMat : purpleMistMat
+    );
+    puff.position.set(Math.cos(angle) * rad, 0.35 + (i % 4) * 0.42, Math.sin(angle) * rad);
+    smokeGroup.add(puff);
+  }
+
+  const vortexRing1 = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.04, 20, 64), purpleMistMat);
+  vortexRing1.position.y = 0.55;
+  vortexRing1.rotation.x = Math.PI / 2 + 0.22;
+  smokeGroup.add(vortexRing1);
+
+  const vortexRing2 = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.035, 20, 64), redMistMat);
+  vortexRing2.position.y = 1.25;
+  vortexRing2.rotation.x = Math.PI / 2 - 0.25;
+  smokeGroup.add(vortexRing2);
+
+  night.add(smokeGroup);
+  night.userData = { nHead, smokeGroup };
+  return { night, smokeGroup };
+}
+
+/** High-Res Sleek Space Rocket (Cone nosecone, polished cylinder fuselage, porthole, curved fins) */
+export function buildHighResRocket(THREE = window.THREE) {
+  const padGroup = new THREE.Group();
+  const padBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.68, 0.78, 0.14, 48),
+    hdMat(THREE, '#495057', { metalness: 0.45, roughness: 0.4 })
+  );
+  padBase.position.set(1.35, 0.07, 0);
+  padGroup.add(padBase);
+
+  const padRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.62, 0.032, 20, 48),
+    hdMat(THREE, '#ffd43b', { emissive: '#fcc419', emissiveIntensity: 0.7 })
+  );
+  padRing.position.set(1.35, 0.15, 0);
+  padRing.rotation.x = Math.PI / 2;
+  padGroup.add(padRing);
+
+  const rocket = new THREE.Group();
+  rocket.position.set(1.35, 0.16, 0);
+
+  const redHull = hdMat(THREE, '#ff6b6b', {
+    emissive: '#f03e3e',
+    emissiveIntensity: 0.3,
+    metalness: 0.35,
+    roughness: 0.22,
+  });
+  const pearlBand = hdMat(THREE, '#ffffff', { metalness: 0.3, roughness: 0.18 });
+  const goldNose = hdMat(THREE, '#ffd43b', {
+    emissive: '#fcc419',
+    emissiveIntensity: 0.6,
+    metalness: 0.5,
+    roughness: 0.2,
+  });
+
+  const fuselage = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.88, 48), redHull);
+  fuselage.position.y = 0.54;
+  rocket.add(fuselage);
+
+  const midStripe = new THREE.Mesh(new THREE.CylinderGeometry(0.268, 0.275, 0.22, 48), pearlBand);
+  midStripe.position.y = 0.54;
+  rocket.add(midStripe);
+
+  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(0.245, 0.46, 48), goldNose);
+  noseCone.position.y = 1.21;
+  rocket.add(noseCone);
+
+  const noseTip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 24, 18), goldNose);
+  noseTip.position.y = 1.44;
+  rocket.add(noseTip);
+
+  const portholeRim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.105, 0.024, 20, 36),
+    hdMat(THREE, '#adb5bd', { metalness: 0.75, roughness: 0.2 })
+  );
+  portholeRim.position.set(0, 0.68, 0.25);
+  rocket.add(portholeRim);
+
+  const portholeGlass = new THREE.Mesh(
+    new THREE.SphereGeometry(0.095, 28, 22),
+    hdMat(THREE, '#74c0fc', { emissive: '#339af0', emissiveIntensity: 0.75, roughness: 0.08 })
+  );
+  portholeGlass.scale.set(1, 1, 0.45);
+  portholeGlass.position.set(0, 0.68, 0.245);
+  rocket.add(portholeGlass);
+
+  for (let i = 0; i < 4; i++) {
+    const finGroup = new THREE.Group();
+    finGroup.rotation.y = (i / 4) * TAU;
+    const finCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0.24, 0.42, 0),
+      new THREE.Vector3(0.38, 0.24, 0),
+      new THREE.Vector3(0.42, 0.05, 0),
+    ]);
+    const finMesh = new THREE.Mesh(new THREE.TubeGeometry(finCurve, 24, 0.048, 16, false), redHull);
+    finMesh.scale.set(1.0, 1.0, 0.42);
+    finGroup.add(finMesh);
+    rocket.add(finGroup);
+  }
+
+  const nozzle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.2, 0.16, 36),
+    hdMat(THREE, '#343a40', { metalness: 0.7, roughness: 0.3 })
+  );
+  nozzle.position.y = 0.06;
+  rocket.add(nozzle);
+
+  const flame = new THREE.Group();
+  flame.visible = false;
+
+  const outerPlume = new THREE.Mesh(
+    new THREE.ConeGeometry(0.22, 0.72, 36),
+    hdMat(THREE, '#ff922b', {
+      emissive: '#f76707',
+      emissiveIntensity: 0.95,
+      transparent: true,
+      opacity: 0.82,
+    })
+  );
+  outerPlume.rotation.x = Math.PI;
+  outerPlume.position.y = -0.34;
+  flame.add(outerPlume);
+
+  const innerCorePlume = new THREE.Mesh(
+    new THREE.ConeGeometry(0.13, 0.48, 32),
+    hdMat(THREE, '#fff3bf', {
+      emissive: '#ffd43b',
+      emissiveIntensity: 1.0,
+    })
+  );
+  innerCorePlume.rotation.x = Math.PI;
+  innerCorePlume.position.y = -0.22;
+  flame.add(innerCorePlume);
+
+  const shockRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.2, 0.028, 16, 36),
+    hdMat(THREE, '#ffd43b', { emissive: '#ff922b', emissiveIntensity: 0.9, transparent: true, opacity: 0.75 })
+  );
+  shockRing.rotation.x = Math.PI / 2;
+  shockRing.position.y = -0.18;
+  flame.add(shockRing);
+
+  outerPlume.onBeforeRender = () => {
+    const now = performance.now() * 0.001;
+    flame.scale.y = 0.9 + Math.sin(now * 28) * 0.18;
+    shockRing.scale.setScalar(0.9 + Math.cos(now * 22) * 0.15);
+  };
+
+  rocket.add(flame);
+  return { padGroup, rocket, flame };
+}
+
+/** Smooth Rolling Storybook Hill for the 10s Opening */
+export function buildHighResStorybookHill(THREE = window.THREE) {
+  const hillGroup = new THREE.Group();
+
+  const mainHill = new THREE.Mesh(
+    new THREE.SphereGeometry(5.2, 64, 48),
+    hdMat(THREE, '#40c057', { roughness: 0.72 })
+  );
+  mainHill.scale.set(1.65, 0.28, 1.15);
+  mainHill.position.set(1.0, -1.42, -0.2);
+  mainHill.receiveShadow = true;
+  hillGroup.add(mainHill);
+
+  const valleyMeadow = new THREE.Mesh(
+    new THREE.SphereGeometry(12.5, 64, 48),
+    hdMat(THREE, '#37b24d', { roughness: 0.76 })
+  );
+  valleyMeadow.scale.set(1.55, 0.12, 1.15);
+  valleyMeadow.position.set(1.2, -1.45, 5.2);
+  valleyMeadow.receiveShadow = true;
+  hillGroup.add(valleyMeadow);
+
+  const treeCoords = [
+    [-3.2, -0.1, -1.4, 1.05],
+    [-2.4, -0.08, 0.9, 0.88],
+    [4.4, -0.12, -1.1, 1.12],
+    [3.6, -0.1, 1.2, 0.92],
+  ];
+  for (const [tx, ty, tz, ts] of treeCoords) {
+    const tr = new THREE.Group();
+    tr.position.set(tx, ty, tz);
+    tr.scale.setScalar(ts);
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.11, 0.16, 0.55, 24),
+      hdMat(THREE, '#8c5a32', { roughness: 0.78 })
+    );
+    trunk.position.y = 0.25;
+    tr.add(trunk);
+    for (let layer = 0; layer < 3; layer++) {
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.54 - layer * 0.11, 0.62 - layer * 0.08, 32),
+        hdMat(THREE, layer % 2 === 0 ? '#37b24d' : '#51cf66', { roughness: 0.65 })
+      );
+      cone.position.y = 0.68 + layer * 0.36;
+      tr.add(cone);
+    }
+    hillGroup.add(tr);
+  }
+
+  return hillGroup;
+}
+
+/** Smooth Non-Blocky Plush Critter Cameo for Phase 3 (6.8s - 10.0s) */
+export function buildHighResCameoCritter(def, THREE = window.THREE) {
+  const g = new THREE.Group();
+  const c = def?.color || '#f59f00';
+  const ac = def?.accent || '#fff3bf';
+
+  const bodyMat = hdMat(THREE, c, { roughness: 0.52 });
+  const accentMat = hdMat(THREE, ac, { roughness: 0.48, emissive: ac, emissiveIntensity: 0.22 });
+  const eyeMat = hdMat(THREE, '#1a1426', { roughness: 0.15 });
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.46, 0.18, 36), accentMat);
+  base.position.y = 0.09;
+  g.add(base);
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.22, 16, 28), bodyMat);
+  torso.position.y = 0.42;
+  g.add(torso);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 36, 28), bodyMat);
+  head.position.y = 0.82;
+  g.add(head);
+
+  for (const side of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 24), bodyMat);
+    ear.position.set(side * 0.18, 1.08, 0);
+    ear.rotation.z = -side * 0.25;
+    g.add(ear);
+
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.052, 20, 16), eyeMat);
+    eye.position.set(side * 0.1, 0.85, 0.25);
+    g.add(eye);
+  }
+
+  const smile = new THREE.Mesh(
+    new THREE.TorusGeometry(0.09, 0.018, 16, 32, Math.PI),
+    eyeMat
+  );
+  smile.position.set(0, 0.78, 0.26);
+  smile.rotation.x = Math.PI;
+  g.add(smile);
+
+  return g;
+}
+
+/** Smooth Non-Blocky Storybook Zombie Cameo for Phase 3 (6.8s - 10.0s) */
+export function buildHighResCameoZombie(def, THREE = window.THREE) {
+  const g = new THREE.Group();
+  const s = def?.scale || 1.0;
+  g.scale.setScalar(s);
+
+  const skinMat = hdMat(THREE, def?.skinColor || '#69db7c', { roughness: 0.58 });
+  const shirtMat = hdMat(THREE, def?.shirtColor || '#22b8cf', { roughness: 0.62 });
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.21, 0.28, 16, 28), shirtMat);
+  torso.position.y = 0.56;
+  g.add(torso);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 36, 28), skinMat);
+  head.position.y = 1.02;
+  g.add(head);
+
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.24, 14, 24), hdMat(THREE, '#364fc7'));
+    leg.position.set(side * 0.11, 0.2, 0);
+    g.add(leg);
+
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.068, 0.26, 14, 24), skinMat);
+    arm.position.set(-0.2, 0.68, side * 0.22);
+    arm.rotation.z = Math.PI / 2;
+    g.add(arm);
+  }
+
+  if (def?.id === 'balloon') {
+    const balloon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.34, 36, 28),
+      hdMat(THREE, '#f03e3e', { emissive: '#e03131', emissiveIntensity: 0.45 })
+    );
+    balloon.scale.set(1, 1.18, 1);
+    balloon.position.y = 1.82;
+    g.add(balloon);
+  }
+
+  return g;
+}
+
+/** Complete High-Res Cutscene Rig */
+export function buildHighResCutsceneRig(THREE = window.THREE) {
+  const root = new THREE.Group();
+
+  const hillGroup = buildHighResStorybookHill(THREE);
+  root.add(hillGroup);
+
+  const cute = buildHighResCuteCatNap(THREE);
+  root.add(cute);
+
+  const { night, smokeGroup } = buildHighResNightmareCatNap(THREE);
+  root.add(night);
+
+  const { padGroup, rocket, flame } = buildHighResRocket(THREE);
+  root.add(padGroup);
+  root.add(rocket);
+
+  // 24 Smooth 3D Star-Shard Crystals (OctahedronGeometry + ConeGeometry)
+  const shardGroup = new THREE.Group();
+  shardGroup.position.set(2.6, 4.7, -0.2);
+  shardGroup.visible = false;
+  const shards = [];
+  for (let i = 0; i < 24; i++) {
+    const phi = Math.acos(1 - (2 * (i + 0.5)) / 24);
+    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+    const isGold = i % 2 === 0;
+    const shardMesh = new THREE.Mesh(
+      i % 3 === 0 ? new THREE.OctahedronGeometry(0.22, 1) : new THREE.ConeGeometry(0.14, 0.38, 24),
+      hdMat(THREE, isGold ? '#ffd43b' : '#b197fc', {
+        emissive: isGold ? '#fcc419' : '#7950f2',
+        emissiveIntensity: 0.92,
+        roughness: 0.18,
+      })
+    );
+    shardGroup.add(shardMesh);
+    shards.push({
+      mesh: shardMesh,
+      vx: Math.sin(phi) * Math.cos(theta) * 2.8,
+      vy: Math.cos(phi) * 2.4 + 0.8,
+      vz: Math.sin(phi) * Math.sin(theta) * 2.8,
+    });
+  }
+  root.add(shardGroup);
+
+  let burstStartMs = 0;
+  const driverMesh = night.children[0];
+  if (driverMesh) {
+    driverMesh.onBeforeRender = () => {
+      const now = performance.now() * 0.001;
+      const inIntro = document.body.classList.contains('inIntro');
+      hillGroup.visible = inIntro;
+
+      if (inIntro && !rocket.visible && !cute.visible) {
+        if (!shardGroup.visible) {
+          shardGroup.visible = true;
+          burstStartMs = performance.now();
+        }
+        const elapsed = clamp((performance.now() - burstStartMs) / 1000, 0, 3.5);
+        for (let i = 0; i < shards.length; i++) {
+          const sh = shards[i];
+          sh.mesh.position.set(
+            sh.vx * elapsed,
+            sh.vy * elapsed - 1.6 * elapsed * elapsed,
+            sh.vz * elapsed
+          );
+          sh.mesh.rotation.x = now * 3 + i;
+          sh.mesh.rotation.y = now * 4 + i;
+          const fade = clamp(1 - elapsed / 2.8, 0.01, 1);
+          sh.mesh.scale.setScalar(fade);
+        }
+      } else {
+        shardGroup.visible = false;
+        burstStartMs = 0;
+      }
+    };
+  }
+
+  root.userData = {
+    cute,
+    night,
+    smokeGroup,
+    rocket,
+    flame,
+    hillGroup,
+    shardGroup,
+    shards,
+  };
+  return root;
+}
+
+export const buildHighResCutsceneWorld = buildHighResCutsceneRig;

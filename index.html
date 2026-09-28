@@ -1,119 +1,123 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="CritterCraft">
-<meta name="theme-color" content="#140f2d">
-<title>CritterCraft: Moonless Night (22x14 Tactical Citadel)</title>
-<link rel="apple-touch-icon" href="icons/catnap.jpg">
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>🐱🌙 🚀🌕 🧟⚔️</title>
+  <link rel="icon" href="icons/catnap.jpg" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
-<body class="inIntro">
-<canvas id="scene"></canvas>
+<body>
+  <div id="app">
+    <canvas id="gameCanvas"></canvas>
 
-<!-- Single-Row Top HUD Bar -->
-<header id="topBar">
-  <div class="barGroup">
-    <button id="pauseBtn" class="pillBtn" title="Pause / Resume">⏸</button>
-    <button id="stopBtn" class="pillBtn" title="Title Screen">⏹</button>
-    <button id="replayIntroBtn" class="pillBtn accent" title="Replay 10s Opening Movie">🎬 10s</button>
-    <button id="diffBtn" class="pillBtn warn" title="Switch Difficulty: Tactical / Nightmare / Cozy">🔥 Tactical</button>
-    <button id="camBtn" class="pillBtn" title="Toggle Wide Map / Citadel Zoom (or drag & pinch)">🗺️ Wide</button>
-    <button id="speedBtn" class="pillBtn" title="Game Speed">🚶 1.0x</button>
-  </div>
+    <!-- Top Bright Pastel HUD Bar (100% Zero-Text Icon UI) -->
+    <header id="topBar">
+      <div class="hud-left">
+        <button id="pauseBtn" class="icon-btn" aria-label="pause">⏸</button>
+        <button id="replayCineBtn" class="icon-btn" aria-label="cutscene">🎬</button>
+        <button id="camZoomBtn" class="icon-btn" aria-label="zoom">🗺️</button>
+        <div id="stageBar" class="stage-bar">
+          <button class="stage-btn active" data-stage="0">1️⃣</button>
+          <button class="stage-btn" data-stage="1">2️⃣</button>
+          <button class="stage-btn" data-stage="2">3️⃣</button>
+          <button class="stage-btn" data-stage="3">4️⃣</button>
+          <button class="stage-btn" data-stage="4">5️⃣</button>
+        </div>
+      </div>
 
-  <div class="barCenter">
-    <div class="statChip starChip" title="Starlight (Mana & Light Currency)">🌟 <span id="starVal">110</span></div>
-    <div class="statChip oreChip" title="Redstone Ore (Walls, Bridges, Conduits & Tech Currency)">⚙️ <span id="oreVal">45</span></div>
-    <div class="statChip hpChip" title="Central Moon Altar Health">❤️ <span id="hpVal">600</span></div>
-    <div class="moonMeter" title="Collect 100 Moon Shards from Outer Geodes, Elites & Shard Refinery!">
-      <div id="shardFill" class="moonFill"></div>
-      <span class="moonLabel">🌕 <b id="shardText">0 / 100</b></span>
+      <!-- 4 Layered Production Materials + Base Hearts + Moon Shard Goal -->
+      <div class="hud-center">
+        <div class="res-chip sun-chip" id="sunChip">
+          <span class="res-ico">☀️</span>
+          <span id="sunCount">110</span>
+        </div>
+        <div class="res-chip wood-chip" id="woodChip">
+          <span class="res-ico">🪵</span>
+          <span id="woodCount">35</span>
+        </div>
+        <div class="res-chip stone-chip" id="stoneChip">
+          <span class="res-ico">🪨</span>
+          <span id="stoneCount">30</span>
+        </div>
+        <div class="res-chip crystal-chip" id="crystalChip">
+          <span class="res-ico">💎</span>
+          <span id="crystalCount">15</span>
+        </div>
+        <div class="res-chip hp-chip" id="hpChip">
+          <span class="res-ico">❤️</span>
+          <span id="hpCount">25</span>
+        </div>
+
+        <div class="moon-progress-wrap">
+          <span class="moon-ico">🌑</span>
+          <div class="moon-bar-bg">
+            <div id="moonBarFill" class="moon-bar-fill" style="width: 0%"></div>
+          </div>
+          <span class="moon-ico">🌕</span>
+          <span id="moonShardText" class="moon-num">0/30</span>
+          <button id="craftMoonBtn" class="craft-moon-btn" aria-label="craft-moon">
+            <span>⚗️➔🌕</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <button id="waveBtn" class="action-pill wave-pill" aria-label="wave">
+          <span>🧟⚡</span>
+        </button>
+        <button id="sandboxBtn" class="icon-btn" aria-label="sandbox">🧱</button>
+        <button id="musicBtn" class="icon-btn" aria-label="music">🎵</button>
+        <button id="sfxBtn" class="icon-btn" aria-label="sound">🔊</button>
+      </div>
+    </header>
+
+    <!-- 10-Second Opening Cutscene 3-Step Visual Picture Pill (Zero Text) -->
+    <div id="cineBanner" class="cine-banner hidden">
+      <div class="cine-steps">
+        <div id="cineStep1" class="cine-step active">🐱🌙</div>
+        <span class="cine-arrow">➔</span>
+        <div id="cineStep2" class="cine-step">🚀🌕</div>
+        <span class="cine-arrow">➔</span>
+        <div id="cineStep3" class="cine-step">🧟⚔️</div>
+      </div>
+      <div class="cine-progress-track">
+        <div id="cineProgressFill" class="cine-progress-fill"></div>
+      </div>
+      <button id="skipCineBtn" class="skip-btn" aria-label="skip">⏭️</button>
     </div>
-    <button id="refineBtn" class="pillBtn refineBtn" title="Refine 35 🌟 + 20 ⚙️ into +5 🌙 Moon Shards!">🔬 +5🌙</button>
-    <div id="portalBadge" class="statChip portalChip" title="Active Zombie Invasion Portals (Wave & Directions)">⛩️ W1 · E</div>
-    <div id="harmonyBadge" class="statChip synChip">✨ Lv.1</div>
-    <div id="balanceBadge" class="statChip balChip">⚖️ P=1.00</div>
-  </div>
 
-  <div class="barGroup">
-    <button id="spawnWaveBtn" class="pillBtn warn" title="Call Early Multi-Portal Assault (+20 🌟 & +10 ⚙️)">🧟 +Wave</button>
-    <button id="modeBtn" class="pillBtn" title="Switch Tactical Rescue / Free Sandbox">🌙 Rescue</button>
-    <button id="musicBtn" class="pillBtn" title="Toggle Music">🎵</button>
-    <button id="soundBtn" class="pillBtn" title="Toggle Sound">🔔</button>
-  </div>
-</header>
+    <!-- Pure-Icon Visual Toast Pill (Zero Text) -->
+    <div id="bubble" class="bubble hidden"></div>
 
-<!-- 10-Second Opening Cinematics Banner -->
-<section id="cineBanner">
-  <div class="cineHeader">
-    <span id="cinePhase">Phase 1 / 3 · 月黑风高 (Windy Moonlit Night)</span>
-    <div class="cineRight">
-      <span id="cineTimer" class="timerPill">10.0s</span>
-      <button id="skipIntroBtn" class="skipBtn">⏭ Skip to Game</button>
+    <!-- Bottom Minecraft Critter Builder Hotbar + Visual Recipe Pill -->
+    <footer id="bottomDock">
+      <div id="unitInfo" class="recipe-pill"></div>
+      <div id="hotbar" class="hotbar"></div>
+    </footer>
+
+    <!-- Pure-Icon Stage Clear & Moon Restored Celebration Modal -->
+    <div id="victoryModal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-stars">⭐ ⭐ ⭐</div>
+        <div class="modal-hero-row">
+          <span class="modal-big-ico">🌕</span>
+          <img src="icons/catnap.jpg" alt="" class="modal-portrait" />
+          <span class="modal-big-ico">🎉</span>
+        </div>
+        <div id="modalStageBadge" class="modal-stage-badge">1️⃣ ➔ 2️⃣</div>
+        <div class="modal-btn-row">
+          <button id="nextStageBtn" class="big-play-btn next-btn" aria-label="next">▶️➡️</button>
+          <button id="continueBtn" class="big-play-btn continue-btn" aria-label="continue">🧱✨</button>
+          <button id="restartBtn" class="big-play-btn replay-btn" aria-label="replay">🔄🎬</button>
+        </div>
+      </div>
     </div>
   </div>
-  <p id="cineSub">Cute CatNap stands under the Full Moon… swirling purple dream-mist transforms him into Nightmare CatNap!</p>
-</section>
 
-<!-- Floating Speech Toast -->
-<div id="bubble" class="hidden"></div>
-
-<!-- Bottom Free-Style Minecraft Voxel Build Dock -->
-<footer id="dock">
-  <div class="dockTop">
-    <div id="roleTabs"></div>
-    <div id="unitInfo">22×14 Valley: Build Maze Walls, Redstone Quarries, Anti-Air Towers & Outer Geode Outposts!</div>
-  </div>
-  <div id="hotbar"></div>
-</footer>
-
-<!-- Title Modal (accessible via ⏹) -->
-<section id="titleModal" class="modal hidden">
-  <div class="modalCard">
-    <div class="heroIcons">
-      <img src="icons/catnap.jpg" alt="CatNap">
-      <img src="icons/lunabat.jpg" alt="LunaBat">
-      <img src="icons/sunnyfox.jpg" alt="SunnyFox">
-      <img src="icons/poppydash.jpg" alt="PoppyDash">
-    </div>
-    <h1>CritterCraft: <span>Moonless Night</span></h1>
-    <p class="subtitle">
-      Nightmare CatNap shattered the Moon! Defend the <b>22×14 Multi-Biome Citadel</b> against 4-Direction Zombie Sieges,
-      TNT Creepers, Flying Balloons & Red-Smoke Sleep Storms! Harvest <b>🌟 Starlight</b> & <b>⚙️ Redstone Ore</b>, build maze walls,
-      and capture outer <b>🌙 Moon Geodes</b>!
-    </p>
-    <div class="modalBtns">
-      <button id="startIntroBtn" class="bigBtn primary">🎬 Watch 10s Intro & Play</button>
-      <button id="quickPlayBtn" class="bigBtn secondary">⚡ Jump Straight to 22×14 Citadel</button>
-    </div>
-  </div>
-</section>
-
-<!-- Victory / Moon Restored Modal -->
-<section id="victoryModal" class="modal hidden">
-  <div class="modalCard">
-    <div class="heroIcons">
-      <img src="icons/catnap.jpg" alt="Cute CatNap">
-      <img src="icons/lunabat.jpg" alt="LunaBat">
-      <img src="icons/sunnyfox.jpg" alt="SunnyFox">
-    </div>
-    <h1 id="endTitle">🌕 The Moon Is Restored!</h1>
-    <p id="endSub" class="subtitle">
-      You forged 100 Moon Shards across the 22×14 Citadel! The Full Moon shines bright again, all Zombies turned into starlight flowers,
-      and Nightmare CatNap transformed back into cozy Cute CatNap!
-    </p>
-    <div class="modalBtns">
-      <button id="keepPlayingBtn" class="bigBtn primary">🧱 Keep Building (Sandbox)</button>
-      <button id="playAgainBtn" class="bigBtn secondary">🎬 Replay 10s Movie & New Siege</button>
-    </div>
-  </div>
-</section>
-
-<script src="js/vendor/three.min.js"></script>
-<script type="module" src="js/app.js"></script>
+  <script src="js/vendor/three.min.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>
