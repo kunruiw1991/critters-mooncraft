@@ -1,16 +1,17 @@
 // ============================================================================
-// CRITTERCRAFT: MOONLESS NIGHT — BALANCED, FUN & ACCESSIBLE GAMEPLAY CONFIG
-// Designed for smooth PvZ-style progressive waves:
-// - Casual / Kid Play (placing a few gatherers & defenders) feels rewarding and winnable!
-// - AFK (doing nothing) survives early scouting Wave 1-2 via starter guard + castle beam, then loses in Wave 3-4.
-// - Strategic Play (veins + upgrades + Moon Forge) clears stages fast with 3 Stars!
+// CRITTERCRAFT: MOONLESS NIGHT — TIGHT, MEANINGFUL 4-RESOURCE ECONOMY & PVZ WAVES
+// - Zero passive resource inflation: resources ONLY come from Gatherer work cycles
+//   (every 5.5s) on Resource Veins and clicked salvage orbs.
+// - Tight opening bank (☀️ 60, 🪵 20, 🪨 20, 💎 0) with 1 starter SunnyFox:
+//   every harvest matters and is immediately spent on tech progression, upgrades,
+//   and escalating Moon Sanctuary Forging!
 // ============================================================================
 
 export const INITIAL_RESOURCES = {
-  sun: 150,
-  wood: 80,
-  stone: 80,
-  crystal: 25
+  sun: 60,
+  wood: 20,
+  stone: 20,
+  crystal: 0
 };
 
 export const RESOURCE_META = {
@@ -20,15 +21,16 @@ export const RESOURCE_META = {
   crystal: { id: 'crystal', symbol: '💎', color: '#da77f2' }
 };
 
-// Moon Sanctuary Forge Recipe: Convert all 4 resources into +6 Moon Shards + Starlight Shockwave!
+// Moon Sanctuary Forge Recipe: Base cost (escalates +15% per forge so resources always have a high-value sink!)
 export const MOON_FORGE_RECIPE = {
-  cost: { sun: 20, wood: 10, stone: 10, crystal: 5 },
-  shards: 6
+  cost: { sun: 35, wood: 20, stone: 20, crystal: 10 },
+  shards: 5
 };
 
 // ==================== 10 CRITTERS IN 3-TIER TACTICAL HIERARCHY ====================
 export const UNITS = [
   // -------------------- TIER 1: GATHERERS & SUPPORT --------------------
+  // Gatherers produce full yield ONLY when placed on/adjacent to a matching Resource Vein (35% yield off-vein).
   {
     id: 'sunnyfox',
     tier: 1,
@@ -38,15 +40,15 @@ export const UNITS = [
     fxIcon: '☀️',
     color: '#f59f00',
     accent: '#fff3bf',
-    cost: { sun: 30, wood: 0, stone: 0, crystal: 0 },
-    hp: 250,
-    prod: { sun: 14, wood: 0, stone: 0, crystal: 0 },
-    prodInterval: 3.5,
+    cost: { sun: 35, wood: 0, stone: 0, crystal: 0 },
+    hp: 210,
+    prod: { sun: 4, wood: 0, stone: 0, crystal: 0 },
+    prodInterval: 5.5,
     veinBonusNode: 'sun',
-    veinMult: 1.75,
-    atk: 14,
-    fireInterval: 1.4,
-    range: 3.2,
+    veinMult: 2.5, // +10 ☀️ every 5.5s on Sun Shrine Vein (only +4 off-vein!)
+    atk: 9,
+    fireInterval: 1.6,
+    range: 2.5,
     antiAir: false,
     lightRadius: 3.5
   },
@@ -59,17 +61,17 @@ export const UNITS = [
     fxIcon: '🪵',
     color: '#495057',
     accent: '#74c0fc',
-    cost: { sun: 30, wood: 10, stone: 0, crystal: 0 },
-    hp: 260,
-    prod: { sun: 0, wood: 10, stone: 0, crystal: 0 },
-    prodInterval: 3.5,
+    cost: { sun: 35, wood: 10, stone: 0, crystal: 0 },
+    hp: 220,
+    prod: { sun: 0, wood: 3, stone: 0, crystal: 0 },
+    prodInterval: 5.5,
     veinBonusNode: 'wood',
-    veinMult: 1.75,
-    hasteRadius: 2.8,
-    hasteMult: 1.30,
-    atk: 15,
-    fireInterval: 1.35,
-    range: 3.2,
+    veinMult: 2.7, // +8 🪵 every 5.5s on Forest Vein (only +3 off-vein!)
+    hasteRadius: 2.6,
+    hasteMult: 1.25,
+    atk: 10,
+    fireInterval: 1.5,
+    range: 2.5,
     antiAir: false,
     knockback: 0.15
   },
@@ -82,17 +84,17 @@ export const UNITS = [
     fxIcon: '🪨',
     color: '#f783ac',
     accent: '#ffdeeb',
-    cost: { sun: 30, wood: 0, stone: 10, crystal: 0 },
-    hp: 290,
-    prod: { sun: 0, wood: 0, stone: 10, crystal: 0 },
-    prodInterval: 3.5,
+    cost: { sun: 35, wood: 15, stone: 0, crystal: 0 },
+    hp: 250,
+    prod: { sun: 0, wood: 0, stone: 3, crystal: 0 },
+    prodInterval: 5.5,
     veinBonusNode: 'stone',
-    veinMult: 1.75,
-    healRadius: 3.0,
-    healPerSec: 24,
-    atk: 15,
-    fireInterval: 1.4,
-    range: 3.0,
+    veinMult: 2.7, // +8 🪨 every 5.5s on Quarry Vein (only +3 off-vein!)
+    healRadius: 2.8,
+    healPerSec: 18,
+    atk: 10,
+    fireInterval: 1.5,
+    range: 2.5,
     splashRadius: 0.8,
     antiAir: false
   },
@@ -107,18 +109,18 @@ export const UNITS = [
     fxIcon: '💎',
     color: '#339af0',
     accent: '#d0ebff',
-    cost: { sun: 35, wood: 10, stone: 10, crystal: 0 },
-    hp: 380,
+    cost: { sun: 45, wood: 20, stone: 20, crystal: 0 },
+    hp: 350,
     amphibious: true,
-    prod: { sun: 0, wood: 0, stone: 0, crystal: 8 },
-    prodInterval: 3.6,
+    prod: { sun: 0, wood: 0, stone: 0, crystal: 2 },
+    prodInterval: 6.0,
     veinBonusNode: 'crystal',
-    veinMult: 1.75,
-    slowRadius: 3.2,
+    veinMult: 3.0, // +6 💎 every 6.0s on Crystal Vein or Water (only +2 off-vein!)
+    slowRadius: 3.0,
     slowFactor: 0.50,
-    atk: 20,
-    fireInterval: 1.25,
-    range: 3.6,
+    atk: 16,
+    fireInterval: 1.35,
+    range: 3.4,
     antiAir: true
   },
   {
@@ -130,14 +132,14 @@ export const UNITS = [
     fxIcon: '🧱',
     color: '#e03131',
     accent: '#ffc9c9',
-    cost: { sun: 25, wood: 0, stone: 20, crystal: 0 },
-    hp: 920,
-    thornsDmg: 30,
-    blastResist: 0.70,
-    atk: 30,
-    fireInterval: 1.3,
-    range: 2.3,
-    splashRadius: 1.5,
+    cost: { sun: 35, wood: 0, stone: 20, crystal: 0 },
+    hp: 820,
+    thornsDmg: 24,
+    blastResist: 0.65,
+    atk: 24,
+    fireInterval: 1.35,
+    range: 2.1,
+    splashRadius: 1.4,
     antiAir: false
   },
   {
@@ -149,17 +151,17 @@ export const UNITS = [
     fxIcon: '🗼',
     color: '#37b24d',
     accent: '#b2f2bb',
-    cost: { sun: 25, wood: 15, stone: 15, crystal: 0 },
-    hp: 540,
+    cost: { sun: 35, wood: 20, stone: 20, crystal: 0 },
+    hp: 480,
     stackable: true,
     towerRangeBonus: 1.40,
     towerDmgBonus: 1.30,
     grantsAntiAir: true,
-    atk: 24,
-    fireInterval: 1.1,
-    range: 4.6,
+    atk: 20,
+    fireInterval: 1.15,
+    range: 4.4,
     antiAir: true,
-    deathBlastDmg: 150
+    deathBlastDmg: 140
   },
   {
     id: 'lunabat',
@@ -170,17 +172,17 @@ export const UNITS = [
     fxIcon: '🏹',
     color: '#7950f2',
     accent: '#e5dbff',
-    cost: { sun: 35, wood: 20, stone: 0, crystal: 0 },
-    hp: 260,
-    atk: 38,
-    fireInterval: 0.78,
-    range: 5.2,
+    cost: { sun: 45, wood: 25, stone: 0, crystal: 0 },
+    hp: 230,
+    atk: 35,
+    fireInterval: 0.85,
+    range: 4.9,
     pierce: 2,
     antiAir: true,
     bonusVsFlyerCreeper: 1.80
   },
 
-  // -------------------- TIER 3: ARCANE & SIEGE SPECIALISTS --------------------
+  // -------------------- TIER 3: ARCANE & SIEGE SPECIALISTS (Require 💎 Crystal!) --------------------
   {
     id: 'dogday',
     tier: 3,
@@ -190,12 +192,12 @@ export const UNITS = [
     fxIcon: '💥',
     color: '#fd7e14',
     accent: '#ffe8cc',
-    cost: { sun: 45, wood: 0, stone: 25, crystal: 10 },
-    hp: 340,
-    atk: 74,
-    fireInterval: 1.30,
-    range: 5.2,
-    splashRadius: 1.9,
+    cost: { sun: 65, wood: 0, stone: 40, crystal: 16 },
+    hp: 310,
+    atk: 70,
+    fireInterval: 1.35,
+    range: 5.0,
+    splashRadius: 1.85,
     armorMelt: 0.80,
     antiAir: true
   },
@@ -208,15 +210,15 @@ export const UNITS = [
     fxIcon: '🌈',
     color: '#22b8cf',
     accent: '#c5f6fa',
-    cost: { sun: 50, wood: 20, stone: 0, crystal: 10 },
-    hp: 300,
-    atk: 54,
-    fireInterval: 0.95,
-    range: 6.0,
+    cost: { sun: 70, wood: 35, stone: 0, crystal: 18 },
+    hp: 280,
+    atk: 52,
+    fireInterval: 1.0,
+    range: 5.8,
     antiAir: true,
     vulnBonus: 0.35,
     shardWeaver: true,
-    shardInterval: 6.0,
+    shardInterval: 7.5,
     shardYield: 2
   },
   {
@@ -228,18 +230,20 @@ export const UNITS = [
     fxIcon: '⚡',
     color: '#fcc419',
     accent: '#fff9db',
-    cost: { sun: 45, wood: 15, stone: 15, crystal: 10 },
-    hp: 320,
-    atk: 46,
-    fireInterval: 0.88,
-    range: 5.0,
+    cost: { sun: 65, wood: 25, stone: 25, crystal: 16 },
+    hp: 300,
+    atk: 44,
+    fireInterval: 0.92,
+    range: 4.8,
     chainTargets: 4,
-    knockback: 0.42,
+    knockback: 0.40,
     antiAir: true
   }
 ];
 
-// ==================== 7 DISTINCT ZOMBIE ARCHETYPES (FAIR, READABLE STATS) ====================
+// ==================== 7 DISTINCT ZOMBIE ARCHETYPES ====================
+// Zombies are a threat, NOT a free resource pinata!
+// Basic zombies drop 0 automatic resources and 0 free Moon Shards; only Elites/Bosses drop 1-3 shards.
 export const ZOMBIE_TYPES = {
   walker: {
     id: 'walker',
@@ -247,96 +251,96 @@ export const ZOMBIE_TYPES = {
     speed: 0.56,
     dps: 16,
     breachDmg: 1,
-    reward: { sun: 10, wood: 4, stone: 4, crystal: 1, shard: 1 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 0 },
     scale: 0.92,
     shirtColor: '#4dabf7',
     skinColor: '#69db7c'
   },
   runner: {
     id: 'runner',
-    hp: 90,
-    speed: 0.92,
+    hp: 95,
+    speed: 0.90,
     dps: 16,
     breachDmg: 1,
-    reward: { sun: 10, wood: 4, stone: 4, crystal: 1, shard: 1 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 0 },
     scale: 0.84,
     shirtColor: '#f783ac',
     skinColor: '#8ce99a'
   },
   bucket: {
     id: 'bucket',
-    hp: 260,
+    hp: 280,
     speed: 0.48,
-    dps: 22,
-    armor: 0.36,
+    dps: 24,
+    armor: 0.42,
     breachDmg: 1,
-    reward: { sun: 14, wood: 6, stone: 8, crystal: 3, shard: 2 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
     scale: 1.15,
     shirtColor: '#868e96',
     skinColor: '#51cf66'
   },
   digger: {
     id: 'digger',
-    hp: 180,
+    hp: 190,
     speed: 0.58,
     dps: 26,
     wallBreaker: true,
     breachDmg: 1,
-    reward: { sun: 12, wood: 5, stone: 7, crystal: 2, shard: 2 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
     scale: 1.04,
     shirtColor: '#f59f00',
     skinColor: '#69db7c'
   },
   creeper: {
     id: 'creeper',
-    hp: 155,
+    hp: 165,
     speed: 0.64,
     dps: 20,
-    frontBurstDmg: 110,
-    splashBurstDmg: 35,
+    frontBurstDmg: 120,
+    splashBurstDmg: 40,
     breachDmg: 2,
-    reward: { sun: 15, wood: 6, stone: 6, crystal: 4, shard: 2 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
     scale: 1.05,
     shirtColor: '#40c057',
     skinColor: '#37b24d'
   },
   balloon: {
     id: 'balloon',
-    hp: 150,
+    hp: 160,
     speed: 0.60,
     dps: 18,
     flying: true,
     breachDmg: 1,
-    reward: { sun: 14, wood: 6, stone: 5, crystal: 4, shard: 2 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
     scale: 0.96,
     shirtColor: '#7950f2',
     skinColor: '#9775fa'
   },
   necromancer: {
     id: 'necromancer',
-    hp: 280,
+    hp: 300,
     speed: 0.44,
     dps: 22,
-    armor: 0.20,
+    armor: 0.25,
     healRadius: 2.8,
     healPerSec: 12,
     summonInterval: 9.5,
     breachDmg: 2,
-    reward: { sun: 18, wood: 8, stone: 8, crystal: 6, shard: 3 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 2 },
     scale: 1.20,
     shirtColor: '#3b1f7a',
     skinColor: '#b197fc'
   },
   nightmare_boss: {
     id: 'nightmare_boss',
-    hp: 750,
+    hp: 820,
     speed: 0.38,
-    dps: 36,
-    armor: 0.28,
+    dps: 38,
+    armor: 0.32,
     poppyAuraRadius: 2.2,
-    poppyAuraDps: 6,
+    poppyAuraDps: 8,
     breachDmg: 3,
-    reward: { sun: 35, wood: 18, stone: 18, crystal: 15, shard: 6 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 4 },
     scale: 1.50,
     shirtColor: '#5f3dc4',
     skinColor: '#9775fa'
@@ -363,7 +367,7 @@ function buildRoadTilesFromRoutes(routes = []) {
 
 // ==================== 5 ESCALATING STAGE MAPS ====================
 export const STAGES = [
-  // Stage 1: 14 x 8 — S-Bend Meadow (Welcoming opening stage; no flyers/bosses in early waves!)
+  // Stage 1: 14 x 8 — S-Bend Meadow
   {
     index: 0,
     stageNumber: 1,
@@ -390,14 +394,13 @@ export const STAGES = [
       { gx: 11, gz: 1, kind: 'sun' },
       { gx: 11, gz: 6, kind: 'stone' }
     ],
-    // Friendly starter economy: 1 SunnyFox on Sun Shrine + 1 PoppyDash on Forest Vein!
+    // Only 1 starter SunnyFox on Sun Shrine — player must build their own economy!
     starterUnits: [
-      { gx: 3, gz: 1, id: 'sunnyfox' },
-      { gx: 3, gz: 6, id: 'poppydash' }
+      { gx: 3, gz: 1, id: 'sunnyfox' }
     ]
   },
 
-  // Stage 2: 14 x 8 — Twin-Bridge River Canyon (Introduces Balloon Flyers in Wave 3+)
+  // Stage 2: 14 x 8 — Twin-Bridge River Canyon
   {
     index: 1,
     stageNumber: 2,
@@ -425,12 +428,11 @@ export const STAGES = [
       { gx: 11, gz: 4, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 3, gz: 1, id: 'sunnyfox' },
-      { gx: 3, gz: 6, id: 'poppydash' }
+      { gx: 3, gz: 1, id: 'sunnyfox' }
     ]
   },
 
-  // Stage 3: 15 x 8 — Central Moon Citadel (Two-Front Assault from East & West!)
+  // Stage 3: 15 x 8 — Central Moon Citadel
   {
     index: 2,
     stageNumber: 3,
@@ -458,12 +460,11 @@ export const STAGES = [
       { gx: 12, gz: 5, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' },
-      { gx: 8, gz: 1, id: 'poppydash' }
+      { gx: 6, gz: 1, id: 'sunnyfox' }
     ]
   },
 
-  // Stage 4: 16 x 8 — Three-Gate Star Fortress (Portals E, W, N + Nightmare Boss in Wave 4+)
+  // Stage 4: 16 x 8 — Three-Gate Star Fortress
   {
     index: 3,
     stageNumber: 4,
@@ -492,12 +493,11 @@ export const STAGES = [
       { gx: 13, gz: 1, kind: 'stone' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' },
-      { gx: 9, gz: 1, id: 'poppydash' }
+      { gx: 6, gz: 1, id: 'sunnyfox' }
     ]
   },
 
-  // Stage 5: 16 x 8 — Four-Gate Starlight Finale (All 4 Cardinal Portals E, W, N, S!)
+  // Stage 5: 16 x 8 — Four-Gate Starlight Finale
   {
     index: 4,
     stageNumber: 5,
@@ -536,8 +536,7 @@ export const STAGES = [
       { gx: 14, gz: 6, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' },
-      { gx: 9, gz: 1, id: 'poppydash' }
+      { gx: 6, gz: 1, id: 'sunnyfox' }
     ]
   }
 ];
@@ -554,7 +553,6 @@ export function getStageConfig(stageIndex = 0) {
   const midZLow = Math.floor(stage.altarGz);
   const midZHigh = Math.ceil(stage.altarGz);
 
-  // Sanctuary footprint (2x2 around altarGx, altarGz)
   const altarSet = new Set([
     `${midXLow},${midZLow}`,
     `${midXHigh},${midZLow}`,
@@ -563,8 +561,6 @@ export function getStageConfig(stageIndex = 0) {
   ]);
 
   const roadSet = buildRoadTilesFromRoutes(stage.routes || []);
-
-  // Portal start coordinates from routes
   const portalSet = new Set((stage.routes || []).map(r => `${r[0][0]},${r[0][1]}`));
 
   function getPortalDir(gx, gz) {
@@ -593,11 +589,10 @@ export function getStageConfig(stageIndex = 0) {
   };
 }
 
-// Gentle duplicate cost scaling (+8% after the 2nd copy of the same unit)
+// +22% cost scaling per existing copy of the same unit so players diversify & upgrade rather than spamming!
 export function computeDynamicResourceCosts(def, existingCount = 0) {
   if (!def || !def.cost) return { sun: 0, wood: 0, stone: 0, crystal: 0 };
-  const extraCopies = Math.max(0, existingCount - 1);
-  const mult = extraCopies <= 0 ? 1.0 : Math.pow(1.08, extraCopies);
+  const mult = existingCount <= 0 ? 1.0 : Math.pow(1.22, existingCount);
   const c = def.cost;
   return {
     sun: c.sun > 0 ? Math.round(c.sun * mult) : 0,
@@ -607,15 +602,15 @@ export function computeDynamicResourceCosts(def, existingCount = 0) {
   };
 }
 
-// Cost to upgrade an existing placed Critter (Lv.1 -> Lv.2 -> Lv.3)
+// Cost to upgrade an existing placed Critter (Lv.1 -> Lv.2 -> Lv.3) — major resource sink!
 export function computeUpgradeCost(def, currentLevel = 1) {
-  const c = def?.cost || { sun: 30, wood: 15, stone: 15, crystal: 8 };
-  const lvMult = currentLevel === 1 ? 0.75 : 1.15;
+  const c = def?.cost || { sun: 35, wood: 15, stone: 15, crystal: 8 };
+  const lvMult = currentLevel === 1 ? 0.90 : 1.45;
   return {
-    sun: Math.max(15, Math.round((c.sun || 25) * lvMult)),
-    wood: Math.round((c.wood || (def?.role === 'attack' ? 10 : 0)) * lvMult),
-    stone: Math.round((c.stone || (def?.role === 'defend' ? 10 : 0)) * lvMult),
-    crystal: Math.max(currentLevel === 1 ? 4 : 8, Math.round((c.crystal || 4) * lvMult))
+    sun: Math.max(25, Math.round((c.sun || 30) * lvMult)),
+    wood: Math.round((c.wood || (def?.role === 'attack' ? 15 : 0)) * lvMult),
+    stone: Math.round((c.stone || (def?.role === 'defend' ? 15 : 0)) * lvMult),
+    crystal: Math.max(currentLevel === 1 ? 6 : 12, Math.round((c.crystal || 6) * lvMult))
   };
 }
 

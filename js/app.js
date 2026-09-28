@@ -273,6 +273,7 @@ const S = {
   sanctuaryMesh: null,
   sanctuaryShake: 0,
   sanctuaryFireTimer: 0,
+  forgeCount: 0,
   res: { ...INITIAL_RESOURCES },
   hp: 12,
   maxHp: 12,
@@ -321,6 +322,7 @@ export function buildStageWorld(stageIdx) {
   S.wave = 0;
   S.waveTimer = 14.0;
   S.spawnCooldown = 0;
+  S.forgeCount = 0;
   document.getElementById('victoryModal')?.classList.add('hidden');
 
   clearGroup(tileGroup);
@@ -474,6 +476,7 @@ export function buildStageWorld(stageIdx) {
         group: tGroup,
         topBlock,
         nodeMesh,
+        veinCharges: (type === 'sun' || type === 'wood' || type === 'stone' || type === 'crystal') ? 10 : 0,
         hasBridge: false,
         unit: null,
         stackedUnit: null
@@ -897,7 +900,7 @@ export function tryUpgradeUnit(u) {
   return true;
 }
 
-// Moon Sanctuary Forge: Convert gathered resources into +6 Moon Shards + a golden Starlight Shockwave!
+// Moon Sanctuary Forge: Escalates by +15% per forge so gathered resources always have a high-value sink!
 export function forgeMoonAtSanctuary() {
   if (S.sandbox) {
     addMoonShards(6);
@@ -907,17 +910,23 @@ export function forgeMoonAtSanctuary() {
     return true;
   }
 
-  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 20 + 🪵 10 + 🪨 10 + 💎 5 -> +6 🌕)
-  const bundleCost = { sun: 20, wood: 10, stone: 10, crystal: 5 };
+  const forgeMult = Math.pow(1.15, S.forgeCount || 0);
+  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 30 + 🪵 15 + 🪨 15 + 💎 8 * 1.15^N -> +6 🌕)
+  const bundleCost = {
+    sun: Math.round(30 * forgeMult),
+    wood: Math.round(15 * forgeMult),
+    stone: Math.round(15 * forgeMult),
+    crystal: Math.round(8 * forgeMult)
+  };
   if (checkAfford(bundleCost)) {
     spendCost(bundleCost);
+    S.forgeCount = (S.forgeCount || 0) + 1;
     addMoonShards(6);
     sound.shard();
     spawnBurst(S.sanctuaryWorld.x, 1.6, S.sanctuaryWorld.z, 0xffd43b, 8);
-    // Forging Moon Shards unleashes a defensive Sanctuary shockwave within 3.8 tiles!
     for (const z of S.zombies) {
-      if (Math.hypot(z.x - S.sanctuaryWorld.x, z.z - S.sanctuaryWorld.z) <= 3.8) {
-        z.hp -= 90;
+      if (Math.hypot(z.x - S.sanctuaryWorld.x, z.z - S.sanctuaryWorld.z) <= 3.5) {
+        z.hp -= 80;
         z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
       }
     }
@@ -926,7 +935,8 @@ export function forgeMoonAtSanctuary() {
     return true;
   }
 
-  // Mode 2: Surplus-Resource Converter! Spend 35 of any single resource -> +4 🌕
+  // Mode 2: Surplus-Resource Converter! Spend 45 (* 1.15^N) of any single resource -> +4 🌕
+  const singleCost = Math.round(45 * Math.pow(1.15, S.forgeCount || 0));
   const entries = [
     ['crystal', '💎'],
     ['stone', '🪨'],
@@ -935,17 +945,18 @@ export function forgeMoonAtSanctuary() {
   ].sort((a, b) => (S.res[b[0]] || 0) - (S.res[a[0]] || 0));
 
   const [bestKey, bestIcon] = entries[0];
-  if ((S.res[bestKey] || 0) >= 35) {
-    S.res[bestKey] -= 35;
+  if ((S.res[bestKey] || 0) >= singleCost) {
+    S.res[bestKey] -= singleCost;
+    S.forgeCount = (S.forgeCount || 0) + 1;
     addMoonShards(4);
     sound.shard();
     spawnBurst(S.sanctuaryWorld.x, 1.6, S.sanctuaryWorld.z, 0xffd43b, 8);
-    showBubble(`${bestIcon}35 ➔ +4 🌕 ✨`, 1.4);
+    showBubble(`${bestIcon}${singleCost} ➔ +4 🌕 ✨`, 1.4);
     updateTopHUD();
     return true;
   }
 
-  showBubble('☀️20 🪵10 🪨10 💎5 ❌', 1.4);
+  showBubble(`☀️${bundleCost.sun} 🪵${bundleCost.wood} 🪨${bundleCost.stone} 💎${bundleCost.crystal} ❌`, 1.4);
   return false;
 }
 
@@ -1317,10 +1328,7 @@ function triggerDefeat() {
 function updateGameplay(dt) {
   if (S.paused || S.phase !== 'playing') return;
 
-  // Steady passive resource trickle so the player never gets resource-deadlocked!
-  S.res.sun += 1.4 * dt;
-  S.res.wood += 0.45 * dt;
-  S.res.stone += 0.45 * dt;
+  // ZERO passive resource trickle — resources ONLY come from Gatherer harvest cycles on Veins!
 
   // Animate road markers pulsing toward the 3D Moon Sanctuary
   const nowSec = performance.now() * 0.004;
@@ -1448,11 +1456,27 @@ function updateGameplay(dt) {
       continue;
     }
 
-    // 2. 4-Resource Production (2.5x-2.7x output when placed directly on matching Resource Vein!)
-    if (u.def.prod && u.prodTimer >= (u.def.prodInterval || 4.2)) {
+    // 2. Depletable 4-Resource Production (10 full harvests per Vein tile before Vein depletes!)
+    if (u.def.prod && u.prodTimer >= (u.def.prodInterval || 5.5)) {
       u.prodTimer = 0;
       const p = u.def.prod;
-      const veinBoost = u.onVein ? (u.def.veinMult || 2.5) : 1.0;
+      let veinActive = false;
+      if (u.onVein && tile) {
+        if (tile.baseType === 'water' && u.id === 'bubba') {
+          veinActive = true;
+        } else if ((tile.veinCharges ?? 0) > 0) {
+          tile.veinCharges--;
+          veinActive = true;
+          if (tile.nodeMesh) {
+            if (tile.veinCharges <= 0) {
+              tile.nodeMesh.visible = false;
+            } else {
+              tile.nodeMesh.scale.setScalar(0.28 + 0.30 * (tile.veinCharges / 10));
+            }
+          }
+        }
+      }
+      const veinBoost = veinActive ? (u.def.veinMult || 2.5) : 1.0;
 
       if (p.sun > 0) {
         S.res.sun += Math.round(p.sun * veinBoost * lvMult);
@@ -1467,8 +1491,7 @@ function updateGameplay(dt) {
         spawnSoftSparkle(wpos.x, 0.95, wpos.z, 0x74c0fc);
       }
       if (p.crystal > 0) {
-        const wBoost = (u.onVein || tile?.baseType === 'water') ? (u.def.veinMult || 2.7) : 1.0;
-        S.res.crystal += Math.round(p.crystal * wBoost * lvMult);
+        S.res.crystal += Math.round(p.crystal * veinBoost * lvMult);
         spawnSoftSparkle(wpos.x, 0.95, wpos.z, 0xda77f2);
       }
       updateTopHUD();
@@ -1586,18 +1609,14 @@ function updateGameplay(dt) {
     if (z.hp <= 0) {
       spawnBurst(z.x, z.y + 0.4, z.z, z.def.skinColor || '#69db7c', 5);
       const rw = z.def.reward || {};
-      // Normal zombies drop 0 free Moon Shards — only Elites/Bosses drop shards directly!
       if (rw.shard > 0) {
         addMoonShards(rw.shard);
       }
-      if (rw.sun) S.res.sun += rw.sun;
-      if (rw.wood) S.res.wood += rw.wood;
-      if (rw.stone) S.res.stone += rw.stone;
-      if (rw.crystal) S.res.crystal += rw.crystal;
-      if (Math.random() < 0.32) {
+      // Zombies do NOT grant automatic free resources — only a 20% chance to drop a +4 salvage orb!
+      if (Math.random() < 0.20) {
         const kinds = ['sun', 'wood', 'stone', 'crystal'];
         const k = kinds[Math.floor(Math.random() * kinds.length)];
-        spawnCollectibleOrb(z.x, z.z, k, 5);
+        spawnCollectibleOrb(z.x, z.z, k, 4);
       }
       zombieGroup.remove(z.mesh);
       S.zombies.splice(i, 1);
