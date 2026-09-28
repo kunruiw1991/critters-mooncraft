@@ -196,8 +196,142 @@ export function buildCritterUnitMesh(def, portraitTex) {
     prop.add(coilL, coilR);
   }
   g.add(prop);
-  g.userData.head = head;
-  g.userData.prop = prop;
+
+  // Floating 3D Upgrade Stars above the Critter (Lv.1 -> Lv.2 -> Lv.3)
+  const starRow = new THREE.Group();
+  starRow.position.set(0, 1.15, 0);
+  const starMeshes = [];
+  for (let i = 0; i < 3; i++) {
+    const sm = vox(0.13, 0.13, 0.06, 0xffd43b, (i - 1) * 0.18, 0, 0, {
+      emissive: 0xfcc419,
+      emissiveIntensity: 0.9
+    });
+    sm.rotation.z = Math.PI / 4;
+    sm.visible = i === 0;
+    starRow.add(sm);
+    starMeshes.push(sm);
+  }
+  g.add(starRow);
+
+  g.userData = {
+    head,
+    prop,
+    rotor: g.userData.rotor,
+    starRow,
+    setStarLevel(lv = 1) {
+      for (let i = 0; i < 3; i++) {
+        starMeshes[i].visible = i < lv;
+      }
+      const sc = 1 + (lv - 1) * 0.18;
+      g.scale.setScalar(sc);
+    }
+  };
+  return g;
+}
+
+// ============================================================================
+// GIANT 3D MOON SANCTUARY CASTLE & REBUILD CRADLE (CLEAR VISUAL GOAL ON BOARD!)
+// ============================================================================
+export function buildMoonSanctuaryMesh() {
+  const g = new THREE.Group();
+
+  // Grand Golden-Ivory Starlight Base & 4 Corner Towers
+  const base1 = vox(1.85, 0.28, 1.85, 0xfff3bf, 0, 0.14, 0, { emissive: 0xf59f00, emissiveIntensity: 0.22 });
+  const base2 = vox(1.45, 0.34, 1.45, 0xffe066, 0, 0.45, 0, { emissive: 0xf59f00, emissiveIntensity: 0.35 });
+  g.add(base1, base2);
+
+  for (const sx of [-0.72, 0.72]) {
+    for (const sz of [-0.72, 0.72]) {
+      const pillar = vox(0.32, 0.95, 0.32, 0x7950f2, sx, 0.48, sz, { emissive: 0x5f3dc4, emissiveIntensity: 0.35 });
+      const cap = vox(0.38, 0.18, 0.38, 0xffd43b, sx, 1.02, sz, { emissive: 0xfcc419, emissiveIntensity: 0.75 });
+      g.add(pillar, cap);
+    }
+  }
+
+  // Hollow Cradle Ring holding the Rebuilding 3D Moon
+  const cradleRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.68, 0.07, 20, 48),
+    new THREE.MeshStandardMaterial({
+      color: 0xadb5bd,
+      emissive: 0x495057,
+      emissiveIntensity: 0.35,
+      metalness: 0.6,
+      roughness: 0.3
+    })
+  );
+  cradleRing.position.set(0, 1.48, 0);
+  g.add(cradleRing);
+
+  // The Rebuilding 3D Golden Moon Sphere inside the Cradle (scales 0.2 -> 1.0 as Shards are collected!)
+  const moonMat = new THREE.MeshStandardMaterial({
+    color: 0xfff9db,
+    emissive: 0xffd43b,
+    emissiveIntensity: 0.95,
+    roughness: 0.25
+  });
+  const moonCore = new THREE.Mesh(new THREE.SphereGeometry(0.62, 40, 32), moonMat);
+  moonCore.position.set(0, 1.48, 0);
+  moonCore.scale.setScalar(0.22);
+  g.add(moonCore);
+
+  // 5 Orbiting Star Progress Crystals (light up at 20%, 40%, 60%, 80%, 100%)
+  const starRing = new THREE.Group();
+  starRing.position.set(0, 1.48, 0);
+  const progressStars = [];
+  for (let i = 0; i < 5; i++) {
+    const ang = (i / 5) * Math.PI * 2 - Math.PI / 2;
+    const stMat = new THREE.MeshStandardMaterial({
+      color: 0x495057,
+      emissive: 0x000000,
+      emissiveIntensity: 0,
+      roughness: 0.3
+    });
+    const st = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), stMat);
+    st.position.set(Math.cos(ang) * 0.92, Math.sin(ang) * 0.92, 0.12);
+    starRing.add(st);
+    progressStars.push(st);
+  }
+  g.add(starRing);
+
+  // Overhead 3D Sanctuary Hearts (5 Big Red Hearts)
+  const heartRow = new THREE.Group();
+  heartRow.position.set(0, 2.55, 0);
+  const hearts = [];
+  for (let i = 0; i < 5; i++) {
+    const hm = vox(0.20, 0.20, 0.08, 0xff4d6d, (i - 2) * 0.28, 0, 0, {
+      emissive: 0xff1e42,
+      emissiveIntensity: 0.75
+    });
+    heartRow.add(hm);
+    hearts.push(hm);
+  }
+  g.add(heartRow);
+
+  g.userData = {
+    moonCore,
+    cradleRing,
+    starRing,
+    updateSanctuary(hp, maxHp, moonRatio) {
+      const r = Math.max(0, Math.min(1, moonRatio));
+      moonCore.scale.setScalar(0.22 + r * 0.82);
+      moonMat.emissiveIntensity = 0.55 + r * 0.65;
+
+      const litStars = Math.floor(r * 5 + 0.001);
+      for (let i = 0; i < 5; i++) {
+        const active = i < litStars;
+        progressStars[i].material.color.setHex(active ? 0xffd43b : 0x495057);
+        progressStars[i].material.emissive.setHex(active ? 0xfcc419 : 0x000000);
+        progressStars[i].material.emissiveIntensity = active ? 0.95 : 0;
+        progressStars[i].scale.setScalar(active ? 1.2 : 0.8);
+      }
+
+      const hpRatio = Math.max(0, hp / Math.max(1, maxHp));
+      const activeHearts = Math.ceil(hpRatio * 5);
+      for (let i = 0; i < 5; i++) {
+        hearts[i].visible = i < activeHearts;
+      }
+    }
+  };
   return g;
 }
 

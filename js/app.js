@@ -5,6 +5,8 @@ import {
   ZOMBIE_TYPES,
   STAGES,
   getStageConfig,
+  computeDynamicResourceCosts,
+  computeUpgradeCost,
   canAffordCost,
   deductCost,
   computeBalanceState
@@ -17,16 +19,17 @@ import {
   buildHighResCameoZombie,
   buildResourceNodeMesh,
   buildCritterUnitMesh,
+  buildMoonSanctuaryMesh,
   buildVoxelZombie
 } from './voxel_models.js';
 import { sound } from './audio.js';
 
-// Enrich Critter units with pure visual role & effect badges + 4 Minecraft Terraform/Reclaim tools
+// Pure visual role & effect badges for 10 Critters + Upgrade Star Tool + Terraform/Reclaim Tools
 const ROLE_ICONS = {
   sunnyfox:   { roleIcon: '⛏️', fxIcon: '☀️' },
   poppydash:  { roleIcon: '⛏️', fxIcon: '🪵' },
   picky:      { roleIcon: '⛏️', fxIcon: '🪨' },
-  bubba:      { roleIcon: '🛡️', fxIcon: '💎' },
+  bubba:      { roleIcon: '⛏️', fxIcon: '💎' },
   bobby:      { roleIcon: '🛡️', fxIcon: '🧱' },
   mikey:      { roleIcon: '🛡️', fxIcon: '🗼' },
   lunabat:    { roleIcon: '⚔️', fxIcon: '🏹' },
@@ -43,6 +46,17 @@ export const CRITTER_UNITS = [
     fxIcon: ROLE_ICONS[u.id]?.fxIcon || '✨'
   })),
   {
+    id: 'upgrade_star',
+    tier: 0,
+    role: 'upgrade',
+    emoji: '⬆️',
+    roleIcon: '⭐',
+    fxIcon: '🔼',
+    color: '#ffd43b',
+    accent: '#fff3bf',
+    cost: { sun: 20, wood: 10, stone: 10, crystal: 5 }
+  },
+  {
     id: 'bridge',
     tier: 0,
     role: 'terraform',
@@ -51,18 +65,7 @@ export const CRITTER_UNITS = [
     fxIcon: '🌊',
     color: '#bc6c25',
     accent: '#dda15e',
-    cost: { sun: 10, wood: 10, stone: 0, crystal: 0 }
-  },
-  {
-    id: 'cliff_block',
-    tier: 0,
-    role: 'terraform',
-    emoji: '⛰️',
-    roleIcon: '🧰',
-    fxIcon: '🔼',
-    color: '#adb5bd',
-    accent: '#dee2e6',
-    cost: { sun: 10, wood: 0, stone: 15, crystal: 0 }
+    cost: { sun: 0, wood: 15, stone: 0, crystal: 0 }
   },
   {
     id: 'spike_trap',
@@ -73,9 +76,9 @@ export const CRITTER_UNITS = [
     fxIcon: '💥',
     color: '#ced4da',
     accent: '#ff6b6b',
-    cost: { sun: 10, wood: 5, stone: 10, crystal: 0 },
-    hp: 240,
-    dmg: 28
+    cost: { sun: 0, wood: 10, stone: 15, crystal: 0 },
+    hp: 260,
+    dmg: 32
   },
   {
     id: 'shovel',
@@ -89,8 +92,6 @@ export const CRITTER_UNITS = [
     cost: { sun: 0, wood: 0, stone: 0, crystal: 0 }
   }
 ];
-
-export const ZOMBIE_LIST = Object.values(ZOMBIE_TYPES);
 
 // ============================================================================
 // BRIGHT TWILIGHT & SKY SCENE + RENDERER
@@ -157,6 +158,9 @@ function setMoonRestoreProgress(ratio) {
   } else {
     moonGroup.visible = true;
     moonGroup.scale.setScalar(0.25 + r * 0.75);
+  }
+  if (S.sanctuaryMesh) {
+    S.sanctuaryMesh.userData.updateSanctuary(S.hp, S.maxHp, r);
   }
 }
 
@@ -236,10 +240,10 @@ for (const u of CRITTER_UNITS) {
 }
 
 // ============================================================================
-// GAME STATE & 5-STAGE MAP LOADER
+// GAME STATE & 5-STAGE MAP LOADER WITH 3D MOON SANCTUARY + STONE ROADS
 // ============================================================================
 const S = {
-  phase: 'cutscene', // 'cutscene' | 'playing' | 'victory'
+  phase: 'cutscene', // 'cutscene' | 'playing' | 'victory' | 'defeat'
   cineTime: 0,
   moonExploded: false,
   paused: false,
@@ -250,13 +254,18 @@ const S = {
   cols: 16,
   rows: 10,
   stageCfg: null,
+  sanctuaryGx: 1,
+  sanctuaryGz: 4.5,
+  sanctuaryWorld: { x: 0, z: 0 },
+  sanctuaryMesh: null,
+  sanctuaryShake: 0,
   res: { ...INITIAL_RESOURCES },
-  hp: 25,
-  maxHp: 25,
+  hp: 15,
+  maxHp: 15,
   moonShards: 0,
   moonGoal: 30,
   wave: 1,
-  waveTimer: 7,
+  waveTimer: 4.5,
   spawnQueue: [],
   spawnCooldown: 0,
   selectedTool: 'sunnyfox',
@@ -264,7 +273,8 @@ const S = {
   zombies: [],
   projectiles: [],
   particles: [],
-  orbs: []
+  orbs: [],
+  roadMarkers: []
 };
 
 let tiles = [];
@@ -290,6 +300,10 @@ export function buildStageWorld(stageIdx) {
   S.cols = cfg.gridW;
   S.rows = cfg.gridH;
   S.moonGoal = cfg.moonTarget;
+  S.sanctuaryGx = cfg.altarGx;
+  S.sanctuaryGz = cfg.altarGz;
+  S.sanctuaryWorld = gridToWorld(cfg.altarGx, cfg.altarGz);
+  S.hp = S.maxHp;
 
   clearGroup(tileGroup);
   clearGroup(unitGroup);
@@ -303,6 +317,8 @@ export function buildStageWorld(stageIdx) {
   S.projectiles = [];
   S.particles = [];
   S.orbs = [];
+  S.roadMarkers = [];
+  S.spawnQueue = [];
 
   for (let gx = 0; gx < S.cols; gx++) {
     tiles[gx] = [];
@@ -312,9 +328,9 @@ export function buildStageWorld(stageIdx) {
       let height = 0.28;
       const pDir = cfg.getPortalDir(gx, gz);
 
-      if (gx === 0 && !pDir) {
+      if (cfg.altarSet.has(key)) {
         type = 'sanctuary';
-        height = 0.34;
+        height = 0.36;
       } else if (pDir) {
         type = 'corrupted';
         height = 0.32;
@@ -327,6 +343,9 @@ export function buildStageWorld(stageIdx) {
       } else if (cfg.nodeMap.has(key)) {
         type = cfg.nodeMap.get(key).kind; // 'sun' | 'wood' | 'stone' | 'crystal'
         height = 0.32;
+      } else if (cfg.roadSet.has(key)) {
+        type = 'road';
+        height = 0.29;
       }
 
       const wpos = gridToWorld(gx, gz);
@@ -340,10 +359,13 @@ export function buildStageWorld(stageIdx) {
       let topOpts = {};
       if (type === 'sanctuary') {
         topColor = (gx + gz) % 2 === 0 ? 0xffe066 : 0xffd43b;
-        topOpts = { emissive: 0xf59f00, emissiveIntensity: 0.25 };
+        topOpts = { emissive: 0xf59f00, emissiveIntensity: 0.32 };
       } else if (type === 'corrupted') {
         topColor = (gx + gz) % 2 === 0 ? 0x5f3dc4 : 0x4c2a85;
-        topOpts = { emissive: 0x3b096c, emissiveIntensity: 0.32 };
+        topOpts = { emissive: 0x3b096c, emissiveIntensity: 0.35 };
+      } else if (type === 'road') {
+        topColor = (gx + gz) % 2 === 0 ? 0xd0bfff : 0xb197fc;
+        topOpts = { emissive: 0x5f3dc4, emissiveIntensity: 0.15 };
       } else if (type === 'water') {
         topColor = 0x339af0;
         topOpts = { emissive: 0x1c7ed6, emissiveIntensity: 0.35, roughness: 0.18 };
@@ -364,19 +386,21 @@ export function buildStageWorld(stageIdx) {
       tGroup.add(topBlock);
       tilePickMeshes.push(topBlock);
 
+      // Glowing path dots on road tiles leading from Portals to the Moon Sanctuary
+      if (type === 'road' && (gx + gz) % 2 === 0) {
+        const marker = vox(0.24, 0.05, 0.24, 0xffe066, 0, height + 0.03, 0, {
+          emissive: 0xfcc419,
+          emissiveIntensity: 0.65
+        });
+        tGroup.add(marker);
+        S.roadMarkers.push({ mesh: marker, gx, gz });
+      }
+
       let nodeMesh = null;
       if (type === 'sun' || type === 'wood' || type === 'stone' || type === 'crystal') {
         nodeMesh = buildResourceNodeMesh(type);
         nodeMesh.position.y = height;
         tGroup.add(nodeMesh);
-      }
-
-      if (type === 'sanctuary' && gz % 2 === 1) {
-        const lantern = vox(0.24, 0.38, 0.24, 0xffe066, -0.22, height + 0.19, 0, {
-          emissive: 0xffb703,
-          emissiveIntensity: 0.9
-        });
-        tGroup.add(lantern);
       }
 
       tileGroup.add(tGroup);
@@ -391,19 +415,28 @@ export function buildStageWorld(stageIdx) {
         nodeMesh,
         hasBridge: false,
         unit: null,
-        stackedUnit: null,
-        lit: gx <= 5
+        stackedUnit: null
       };
     }
   }
+
+  // Place the Giant 3D Moon Sanctuary Castle & Rebuild Cradle at (altarGx, altarGz)!
+  const sanctuaryMesh = buildMoonSanctuaryMesh();
+  sanctuaryMesh.position.set(S.sanctuaryWorld.x, 0.36, S.sanctuaryWorld.z);
+  sanctuaryMesh.userData.updateSanctuary(S.hp, S.maxHp, S.moonShards / Math.max(1, S.moonGoal));
+  tileGroup.add(sanctuaryMesh);
+  S.sanctuaryMesh = sanctuaryMesh;
 
   // Spawn 3D Portal Arches for active stage portals
   const portalCoords = [];
   if (cfg.portals.includes('E')) {
     portalCoords.push({ gx: S.cols - 1, gz: cfg.midZLow, rotY: 0 });
+    if (S.stageIndex >= 1) {
+      portalCoords.push({ gx: S.cols - 1, gz: cfg.midZHigh, rotY: 0 });
+    }
   }
   if (cfg.portals.includes('W')) {
-    portalCoords.push({ gx: 1, gz: cfg.midZLow, rotY: 0 });
+    portalCoords.push({ gx: 0, gz: cfg.midZLow, rotY: 0 });
   }
   if (cfg.portals.includes('N')) {
     portalCoords.push({ gx: cfg.midXLow, gz: 0, rotY: Math.PI / 2 });
@@ -429,6 +462,9 @@ export function buildStageWorld(stageIdx) {
     placeUnitOnTile(st.gx, st.gz, st.id, true);
   }
 
+  // Spawn 2 initial zombies along the portal road so the action and goal are immediately clear!
+  spawnZombie('walker');
+
   updateCameraFraming();
   updateStageButtons();
   updateTopHUD();
@@ -446,7 +482,7 @@ function updateCameraFraming() {
 }
 
 // ============================================================================
-// 100% ZERO-TEXT UI & HOTBAR RENDERING
+// 100% ZERO-TEXT UI & HOTBAR RENDERING (WITH DYNAMIC COST SCALING)
 // ============================================================================
 const sunCountEl = document.getElementById('sunCount');
 const woodCountEl = document.getElementById('woodCount');
@@ -464,6 +500,15 @@ function showBubble(iconSequence, dur = 2.0) {
   bubbleEl.textContent = iconSequence;
   bubbleEl.classList.remove('hidden');
   bubbleTimer = dur;
+}
+
+function getEffectiveUnitCost(def) {
+  if (!def) return { sun: 0, wood: 0, stone: 0, crystal: 0 };
+  if (def.role === 'tool' || def.role === 'terraform' || def.role === 'upgrade') {
+    return def.cost || { sun: 0, wood: 0, stone: 0, crystal: 0 };
+  }
+  const existingCount = S.units.filter(u => u.id === def.id).length;
+  return computeDynamicResourceCosts(def, existingCount);
 }
 
 function checkAfford(cost = {}) {
@@ -488,6 +533,7 @@ function formatCostPipsHTML(cost = {}) {
 
 function updateRecipePill(def) {
   if (!def) return;
+  const effCost = getEffectiveUnitCost(def);
   const thumbHTML = def.portrait
     ? `<img src="${def.portrait}" alt="" class="recipe-thumb" />`
     : `<span class="recipe-chip">${def.emoji || '🧰'}</span>`;
@@ -504,6 +550,8 @@ function updateRecipePill(def) {
     outputIcons += ` <span class="recipe-chip">⚔️${def.atk || def.dmg}</span>`;
   } else if (def.hp && def.role === 'defend') {
     outputIcons += ` <span class="recipe-chip">🛡️${def.hp}</span>`;
+  } else if (def.role === 'upgrade') {
+    outputIcons += ` <span class="recipe-chip">⭐➔⭐⭐➔⭐⭐⭐</span>`;
   }
 
   unitInfoEl.innerHTML = `
@@ -511,7 +559,7 @@ function updateRecipePill(def) {
     <span class="recipe-arrow">➔</span>
     <span>${outputIcons}</span>
     <span class="recipe-arrow">│</span>
-    <span class="cost-row">${formatCostPipsHTML(def.cost)}</span>
+    <span class="cost-row">${formatCostPipsHTML(effCost)}</span>
   `;
 }
 
@@ -530,7 +578,7 @@ function buildHotbar() {
       <span class="role-badge">${u.roleIcon || '✨'}</span>
       <span class="fx-badge">${u.fxIcon || '✨'}</span>
       ${visual}
-      <div class="cost-row">${formatCostPipsHTML(u.cost)}</div>
+      <div class="cost-row">${formatCostPipsHTML(getEffectiveUnitCost(u))}</div>
     `;
 
     card.addEventListener('click', () => {
@@ -566,12 +614,20 @@ function updateTopHUD() {
   moonBarFillEl.style.width = `${pct.toFixed(1)}%`;
   moonShardTextEl.textContent = `${S.moonShards}/${S.moonGoal}`;
 
+  if (S.sanctuaryMesh) {
+    S.sanctuaryMesh.userData.updateSanctuary(S.hp, S.maxHp, S.moonShards / Math.max(1, S.moonGoal));
+  }
+
   document.querySelectorAll('.ucard').forEach(el => {
     const def = CRITTER_UNITS.find(u => u.id === el.dataset.id);
     if (def) {
-      el.classList.toggle('locked', !checkAfford(def.cost));
+      const effCost = getEffectiveUnitCost(def);
+      const costRow = el.querySelector('.cost-row');
+      if (costRow) costRow.innerHTML = formatCostPipsHTML(effCost);
+      el.classList.toggle('locked', !checkAfford(effCost));
     }
   });
+  updateRecipePill(CRITTER_UNITS.find(u => u.id === S.selectedTool));
 }
 
 // ============================================================================
@@ -589,7 +645,6 @@ export function startOpeningCutscene() {
   S.moonExploded = false;
   document.body.classList.add('inIntro');
 
-  // Hide Minecraft voxel world during the 10s cutscene so ONLY High-Res Non-Blocky 3D is visible!
   tileGroup.visible = false;
   unitGroup.visible = false;
   zombieGroup.visible = false;
@@ -628,13 +683,11 @@ function updateOpeningCutscene(dt) {
   const pct = Math.min(100, (t / 10.0) * 100);
   cineProgressFillEl.style.width = `${pct}%`;
 
-  // Update 3-Step Visual Picture Pill (Zero Text)
   cineStep1El.classList.toggle('active', t < 3.2);
   cineStep2El.classList.toggle('active', t >= 3.2 && t < 6.8);
   cineStep3El.classList.toggle('active', t >= 6.8);
 
   if (t < 3.2) {
-    // Phase 1 (0.0s - 3.2s): High-Res Cute CatNap under the glowing Full Moon
     camera.position.set(Math.sin(t * 0.5) * 1.1, 2.8, 7.6 - t * 0.28);
     camera.lookAt(0.6, 1.8, -0.2);
     cineData.cute.position.y = Math.abs(Math.sin(t * 3.5)) * 0.15;
@@ -646,7 +699,6 @@ function updateOpeningCutscene(dt) {
       cineData.cute.scale.setScalar(Math.max(0.1, 1 - p * 0.85));
     }
   } else if (t < 6.8) {
-    // Phase 2 (3.2s - 6.8s): High-Res Nightmare CatNap + Sleek Rocket Launch -> Moon Shatters!
     if (cineData.cute.visible) {
       cineData.cute.visible = false;
       cineData.night.visible = true;
@@ -703,7 +755,6 @@ function updateOpeningCutscene(dt) {
       camera.lookAt(0.8, 3.2, -0.2);
     }
   } else if (t < 10.0) {
-    // Phase 3 (6.8s - 10.0s): Smooth High-Res Zombies & Smiling Critters Rise on Storybook Hill
     const p = Math.min(1, (t - 6.8) / 2.2);
     camera.position.lerpVectors(new THREE.Vector3(0.5, 4.2, 8.6), new THREE.Vector3(0, 5.2, 10.2), p);
     camera.lookAt(0, 0.9, -0.4);
@@ -733,7 +784,6 @@ export function finishCutscene() {
   cineGroup.visible = false;
   cineBannerEl.classList.add('hidden');
 
-  // Reveal the Minecraft-style Voxel Battlefield!
   tileGroup.visible = true;
   unitGroup.visible = true;
   zombieGroup.visible = true;
@@ -744,11 +794,11 @@ export function finishCutscene() {
   setMoonRestoreProgress(S.moonShards / Math.max(1, S.moonGoal));
   updateCameraFraming();
   sound.startMusic();
-  showBubble('⛏️☀️🪵🪨💎 ➔ 🛡️⚔️ ➔ 🌕', 3.2);
+  showBubble('🧟⛩️ ➔ 🛡️⚔️ ➔ 🏰🌕', 3.2);
 }
 
 // ============================================================================
-// MINECRAFT VOXEL BUILDING, STACKING & TERRAFORMING
+// MINECRAFT VOXEL BUILDING, 3-STAR UPGRADING & TERRAFORMING
 // ============================================================================
 function spawnBurst(x, y, z, color, count = 10) {
   for (let i = 0; i < count; i++) {
@@ -764,11 +814,86 @@ function spawnBurst(x, y, z, color, count = 10) {
   }
 }
 
+// Upgrade an existing placed Critter (Lv.1 -> Lv.2 -> Lv.3) — major sink for all 4 resources!
+export function tryUpgradeUnit(u) {
+  if (!u || u.isTrap || (u.level || 1) >= 3) {
+    showBubble('⭐⭐⭐ ✨', 1.2);
+    return false;
+  }
+  const upCost = computeUpgradeCost(u.def, u.level || 1);
+  if (!checkAfford(upCost)) {
+    showBubble('⬆️⭐ ☀️🪵🪨💎 ❌', 1.5);
+    return false;
+  }
+  spendCost(upCost);
+  u.level = (u.level || 1) + 1;
+  u.maxHp = Math.round(u.def.hp * (1 + (u.level - 1) * 0.45));
+  u.hp = u.maxHp;
+  if (u.mesh.userData.setStarLevel) {
+    u.mesh.userData.setStarLevel(u.level);
+  }
+  const wp = gridToWorld(u.gx, u.gz);
+  spawnBurst(wp.x, 1.2, wp.z, 0xffd43b, 14);
+  sound.shard();
+  showBubble(u.level === 2 ? '⬆️ ⭐⭐ ✨' : '⬆️ ⭐⭐⭐ ✨', 1.6);
+  updateTopHUD();
+  return true;
+}
+
+// All-Resource & Surplus-Resource Moon Sanctuary Forge (No resource is ever stuck in surplus!)
+export function forgeMoonAtSanctuary() {
+  if (S.sandbox) {
+    addMoonShards(6);
+    sound.shard();
+    spawnBurst(S.sanctuaryWorld.x, 1.6, S.sanctuaryWorld.z, 0xffd43b, 16);
+    showBubble('🏰 ➕6 🌕 ✨', 1.5);
+    return true;
+  }
+
+  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 20 + 🪵 10 + 🪨 10 + 💎 5 -> +6 🌕)
+  const bundleCost = { sun: 20, wood: 10, stone: 10, crystal: 5 };
+  if (checkAfford(bundleCost)) {
+    spendCost(bundleCost);
+    addMoonShards(6);
+    sound.shard();
+    spawnBurst(S.sanctuaryWorld.x, 1.6, S.sanctuaryWorld.z, 0xffd43b, 16);
+    showBubble('☀️🪵🪨💎 ➔ +6 🌕', 1.6);
+    return true;
+  }
+
+  // Mode 2: Surplus-Resource Converter! If ANY single resource has >= 35, convert 35 of it into +4 🌕!
+  const entries = [
+    ['crystal', '💎'],
+    ['stone', '🪨'],
+    ['wood', '🪵'],
+    ['sun', '☀️']
+  ].sort((a, b) => (S.res[b[0]] || 0) - (S.res[a[0]] || 0));
+
+  const [bestKey, bestIcon] = entries[0];
+  if ((S.res[bestKey] || 0) >= 35) {
+    S.res[bestKey] -= 35;
+    addMoonShards(4);
+    sound.shard();
+    spawnBurst(S.sanctuaryWorld.x, 1.6, S.sanctuaryWorld.z, 0xffd43b, 14);
+    showBubble(`${bestIcon}35 ➔ +4 🌕`, 1.6);
+    updateTopHUD();
+    return true;
+  }
+
+  showBubble('☀️20 🪵10 🪨10 💎5 ❌', 1.6);
+  return false;
+}
+
 export function placeUnitOnTile(gx, gz, toolId, free = false) {
   if (gx < 0 || gx >= S.cols || gz < 0 || gz >= S.rows) return false;
   const tile = tiles[gx][gz];
   const def = CRITTER_UNITS.find(u => u.id === toolId);
   if (!def) return false;
+
+  // Clicking on the 3D Moon Sanctuary tiles triggers the Moon Forge!
+  if (tile.type === 'sanctuary' && !free) {
+    return forgeMoonAtSanctuary();
+  }
 
   // 1. Shovel Reclaim Tool
   if (def.role === 'tool') {
@@ -787,10 +912,21 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
     return true;
   }
 
-  // 2. Terraform Tools: Bridge, High-Ground Cliff, Spike Trap
+  // 2. Explicit Upgrade Tool (`upgrade_star`)
+  if (def.role === 'upgrade') {
+    const target = tile.stackedUnit || tile.unit;
+    if (!target) {
+      showBubble('⬆️⭐ ➔ 🐱', 1.2);
+      return false;
+    }
+    return tryUpgradeUnit(target);
+  }
+
+  // 3. Terraform Tools: Bridge & Spike Trap
   if (def.role === 'terraform') {
-    if (!free && !checkAfford(def.cost)) {
-      showBubble('☀️🪵🪨 ❌', 1.4);
+    const effCost = getEffectiveUnitCost(def);
+    if (!free && !checkAfford(effCost)) {
+      showBubble('🪵🪨 ❌', 1.4);
       return false;
     }
     if (def.id === 'bridge') {
@@ -798,7 +934,7 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
         showBubble('🌊 ➔ 🌉', 1.4);
         return false;
       }
-      if (!free) spendCost(def.cost);
+      if (!free) spendCost(effCost);
       tile.hasBridge = true;
       tile.height = 0.30;
       const bridgeMesh = vox(0.94, 0.12, 0.94, 0xbc6c25, 0, 0.24, 0);
@@ -807,20 +943,9 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
       updateTopHUD();
       return true;
     }
-    if (def.id === 'cliff_block') {
-      if (tile.type === 'water' || tile.type === 'cliff' || tile.unit) return false;
-      if (!free) spendCost(def.cost);
-      tile.type = 'cliff';
-      tile.height = 0.62;
-      const cliffCap = vox(0.94, 0.32, 0.94, 0xced4da, 0, 0.46, 0);
-      tile.group.add(cliffCap);
-      sound.place();
-      updateTopHUD();
-      return true;
-    }
     if (def.id === 'spike_trap') {
       if ((tile.type === 'water' && !tile.hasBridge) || tile.unit) return false;
-      if (!free) spendCost(def.cost);
+      if (!free) spendCost(effCost);
       const trap = new THREE.Group();
       for (let sx = -1; sx <= 1; sx += 2) {
         for (let sz = -1; sz <= 1; sz += 2) {
@@ -839,34 +964,36 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
     }
   }
 
-  // 3. Water check (Bubba is amphibious and can build directly on water!)
+  // 4. Water check (Bubba is amphibious and can build directly on water!)
   if (tile.type === 'water' && !tile.hasBridge && !def.amphibious) {
     showBubble('🌊 ❌ ➔ 🌉 / 🐘', 1.6);
     return false;
   }
 
-  // 4. Corrupted zombie portal tile check
-  if (tile.type === 'corrupted') {
+  // 5. Corrupted zombie portal or Sanctuary check
+  if (tile.type === 'corrupted' || (tile.type === 'sanctuary' && !free)) {
     showBubble('🧟 ❌', 1.4);
     return false;
   }
 
-  // 5. Stacking on Mikey's Watchtower
+  // 6. Stacking on Mikey's Watchtower OR Tapping an Existing Unit to Upgrade It (`⭐1 -> ⭐2 -> ⭐3`)!
   let stackingOnTower = false;
   if (tile.unit) {
     if (tile.unit.def.stackable && !tile.stackedUnit && def.role === 'attack') {
       stackingOnTower = true;
+    } else if (!free) {
+      return tryUpgradeUnit(tile.stackedUnit || tile.unit);
     } else {
-      showBubble('🧱 ❌', 1.2);
       return false;
     }
   }
 
-  if (!free && !checkAfford(def.cost)) {
+  const effCost = getEffectiveUnitCost(def);
+  if (!free && !checkAfford(effCost)) {
     showBubble('☀️🪵🪨💎 ❌', 1.5);
     return false;
   }
-  if (!free) spendCost(def.cost);
+  if (!free) spendCost(effCost);
 
   const mesh = buildCritterUnitMesh(def, portraitTexMap.get(def.id));
   const wpos = gridToWorld(gx, gz);
@@ -874,18 +1001,31 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
   mesh.position.set(wpos.x, yBase, wpos.z);
   unitGroup.add(mesh);
 
+  // Check if placed on OR adjacent to matching resource vein
+  let nearVein = tile.baseType === def.veinBonusNode;
+  if (!nearVein && def.veinBonusNode) {
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dz = -1; dz <= 1; dz++) {
+        if (tiles[gx + dx]?.[gz + dz]?.baseType === def.veinBonusNode) {
+          nearVein = true;
+        }
+      }
+    }
+  }
+
   const unitObj = {
     id: def.id,
     def,
     gx,
     gz,
+    level: 1,
     hp: def.hp,
     maxHp: def.hp,
     mesh,
-    timer: Math.random() * 1.2,
+    timer: Math.random() * 1.0,
     stacked: stackingOnTower,
     onHighGround: stackingOnTower || tile.type === 'cliff',
-    onVein: tile.baseType === def.veinBonusNode
+    onVein: nearVein
   };
 
   if (stackingOnTower) {
@@ -922,32 +1062,36 @@ function removeUnit(u) {
 }
 
 // ============================================================================
-// ZOMBIE SPAWNING (MULTI-PORTAL) & WAVE SYSTEM
+// ZOMBIE SPAWNING ON PORTAL ROADS & WAVE SYSTEM
 // ============================================================================
 export function spawnZombie(typeId, customPos = null) {
   const def = ZOMBIE_TYPES[typeId] || ZOMBIE_TYPES.walker;
   const mesh = buildVoxelZombie(def);
 
-  let gz = Math.floor(Math.random() * S.rows);
-  let gx = S.cols - 0.6;
+  const cfg = S.stageCfg;
+  let gx = S.cols - 1;
+  let gz = cfg ? cfg.midZLow : Math.floor(S.rows / 2);
 
   if (customPos) {
     gx = customPos.gx;
     gz = customPos.gz;
   } else {
-    const portals = S.stageCfg?.portals || ['E'];
+    const portals = cfg?.portals || ['E'];
     const dir = portals[Math.floor(Math.random() * portals.length)];
+    const zLane = Math.random() < 0.5 ? cfg.midZLow : cfg.midZHigh;
+    const xLane = Math.random() < 0.5 ? cfg.midXLow : cfg.midXHigh;
+
     if (dir === 'E') {
-      gx = S.cols - 0.6;
-      gz = Math.floor(Math.random() * S.rows);
+      gx = S.cols - 1;
+      gz = zLane + (Math.random() - 0.5) * 0.6;
     } else if (dir === 'W') {
-      gx = 1.2;
-      gz = Math.random() < 0.5 ? 1 : S.rows - 2;
+      gx = 0.2;
+      gz = zLane + (Math.random() - 0.5) * 0.6;
     } else if (dir === 'N') {
-      gx = Math.floor(S.cols * 0.55) + (Math.random() - 0.5) * 2;
+      gx = xLane + (Math.random() - 0.5) * 0.6;
       gz = 0.2;
     } else if (dir === 'S') {
-      gx = Math.floor(S.cols * 0.55) + (Math.random() - 0.5) * 2;
+      gx = xLane + (Math.random() - 0.5) * 0.6;
       gz = S.rows - 1.2;
     }
   }
@@ -991,7 +1135,7 @@ function triggerNextWave() {
     wave: S.wave
   });
   const pool = S.stageCfg?.zombiePool || ['walker', 'runner', 'digger'];
-  const count = Math.min(14, 3 + S.wave + S.stageIndex);
+  const count = Math.min(12, 3 + S.wave + S.stageIndex);
 
   for (let i = 0; i < count; i++) {
     const zType = (S.wave % 3 === 0 && i === count - 1 && pool.includes('nightmare_boss'))
@@ -1001,15 +1145,15 @@ function triggerNextWave() {
   }
   const waveIcons = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
   const wIco = waveIcons[(S.wave - 1) % waveIcons.length] || '🔥';
-  showBubble(`🧟⚡ ${wIco}`, 2.0);
+  showBubble(`🧟⛩️ ${wIco} ➔ 🏰🌕`, 2.0);
   S.wave++;
-  S.waveTimer = (S.stageCfg?.baseSpawnInterval || 4.2) * 3.2 * (bal.spawnIntervalMult || 1.0);
+  S.waveTimer = (S.stageCfg?.baseSpawnInterval || 3.8) * 3.0 * (bal.spawnIntervalMult || 1.0);
 }
 
 // ============================================================================
-// COLLECTIBLE ORBS & MOON SHARDS
+// COLLECTIBLE ORBS, MOON SHARDS & VICTORY / DEFEAT STATES
 // ============================================================================
-function spawnCollectibleOrb(x, z, kind = 'sun', amount = 12) {
+function spawnCollectibleOrb(x, z, kind = 'sun', amount = 8) {
   const colorMap = {
     sun: 0xffe066,
     wood: 0x51cf66,
@@ -1042,7 +1186,6 @@ export function addMoonShards(n) {
   const progress = S.moonShards / Math.max(1, S.moonGoal);
   setMoonRestoreProgress(progress);
 
-  // Sky brightens from twilight blue (#2b4c7e) to cheerful sky blue (#5c9ce6) as Moon is restored!
   const bg = new THREE.Color(0x2b4c7e).lerp(new THREE.Color(0x5c9ce6), progress);
   scene.background.copy(bg);
   scene.fog.color.copy(bg);
@@ -1057,20 +1200,53 @@ export function addMoonShards(n) {
     const stageNums = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
     const curIco = stageNums[S.stageIndex] || '1️⃣';
     const nextIco = stageNums[Math.min(STAGES.length - 1, S.stageIndex + 1)] || '🏆';
+    document.querySelector('.modal-stars').textContent = '⭐ ⭐ ⭐';
     document.getElementById('modalStageBadge').textContent =
-      S.stageIndex < STAGES.length - 1 ? `${curIco} ⭐ ➔ ${nextIco}` : `${curIco} 🏆 🌕`;
+      S.stageIndex < STAGES.length - 1 ? `${curIco} 🌕 ➔ ${nextIco}` : `${curIco} 🏆 🌕`;
     document.getElementById('victoryModal').classList.remove('hidden');
   }
 }
 
+function triggerDefeat() {
+  if (S.phase === 'defeat' || S.phase === 'victory') return;
+  S.phase = 'defeat';
+  sound.explosion();
+  const stageNums = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
+  const curIco = stageNums[S.stageIndex] || '1️⃣';
+  document.querySelector('.modal-stars').textContent = '💔 🧟 💔';
+  document.getElementById('modalStageBadge').textContent = `${curIco} 🏰💔 ➔ 🔄`;
+  document.getElementById('victoryModal').classList.remove('hidden');
+}
+
 // ============================================================================
-// MAIN SIMULATION LOOP (4-RESOURCE PRODUCTION, COMBAT, 8 ZOMBIE AI BEHAVIORS)
+// MAIN SIMULATION LOOP (TIGHT 4-RESOURCE ECONOMY + UN-STUCKABLE ZOMBIE SIEGE)
 // ============================================================================
 function updateGameplay(dt) {
   if (S.paused) return;
 
-  // Passive solar trickle
-  S.res.sun += 2.2 * dt;
+  // Modest solar trickle so active Critter gatherers are essential
+  S.res.sun += 0.45 * dt;
+
+  // Animate road markers pulsing toward the 3D Moon Sanctuary
+  const nowSec = performance.now() * 0.004;
+  for (let i = 0; i < S.roadMarkers.length; i++) {
+    const rm = S.roadMarkers[i];
+    const pulse = 0.8 + Math.sin(nowSec - rm.gx * 0.5) * 0.25;
+    rm.mesh.scale.set(pulse, 1, pulse);
+  }
+
+  // Rotate the 3D Moon Sanctuary's star ring & handle bash shake
+  if (S.sanctuaryMesh) {
+    S.sanctuaryMesh.userData.starRing.rotation.z += dt * 0.65;
+    S.sanctuaryMesh.userData.moonCore.rotation.y += dt * 0.8;
+    if (S.sanctuaryShake > 0) {
+      S.sanctuaryShake = Math.max(0, S.sanctuaryShake - dt * 3);
+      S.sanctuaryMesh.position.x = S.sanctuaryWorld.x + (Math.random() - 0.5) * S.sanctuaryShake * 0.28;
+      S.sanctuaryMesh.position.z = S.sanctuaryWorld.z + (Math.random() - 0.5) * S.sanctuaryShake * 0.28;
+    } else {
+      S.sanctuaryMesh.position.set(S.sanctuaryWorld.x, 0.36, S.sanctuaryWorld.z);
+    }
+  }
 
   // Wave timer & spawn queue
   S.waveTimer -= dt;
@@ -1080,7 +1256,7 @@ function updateGameplay(dt) {
     S.spawnCooldown -= dt;
     if (S.spawnCooldown <= 0) {
       spawnZombie(S.spawnQueue.shift());
-      S.spawnCooldown = 0.85;
+      S.spawnCooldown = 0.90;
     }
   }
 
@@ -1089,6 +1265,7 @@ function updateGameplay(dt) {
     const u = S.units[i];
     const wpos = gridToWorld(u.gx, u.gz);
     const tile = tiles[u.gx]?.[u.gz];
+    const lvMult = 1 + ((u.level || 1) - 1) * 0.50;
 
     if (u.mesh.userData.head) {
       u.mesh.userData.head.rotation.y = Math.sin(performance.now() * 0.003 + u.gx) * 0.16;
@@ -1097,7 +1274,6 @@ function updateGameplay(dt) {
       u.mesh.userData.rotor.rotation.z += dt * 4.5;
     }
 
-    // Check PoppyDash haste aura (+30% speed)
     let haste = 1.0;
     for (const ally of S.units) {
       if (ally.def.hasteRadius && Math.hypot(ally.gx - u.gx, ally.gz - u.gz) <= ally.def.hasteRadius) {
@@ -1110,7 +1286,7 @@ function updateGameplay(dt) {
     // 1. Spike Trap damage
     if (u.isTrap) {
       for (const z of S.zombies) {
-        if (!z.def.flying && Math.hypot(z.x - wpos.x, z.z - wpos.z) < 0.55) {
+        if (!z.def.flying && Math.hypot(z.x - wpos.x, z.z - wpos.z) < 0.58) {
           z.hp -= u.def.dmg * dt;
           z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
         }
@@ -1118,28 +1294,27 @@ function updateGameplay(dt) {
       continue;
     }
 
-    // 2. 4-Resource Production (SunnyFox, PoppyDash, PickyPiggy, Bubba)
+    // 2. 4-Resource Production (2.4x on/adjacent to matching Vein, +50% per Star Level!)
     if (u.def.prod && u.timer >= (u.def.prodInterval || 4.0)) {
       u.timer = 0;
       const p = u.def.prod;
+      const veinBoost = u.onVein ? (u.def.veinMult || 2.25) : 1.0;
+
       if (p.sun > 0) {
-        const mult = tile?.baseType === 'sun' ? (u.def.veinMult || 1.6) : 1;
-        S.res.sun += p.sun * mult;
+        S.res.sun += Math.round(p.sun * veinBoost * lvMult);
         spawnBurst(wpos.x, 0.9, wpos.z, 0xffe066, 5);
       }
       if (p.wood > 0) {
-        const mult = tile?.baseType === 'wood' ? (u.def.veinMult || 2.0) : 1;
-        S.res.wood += p.wood * mult;
+        S.res.wood += Math.round(p.wood * veinBoost * lvMult);
         spawnBurst(wpos.x, 0.9, wpos.z, 0x51cf66, 5);
       }
       if (p.stone > 0) {
-        const mult = tile?.baseType === 'stone' ? (u.def.veinMult || 2.0) : 1;
-        S.res.stone += p.stone * mult;
+        S.res.stone += Math.round(p.stone * veinBoost * lvMult);
         spawnBurst(wpos.x, 0.9, wpos.z, 0x74c0fc, 5);
       }
       if (p.crystal > 0) {
-        const mult = (tile?.baseType === 'crystal' || tile?.baseType === 'water') ? (u.def.veinMult || 2.0) : 1;
-        S.res.crystal += p.crystal * mult;
+        const wBoost = (u.onVein || tile?.baseType === 'water') ? (u.def.veinMult || 2.4) : 1.0;
+        S.res.crystal += Math.round(p.crystal * wBoost * lvMult);
         spawnBurst(wpos.x, 0.9, wpos.z, 0xda77f2, 5);
       }
       updateTopHUD();
@@ -1149,7 +1324,7 @@ function updateGameplay(dt) {
     if (u.def.healRadius) {
       for (const ally of S.units) {
         if (ally.hp < ally.maxHp && Math.hypot(ally.gx - u.gx, ally.gz - u.gz) <= u.def.healRadius) {
-          ally.hp = Math.min(ally.maxHp, ally.hp + (u.def.healPerSec || 18) * dt);
+          ally.hp = Math.min(ally.maxHp, ally.hp + (u.def.healPerSec || 18) * lvMult * dt);
         }
       }
     }
@@ -1168,16 +1343,16 @@ function updateGameplay(dt) {
       u.moonTimer = (u.moonTimer || 0) + dt;
       if (u.moonTimer >= (u.def.shardInterval || 5.5)) {
         u.moonTimer = 0;
-        addMoonShards(u.def.shardYield || 2);
+        addMoonShards(Math.round((u.def.shardYield || 2) * lvMult));
         spawnBurst(wpos.x, 1.1, wpos.z, 0xfff3bf, 8);
       }
     }
 
     // 6. Ranged / Area Attackers (LunaBat, DogDay, CraftyCorn, KickinChicken)
-    if (u.def.role === 'attack' && u.timer >= (u.def.fireInterval || 1.1)) {
+    if (u.def.role === 'attack' && u.timer >= (u.def.fireInterval || 1.0)) {
       const rangeBonus = u.stacked ? 1.45 : (u.onHighGround ? 1.25 : 1.0);
-      const dmgBonus = u.stacked ? 1.30 : (u.onHighGround ? 1.15 : 1.0);
-      const effRange = (u.def.range || 4.5) * rangeBonus;
+      const dmgBonus = (u.stacked ? 1.35 : (u.onHighGround ? 1.15 : 1.0)) * lvMult;
+      const effRange = (u.def.range || 4.8) * rangeBonus;
       const canHitAir = u.def.antiAir || u.stacked;
 
       let target = null;
@@ -1206,7 +1381,7 @@ function updateGameplay(dt) {
           y: u.mesh.position.y + 0.55,
           z: wpos.z,
           target,
-          dmg: (u.def.atk || 34) * dmgBonus,
+          dmg: (u.def.atk || 35) * dmgBonus,
           splash: u.def.splashRadius || 0,
           meltsArmor: (u.def.armorMelt || 0) > 0,
           marksTarget: (u.def.vulnBonus || 0) > 0,
@@ -1231,7 +1406,7 @@ function updateGameplay(dt) {
     const dy = (p.target.y + 0.45) - p.y;
     const dz = p.target.z - p.z;
     const dist = Math.hypot(dx, dy, dz);
-    const step = 11.5 * dt;
+    const step = 12.0 * dt;
 
     if (dist <= step + 0.2) {
       applyProjectileHit(p, p.target);
@@ -1245,8 +1420,10 @@ function updateGameplay(dt) {
     }
   }
 
-  // Update Zombies (8 Distinct Archetype Mechanics)
-  const leftEdgeX = gridToWorld(0, 0).x - 0.35;
+  // Update Zombies — Direct March to the 3D Moon Sanctuary Castle (ZERO STUCK ZOMBIES!)
+  const sancX = S.sanctuaryWorld.x;
+  const sancZ = S.sanctuaryWorld.z;
+
   for (let i = S.zombies.length - 1; i >= 0; i--) {
     const z = S.zombies[i];
 
@@ -1258,10 +1435,10 @@ function updateGameplay(dt) {
       if (rw.wood) S.res.wood += rw.wood;
       if (rw.stone) S.res.stone += rw.stone;
       if (rw.crystal) S.res.crystal += rw.crystal;
-      if (Math.random() < 0.45) {
+      if (Math.random() < 0.38) {
         const kinds = ['sun', 'wood', 'stone', 'crystal'];
         const k = kinds[Math.floor(Math.random() * kinds.length)];
-        spawnCollectibleOrb(z.x, z.z, k, k === 'sun' ? 10 : 5);
+        spawnCollectibleOrb(z.x, z.z, k, 6);
       }
       zombieGroup.remove(z.mesh);
       S.zombies.splice(i, 1);
@@ -1269,7 +1446,7 @@ function updateGameplay(dt) {
       continue;
     }
 
-    z.walkPhase += dt * 7.5;
+    z.walkPhase += dt * 7.8;
     if (z.mesh.userData.legL) {
       z.mesh.userData.legL.rotation.z = Math.sin(z.walkPhase) * 0.45;
       z.mesh.userData.legR.rotation.z = -Math.sin(z.walkPhase) * 0.45;
@@ -1300,9 +1477,9 @@ function updateGameplay(dt) {
         }
       }
       z.specialTimer -= dt;
-      if (z.specialTimer <= 0 && S.zombies.length < 28) {
+      if (z.specialTimer <= 0 && S.zombies.length < 24) {
         z.specialTimer = z.def.summonInterval || 7.5;
-        spawnZombie('runner', { gx: Math.min(S.cols - 1, z.gx + 0.4), gz: z.gz });
+        spawnZombie('runner', { gx: z.gx, gz: z.gz });
         spawnBurst(z.x, z.y + 0.6, z.z, 0x51cf66, 8);
       }
     }
@@ -1310,26 +1487,47 @@ function updateGameplay(dt) {
     if (z.slowTimer > 0) z.slowTimer -= dt;
     if (z.markTimer > 0) z.markTimer -= dt;
 
-    // Check blocking unit in front of zombie
+    // 1. Check if zombie has reached the 3D Moon Sanctuary Castle!
+    const distToSanctuary = Math.hypot(sancX - z.x, sancZ - z.z);
+    if (distToSanctuary <= 1.28) {
+      // Zombie bashes the 3D Moon Sanctuary Castle!
+      S.hp = Math.max(0, S.hp - 1);
+      S.sanctuaryShake = 1.0;
+      sound.explosion();
+      spawnBurst(sancX, 1.2, sancZ, 0xff2a55, 18);
+      showBubble('🏰💔 -1 ❤️ ⚠️', 1.4);
+      zombieGroup.remove(z.mesh);
+      S.zombies.splice(i, 1);
+      updateTopHUD();
+      if (S.hp <= 0) {
+        triggerDefeat();
+        return;
+      }
+      continue;
+    }
+
+    // 2. Check if a blocking Critter or Wall is in front of the zombie
     let blocker = null;
     if (!z.def.flying) {
+      let bestBlockDist = 0.78;
       for (const u of S.units) {
         if (u.isTrap) continue;
-        if (Math.abs(u.gz - z.gz) < 0.55 && Math.abs(u.gx - z.gx) < 0.62) {
+        const dUnit = Math.hypot(u.gx - z.gx, u.gz - z.gz);
+        if (dUnit < bestBlockDist) {
+          bestBlockDist = dUnit;
           blocker = u;
-          break;
         }
       }
     }
 
     if (blocker) {
-      // TNT Creeper explodes immediately on contact!
+      // TNT Creeper detonates immediately on contact!
       if (z.def.explosiveDmg) {
         sound.explosion();
         spawnBurst(z.x, z.y + 0.5, z.z, 0xff2a2a, 20);
         for (let ui = S.units.length - 1; ui >= 0; ui--) {
           const u = S.units[ui];
-          if (Math.hypot(u.gx - z.gx, u.gz - z.gz) <= (z.def.explosiveRadius || 1.85)) {
+          if (Math.hypot(u.gx - z.gx, u.gz - z.gz) <= (z.def.explosiveRadius || 1.75)) {
             const resist = u.def.blastResist || 0;
             u.hp -= z.def.explosiveDmg * (1 - resist);
             if (u.hp <= 0) removeUnit(u);
@@ -1341,10 +1539,17 @@ function updateGameplay(dt) {
       }
 
       z.atkTimer += dt;
-      if (z.atkTimer >= 0.85) {
+      if (z.mesh.userData.armL) {
+        z.mesh.userData.armL.rotation.z = Math.sin(z.walkPhase * 2) * 0.55;
+        z.mesh.userData.armR.rotation.z = -Math.sin(z.walkPhase * 2) * 0.55;
+      }
+      if (z.atkTimer >= 0.75) {
         z.atkTimer = 0;
-        const wallMult = z.def.wallBreaker ? 2.5 : 1.0;
+        const wallMult = z.def.wallBreaker ? 2.4 : 1.0;
         blocker.hp -= (z.def.dps || 18) * wallMult;
+        const bPos = gridToWorld(blocker.gx, blocker.gz);
+        spawnBurst(bPos.x, 0.6, bPos.z, 0xff6b6b, 4);
+
         if (blocker.def.thornsDmg) {
           z.hp -= blocker.def.thornsDmg;
           z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
@@ -1362,37 +1567,30 @@ function updateGameplay(dt) {
         }
       }
     } else {
-      // Move toward Critter Sanctuary (gx = 0)
+      // 3. March directly along the road vector toward the 3D Moon Sanctuary Castle!
       const slowMult = z.slowTimer > 0 ? 0.5 : 1.0;
-      const targetW = gridToWorld(0, Math.min(S.rows - 1, Math.max(0, Math.round(z.gz))));
-      const dx = targetW.x - z.x;
-      const dz = targetW.z - z.z;
+      const dx = sancX - z.x;
+      const dz = sancZ - z.z;
       const d = Math.hypot(dx, dz) || 1;
       const move = z.speed * slowMult * dt;
+
       z.x += (dx / d) * move;
-      z.z += (dz / d) * move * 0.35;
+      z.z += (dz / d) * move;
       z.gx = (z.x / 1.0) + (S.cols - 1) / 2;
       z.gz = (z.z / 1.0) + (S.rows - 1) / 2;
       z.mesh.position.x = z.x;
       z.mesh.position.z = z.z;
-
-      if (z.x <= leftEdgeX) {
-        S.hp = Math.max(1, S.hp - 1);
-        showBubble('❤️ -1 ⚠️', 1.2);
-        zombieGroup.remove(z.mesh);
-        S.zombies.splice(i, 1);
-        updateTopHUD();
-      }
+      z.mesh.rotation.y = Math.atan2(dz, -dx);
     }
   }
 
-  // Update Collectible Orbs (auto-collect after 3.2s so pre-readers never miss drops)
+  // Update Collectible Orbs (auto-collect after 2.8s)
   for (let i = S.orbs.length - 1; i >= 0; i--) {
     const o = S.orbs[i];
     o.age += dt;
     o.mesh.rotation.y += dt * 3.2;
     o.mesh.position.y = 0.68 + Math.sin(o.age * 5) * 0.14;
-    if (o.age >= 3.2) {
+    if (o.age >= 2.8) {
       collectOrb(o);
     }
   }
@@ -1428,9 +1626,15 @@ function applyProjectileHit(p, target) {
     }
     z.hp -= finalDmg;
     if (p.knockback > 0) {
-      z.x += p.knockback * 0.38;
+      const dx = z.x - S.sanctuaryWorld.x;
+      const dz = z.z - S.sanctuaryWorld.z;
+      const d = Math.hypot(dx, dz) || 1;
+      z.x += (dx / d) * p.knockback * 0.38;
+      z.z += (dz / d) * p.knockback * 0.38;
       z.gx = (z.x / 1.0) + (S.cols - 1) / 2;
+      z.gz = (z.z / 1.0) + (S.rows - 1) / 2;
       z.mesh.position.x = z.x;
+      z.mesh.position.z = z.z;
     }
     z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
   };
@@ -1500,6 +1704,12 @@ canvas.addEventListener('pointerdown', e => {
     }
   }
 
+  // Clicking directly on the 3D Moon Sanctuary Castle triggers Moon Forge!
+  if (S.sanctuaryMesh && raycaster.intersectObject(S.sanctuaryMesh, true).length > 0) {
+    forgeMoonAtSanctuary();
+    return;
+  }
+
   const hits = raycaster.intersectObjects(tilePickMeshes, false);
   if (hits.length > 0) {
     const { gx, gz } = hits[0].object.userData;
@@ -1547,17 +1757,7 @@ document.getElementById('sandboxBtn').addEventListener('click', e => {
 
 document.getElementById('craftMoonBtn').addEventListener('click', () => {
   sound.click();
-  if (S.sandbox || (S.res.sun >= 30 && S.res.crystal >= 10)) {
-    if (!S.sandbox) {
-      S.res.sun -= 30;
-      S.res.crystal -= 10;
-    }
-    addMoonShards(5);
-    sound.shard();
-    showBubble('☀️💎 ➔ +5 🌕', 1.6);
-  } else {
-    showBubble('☀️30 💎10 ❌', 1.6);
-  }
+  forgeMoonAtSanctuary();
 });
 
 document.getElementById('musicBtn').addEventListener('click', e => {
@@ -1578,17 +1778,17 @@ document.querySelectorAll('.stage-btn').forEach(btn => {
     S.res = { ...INITIAL_RESOURCES };
     S.moonShards = 0;
     S.wave = 1;
+    S.phase = 'playing';
     buildStageWorld(idx);
-    if (S.phase === 'cutscene') finishCutscene();
-    showBubble(`${btn.textContent} 🗺️ ✨`, 1.8);
+    showBubble(`${btn.textContent} 🏰🌕 ✨`, 1.8);
   });
 });
 
-// Victory Modal Buttons
+// Victory / Defeat Modal Buttons
 document.getElementById('nextStageBtn').addEventListener('click', () => {
   sound.click();
   document.getElementById('victoryModal').classList.add('hidden');
-  const nextIdx = (S.stageIndex + 1) % STAGES.length;
+  const nextIdx = S.phase === 'defeat' ? S.stageIndex : (S.stageIndex + 1) % STAGES.length;
   S.res = { ...INITIAL_RESOURCES };
   S.moonShards = 0;
   S.wave = 1;
@@ -1599,7 +1799,9 @@ document.getElementById('nextStageBtn').addEventListener('click', () => {
 document.getElementById('continueBtn').addEventListener('click', () => {
   sound.click();
   document.getElementById('victoryModal').classList.add('hidden');
+  if (S.hp <= 0) S.hp = S.maxHp;
   S.phase = 'playing';
+  updateTopHUD();
 });
 
 document.getElementById('restartBtn').addEventListener('click', () => {
@@ -1654,6 +1856,8 @@ window.__MOONCRAFT__ = {
   cineGroup,
   tileGroup,
   placeUnitOnTile,
+  tryUpgradeUnit,
+  forgeMoonAtSanctuary,
   spawnZombie,
   finishCutscene,
   startOpeningCutscene,
