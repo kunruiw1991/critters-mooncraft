@@ -1,12 +1,11 @@
-// CritterCraft: Moonless Night — 5 Progressive Stage Maps with Winding Cobblestone Roads,
-// Zero Dead Angles (360° All-Unit Combat & Full-Board Range), Tight 4-Resource Economy,
-// 3-Star Unit Upgrades, and 8 Distinct Zombie Archetypes.
+// CritterCraft: Moonless Night — Tactical 4-Resource Economy, Role-Specialized Critters,
+// Counter-Based Zombie Roster, Winding Cobblestone Roads, and 5 Escalating Stage Maps.
 
 export const INITIAL_RESOURCES = {
-  sun: 85,      // ☀️ Solar energy (core recruitment + upgrades + Moon Forge)
-  wood: 35,     // 🪵 Timber (bridges, crossbows, watchtowers, prism lasers, upgrades)
-  stone: 35,    // 🪨 Masonry (fortress walls, traps, watchtowers, siege mortars, upgrades)
-  crystal: 15   // 💎 Starlight Crystal (Tier 3 arcane units, 2★/3★ upgrades, Moon Forge)
+  sun: 75,      // ☀️ Solar energy (enough for 1 Defender/Archer + 1 Gatherer; must harvest Sun Veins!)
+  wood: 30,     // 🪵 Timber (enough for 1 early Archer/Miner; must build PoppyDash on Forest Veins!)
+  stone: 30,    // 🪨 Masonry (enough for 1 early Bobby Wall; must build PickyPiggy on Quarries!)
+  crystal: 0    // 💎 Starlight Crystal (starts at 0! Must build Bubba on Crystal/Water Veins!)
 };
 
 export const RESOURCE_META = {
@@ -16,11 +15,14 @@ export const RESOURCE_META = {
   crystal: { id: 'crystal', symbol: '💎', color: '#da77f2' }
 };
 
-// ==================== 10 CRITTERS IN 3-TIER CRAFTING HIERARCHY ====================
-// Every single Critter has BOTH an economic/defensive role AND a 360° combat attack
-// with generous range and anti-air capability so there are ZERO firing dead angles!
+// ==================== 10 CRITTERS IN 3-TIER TACTICAL HIERARCHY ====================
+// Strict Role Separation:
+// - Tier 1 Gatherers produce 2.5x resources when placed on matching Resource Veins (1x off-vein),
+//   have fragile HP (165-210), and only a tiny close-range self-defense poke (range 2.0-2.2, ground-only).
+// - Tier 2 Defenders & Crossbows hold the road, mine Crystal, build Watchtowers, and counter Flyers/Creepers.
+// - Tier 3 Arcane & Siege Specialists require Crystal (💎) and counter Heavy Armor, Swarms, and Bosses.
 export const UNITS = [
-  // -------------------- TIER 1: GATHERER-GUARDIANS (2.4x Output on Veins + Self-Defense Shots!) --------------------
+  // -------------------- TIER 1: RESOURCE GATHERERS & SUPPORT --------------------
   {
     id: 'sunnyfox',
     tier: 1,
@@ -29,16 +31,16 @@ export const UNITS = [
     color: '#f59f00',
     accent: '#fff3bf',
     cost: { sun: 25, wood: 0, stone: 0, crystal: 0 },
-    hp: 260,
-    prod: { sun: 10, wood: 0, stone: 0, crystal: 0 },
-    prodInterval: 3.6,
+    hp: 165,
+    prod: { sun: 6, wood: 0, stone: 0, crystal: 0 },
+    prodInterval: 3.8,
     veinBonusNode: 'sun',
-    veinMult: 2.25,
-    atk: 22,
-    fireInterval: 1.45,
-    range: 7.2,
-    antiAir: true,
-    lightRadius: 4.0
+    veinMult: 2.5, // +15 ☀️ on Sun Shrine Vein vs +6 ☀️ on plain grass!
+    atk: 6,
+    fireInterval: 1.90,
+    range: 2.0,
+    antiAir: false,
+    lightRadius: 3.5
   },
   {
     id: 'poppydash',
@@ -47,19 +49,19 @@ export const UNITS = [
     icon: 'icons/poppydash.jpg',
     color: '#495057',
     accent: '#74c0fc',
-    cost: { sun: 30, wood: 0, stone: 0, crystal: 0 },
-    hp: 270,
-    prod: { sun: 0, wood: 8, stone: 0, crystal: 0 },
-    prodInterval: 3.8,
+    cost: { sun: 25, wood: 0, stone: 0, crystal: 0 },
+    hp: 175,
+    prod: { sun: 0, wood: 5, stone: 0, crystal: 0 },
+    prodInterval: 4.0,
     veinBonusNode: 'wood',
-    veinMult: 2.4,
-    hasteRadius: 3.2,
-    hasteMult: 1.30,
-    atk: 25,
-    fireInterval: 1.35,
-    range: 7.2,
-    antiAir: true,
-    knockback: 0.35
+    veinMult: 2.4, // +12 🪵 on Forest Vein vs +5 🪵 off-vein!
+    hasteRadius: 2.4,
+    hasteMult: 1.25,
+    atk: 7,
+    fireInterval: 1.80,
+    range: 2.1,
+    antiAir: false,
+    knockback: 0.15
   },
   {
     id: 'picky',
@@ -68,22 +70,22 @@ export const UNITS = [
     icon: 'icons/picky.jpg',
     color: '#f783ac',
     accent: '#ffdeeb',
-    cost: { sun: 30, wood: 15, stone: 0, crystal: 0 },
-    hp: 300,
-    prod: { sun: 0, wood: 0, stone: 8, crystal: 0 },
-    prodInterval: 3.8,
+    cost: { sun: 30, wood: 10, stone: 0, crystal: 0 },
+    hp: 210,
+    prod: { sun: 0, wood: 0, stone: 5, crystal: 0 },
+    prodInterval: 4.0,
     veinBonusNode: 'stone',
-    veinMult: 2.4,
-    healRadius: 3.5,
-    healPerSec: 22,
-    atk: 28,
-    fireInterval: 1.50,
-    range: 7.0,
-    splashRadius: 1.2,
-    antiAir: true
+    veinMult: 2.4, // +12 🪨 on Quarry Vein vs +5 🪨 off-vein!
+    healRadius: 2.8,
+    healPerSec: 20,
+    atk: 9,
+    fireInterval: 1.80,
+    range: 2.2,
+    splashRadius: 0.8,
+    antiAir: false
   },
 
-  // -------------------- TIER 2: BUILDERS, DEFENDERS & SNIPERS --------------------
+  // -------------------- TIER 2: DEFENDERS, CRYSTAL MINER & ANTI-AIR --------------------
   {
     id: 'bubba',
     tier: 2,
@@ -92,18 +94,18 @@ export const UNITS = [
     color: '#339af0',
     accent: '#d0ebff',
     cost: { sun: 35, wood: 15, stone: 15, crystal: 0 },
-    hp: 480,
+    hp: 360,
     amphibious: true,
-    prod: { sun: 0, wood: 0, stone: 0, crystal: 6 },
-    prodInterval: 4.0,
+    prod: { sun: 0, wood: 0, stone: 0, crystal: 4 },
+    prodInterval: 4.2,
     veinBonusNode: 'crystal',
-    veinMult: 2.4,
-    slowRadius: 3.8,
+    veinMult: 2.5, // +10 💎 on Crystal Vein or Water tile vs +4 💎 off-vein!
+    slowRadius: 3.0,
     slowFactor: 0.50,
-    atk: 32,
-    fireInterval: 1.25,
-    range: 8.0,
-    antiAir: true
+    atk: 18,
+    fireInterval: 1.35,
+    range: 3.4,
+    antiAir: false
   },
   {
     id: 'bobby',
@@ -112,15 +114,15 @@ export const UNITS = [
     icon: 'icons/bobby.jpg',
     color: '#e03131',
     accent: '#ffc9c9',
-    cost: { sun: 20, wood: 0, stone: 25, crystal: 0 },
-    hp: 1100,
-    thornsDmg: 28,
+    cost: { sun: 25, wood: 0, stone: 25, crystal: 0 },
+    hp: 780,
+    thornsDmg: 22,
     blastResist: 0.65,
-    atk: 42,
-    fireInterval: 1.55,
-    range: 3.6,
-    splashRadius: 2.2,
-    antiAir: true
+    atk: 28,
+    fireInterval: 1.40,
+    range: 2.1,
+    splashRadius: 1.5,
+    antiAir: false
   },
   {
     id: 'mikey',
@@ -129,17 +131,17 @@ export const UNITS = [
     icon: 'icons/mikey.jpg',
     color: '#37b24d',
     accent: '#b2f2bb',
-    cost: { sun: 20, wood: 20, stone: 20, crystal: 0 },
-    hp: 620,
+    cost: { sun: 25, wood: 20, stone: 20, crystal: 0 },
+    hp: 460,
     stackable: true,
-    towerRangeBonus: 1.45,
-    towerDmgBonus: 1.35,
+    towerRangeBonus: 1.40,
+    towerDmgBonus: 1.30,
     grantsAntiAir: true,
-    atk: 36,
-    fireInterval: 1.10,
-    range: 9.2,
+    atk: 20,
+    fireInterval: 1.15,
+    range: 4.3,
     antiAir: true,
-    deathBlastDmg: 160
+    deathBlastDmg: 150
   },
   {
     id: 'lunabat',
@@ -148,17 +150,17 @@ export const UNITS = [
     icon: 'icons/lunabat.jpg',
     color: '#7950f2',
     accent: '#e5dbff',
-    cost: { sun: 35, wood: 25, stone: 0, crystal: 0 },
-    hp: 280,
-    atk: 46,
-    fireInterval: 0.82,
-    range: 10.5,
+    cost: { sun: 40, wood: 25, stone: 0, crystal: 0 },
+    hp: 175,
+    atk: 31,
+    fireInterval: 0.92,
+    range: 4.7,
     pierce: 2,
     antiAir: true,
-    bonusVsFlyerCreeper: 1.75
+    bonusVsFlyerCreeper: 1.85
   },
 
-  // -------------------- TIER 3: ARCANE & SIEGE SPECIALISTS (Full-Board Coverage!) --------------------
+  // -------------------- TIER 3: ARCANE & SIEGE SPECIALISTS (Require 💎 Crystal!) --------------------
   {
     id: 'dogday',
     tier: 3,
@@ -166,14 +168,14 @@ export const UNITS = [
     icon: 'icons/dogday.jpg',
     color: '#fd7e14',
     accent: '#ffe8cc',
-    cost: { sun: 45, wood: 0, stone: 30, crystal: 12 },
-    hp: 340,
-    atk: 72,
-    fireInterval: 1.18,
-    range: 9.8,
-    splashRadius: 2.1,
-    armorMelt: 0.70,
-    antiAir: true
+    cost: { sun: 50, wood: 0, stone: 30, crystal: 12 },
+    hp: 250,
+    atk: 66,
+    fireInterval: 1.38,
+    range: 4.9,
+    splashRadius: 1.80,
+    armorMelt: 0.78,
+    antiAir: false // Ground mortar unless stacked on Mikey Watchtower!
   },
   {
     id: 'craftycorn',
@@ -182,16 +184,16 @@ export const UNITS = [
     icon: 'icons/craftycorn.jpg',
     color: '#22b8cf',
     accent: '#c5f6fa',
-    cost: { sun: 45, wood: 25, stone: 0, crystal: 15 },
-    hp: 290,
-    atk: 56,
-    fireInterval: 0.78,
-    range: 11.8,
+    cost: { sun: 55, wood: 25, stone: 0, crystal: 14 },
+    hp: 210,
+    atk: 48,
+    fireInterval: 0.94,
+    range: 5.8,
     antiAir: true,
     vulnBonus: 0.35,
     shardWeaver: true,
     shardYield: 2,
-    shardInterval: 5.0
+    shardInterval: 7.0
   },
   {
     id: 'kickin',
@@ -200,108 +202,124 @@ export const UNITS = [
     icon: 'icons/kickin.jpg',
     color: '#fab005',
     accent: '#fff9db',
-    cost: { sun: 40, wood: 15, stone: 20, crystal: 15 },
-    hp: 320,
-    atk: 48,
-    fireInterval: 0.86,
-    range: 9.0,
+    cost: { sun: 45, wood: 20, stone: 20, crystal: 14 },
+    hp: 240,
+    atk: 40,
+    fireInterval: 1.00,
+    range: 4.6,
     antiAir: true,
-    chainTargets: 5,
-    knockback: 0.55
+    chainTargets: 4,
+    knockback: 0.38
   }
 ];
 
 export const UNIT_MAP = Object.fromEntries(UNITS.map(u => [u.id, u]));
 
-// ==================== 8 DISTINCT ZOMBIE ARCHETYPES ====================
+// ==================== 8 DISTINCT COUNTER-BASED ZOMBIE ARCHETYPES ====================
 export const ZOMBIE_TYPES = {
   walker: {
     id: 'walker',
-    hp: 115,
-    speed: 0.58,
-    dps: 14,
-    reward: { sun: 6, wood: 3, stone: 3, crystal: 0, shard: 1 },
+    hp: 205,
+    speed: 0.65,
+    dps: 24,
+    breachDmg: 1,
+    reward: { sun: 6, wood: 2, stone: 2, crystal: 0, shard: 0 },
     scale: 1.0,
     shirtColor: '#22b8cf',
     skinColor: '#69db7c'
   },
   runner: {
     id: 'runner',
-    hp: 80,
-    speed: 0.88,
-    dps: 12,
-    reward: { sun: 7, wood: 3, stone: 2, crystal: 0, shard: 1 },
-    scale: 0.82,
+    hp: 160,
+    speed: 1.18,
+    dps: 22,
+    breachDmg: 1,
+    reward: { sun: 7, wood: 3, stone: 2, crystal: 0, shard: 0 },
+    scale: 0.84,
     shirtColor: '#f783ac',
     skinColor: '#8ce99a'
   },
   bucket: {
     id: 'bucket',
-    hp: 270,
-    speed: 0.45,
-    dps: 20,
-    armor: 0.40,
-    reward: { sun: 10, wood: 3, stone: 6, crystal: 2, shard: 2 },
-    scale: 1.16,
+    hp: 580,
+    speed: 0.54,
+    dps: 36,
+    armor: 0.68, // 68% damage reduction! Non-mortar towers barely scratch it until DogDay melts its armor!
+    breachDmg: 2,
+    reward: { sun: 10, wood: 4, stone: 6, crystal: 2, shard: 1 },
+    scale: 1.18,
     shirtColor: '#868e96',
     skinColor: '#51cf66'
   },
   digger: {
     id: 'digger',
-    hp: 175,
-    speed: 0.58,
-    dps: 24,
+    hp: 310,
+    speed: 0.68,
+    dps: 38,
     wallBreaker: true,
-    reward: { sun: 8, wood: 3, stone: 6, crystal: 2, shard: 1 },
-    scale: 1.04,
+    rangedAtk: 20,      // Hurls pickaxes at nearby towers within 2.8 tiles! Fragile archers without Picky/Bobby get sniped!
+    rangedRange: 2.8,
+    breachDmg: 1,
+    reward: { sun: 8, wood: 3, stone: 5, crystal: 1, shard: 1 },
+    scale: 1.05,
     shirtColor: '#f59f00',
     skinColor: '#69db7c'
   },
   creeper: {
     id: 'creeper',
-    hp: 135,
-    speed: 0.60,
-    dps: 18,
-    // Damages only the single frontline blocker it touches (never wipes surrounding towers!)
-    frontBurstDmg: 75,
-    reward: { sun: 12, wood: 4, stone: 4, crystal: 3, shard: 2 },
-    scale: 1.04,
+    hp: 270,
+    speed: 0.78,
+    dps: 26,
+    frontBurstDmg: 260, // Devastates fragile towers unless absorbed by Bobby BearHug (65% blast resist) or sniped by LunaBat!
+    splashBurstDmg: 95,
+    breachDmg: 2,
+    reward: { sun: 12, wood: 4, stone: 4, crystal: 3, shard: 1 },
+    scale: 1.06,
     shirtColor: '#40c057',
     skinColor: '#37b24d'
   },
   balloon: {
     id: 'balloon',
-    hp: 125,
-    speed: 0.56,
-    dps: 16,
-    flying: true,
-    reward: { sun: 10, wood: 4, stone: 2, crystal: 3, shard: 2 },
-    scale: 0.96,
+    hp: 280,
+    speed: 0.72,
+    dps: 28,
+    flying: true,       // Flies over ground blockers & traps! Requires LunaBat, Mikey, CraftyCorn, or Kickin!
+    rangedAtk: 18,
+    rangedRange: 2.6,
+    breachDmg: 2,
+    reward: { sun: 10, wood: 4, stone: 3, crystal: 3, shard: 1 },
+    scale: 0.98,
     shirtColor: '#7950f2',
     skinColor: '#9775fa'
   },
   necromancer: {
     id: 'necromancer',
-    hp: 240,
-    speed: 0.42,
-    dps: 18,
-    armor: 0.20,
-    healRadius: 2.8,
-    healPerSec: 10,
-    summonInterval: 9.5,
-    reward: { sun: 14, wood: 5, stone: 5, crystal: 5, shard: 3 },
-    scale: 1.20,
+    hp: 510,
+    speed: 0.48,
+    dps: 28,
+    armor: 0.32,
+    healRadius: 3.0,
+    healPerSec: 24,
+    summonInterval: 7.5,
+    rangedAtk: 22,
+    rangedRange: 3.4,
+    breachDmg: 2,
+    reward: { sun: 14, wood: 5, stone: 5, crystal: 5, shard: 2 },
+    scale: 1.22,
     shirtColor: '#3b1f7a',
     skinColor: '#b197fc'
   },
   nightmare_boss: {
     id: 'nightmare_boss',
-    hp: 680,
-    speed: 0.36,
-    dps: 32,
-    armor: 0.25,
-    reward: { sun: 30, wood: 15, stone: 15, crystal: 12, shard: 8 },
-    scale: 1.52,
+    hp: 1750,
+    speed: 0.42,
+    dps: 58,
+    armor: 0.45,
+    poppyAuraRadius: 2.8, // Emits crimson poppy-gas aura that slows nearby towers by 35% and deals 18 DPS!
+    poppyAuraDps: 18,
+    breachDmg: 3,
+    reward: { sun: 28, wood: 14, stone: 14, crystal: 12, shard: 5 },
+    scale: 1.54,
     shirtColor: '#5f3dc4',
     skinColor: '#9775fa'
   }
@@ -325,9 +343,9 @@ function buildRoadTilesFromRoutes(routes = []) {
   return set;
 }
 
-// ==================== 5 PROGRESSIVE STAGE MAPS (COMPACT, ZERO DEAD ANGLES, WINDING ROADS) ====================
+// ==================== 5 ESCALATING STAGE MAPS (NO FREE PRE-BUILT ARMIES!) ====================
 export const STAGES = [
-  // Stage 1: 14 x 8 — Sunny S-Bend Meadow (Sanctuary on West gx=1,gz=3.5; Winding S-Road from East gx=13)
+  // Stage 1: 14 x 8 — S-Bend Meadow (Must harvest veins & build defense from scratch!)
   {
     index: 0,
     stageNumber: 1,
@@ -336,10 +354,10 @@ export const STAGES = [
     gridH: 8,
     altarGx: 1,
     altarGz: 3.5,
-    moonTarget: 28,
+    moonTarget: 35,
     portals: ['E'],
-    zombiePool: ['walker', 'runner', 'digger'],
-    baseSpawnInterval: 5.5,
+    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon'],
+    baseSpawnInterval: 4.2,
     routes: [
       [[13, 2], [10, 2], [10, 5], [6, 5], [6, 3], [2, 3]],
       [[13, 5], [10, 5], [6, 5], [6, 4], [2, 4]]
@@ -351,19 +369,16 @@ export const STAGES = [
       { gx: 3, gz: 6, kind: 'wood' },
       { gx: 5, gz: 1, kind: 'stone' },
       { gx: 5, gz: 6, kind: 'crystal' },
-      { gx: 11, gz: 1, kind: 'wood' },
+      { gx: 11, gz: 1, kind: 'sun' },
       { gx: 11, gz: 6, kind: 'stone' }
     ],
+    // Only 1 starter SunnyFox on a Sun Vein — player must build their own army!
     starterUnits: [
-      { gx: 3, gz: 1, id: 'sunnyfox' },
-      { gx: 3, gz: 6, id: 'poppydash' },
-      { gx: 6, gz: 3, id: 'bobby' },
-      { gx: 5, gz: 2, id: 'lunabat' },
-      { gx: 7, gz: 4, id: 'dogday' }
+      { gx: 3, gz: 1, id: 'sunnyfox' }
     ]
   },
 
-  // Stage 2: 14 x 8 — Twin-Bridge River Canyon (Sanctuary on West gx=1,gz=3.5; Twin Winding Loops)
+  // Stage 2: 14 x 8 — Twin-Bridge River Canyon (Flyers & Creepers join early!)
   {
     index: 1,
     stageNumber: 2,
@@ -372,10 +387,10 @@ export const STAGES = [
     gridH: 8,
     altarGx: 1,
     altarGz: 3.5,
-    moonTarget: 40,
+    moonTarget: 45,
     portals: ['E'],
-    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper'],
-    baseSpawnInterval: 5.2,
+    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon'],
+    baseSpawnInterval: 3.8,
     routes: [
       [[13, 1], [9, 1], [9, 3], [5, 3], [2, 3]],
       [[13, 6], [9, 6], [9, 4], [5, 4], [2, 4]]
@@ -391,16 +406,11 @@ export const STAGES = [
       { gx: 11, gz: 4, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 3, gz: 1, id: 'sunnyfox' },
-      { gx: 5, gz: 1, id: 'picky' },
-      { gx: 5, gz: 3, id: 'bobby' },
-      { gx: 5, gz: 4, id: 'bobby' },
-      { gx: 6, gz: 2, id: 'lunabat' },
-      { gx: 6, gz: 5, id: 'craftycorn' }
+      { gx: 3, gz: 1, id: 'sunnyfox' }
     ]
   },
 
-  // Stage 3: 15 x 8 — Central Moon Citadel (Sanctuary at Center 7, 3.5; Winding Roads from E & W)
+  // Stage 3: 15 x 8 — Central Moon Citadel (Two-Front Assault from East & West!)
   {
     index: 2,
     stageNumber: 3,
@@ -409,10 +419,10 @@ export const STAGES = [
     gridH: 8,
     altarGx: 7,
     altarGz: 3.5,
-    moonTarget: 55,
+    moonTarget: 60,
     portals: ['E', 'W'],
-    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon'],
-    baseSpawnInterval: 5.0,
+    zombiePool: ['runner', 'digger', 'bucket', 'creeper', 'balloon', 'necromancer'],
+    baseSpawnInterval: 3.5,
     routes: [
       [[14, 2], [11, 2], [11, 4], [8, 4]],
       [[0, 5], [3, 5], [3, 3], [6, 3]]
@@ -428,16 +438,11 @@ export const STAGES = [
       { gx: 12, gz: 5, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' },
-      { gx: 8, gz: 1, id: 'poppydash' },
-      { gx: 9, gz: 4, id: 'bobby' },
-      { gx: 5, gz: 3, id: 'bobby' },
-      { gx: 9, gz: 2, id: 'lunabat' },
-      { gx: 5, gz: 5, id: 'dogday' }
+      { gx: 6, gz: 1, id: 'sunnyfox' }
     ]
   },
 
-  // Stage 4: 16 x 8 — Three-Gate Star Fortress (Sanctuary at 7.5, 3.5; Portals E, W, N)
+  // Stage 4: 16 x 8 — Three-Gate Star Fortress (Portals E, W, N + Nightmare Bosses!)
   {
     index: 3,
     stageNumber: 4,
@@ -446,10 +451,10 @@ export const STAGES = [
     gridH: 8,
     altarGx: 7.5,
     altarGz: 3.5,
-    moonTarget: 70,
+    moonTarget: 75,
     portals: ['E', 'W', 'N'],
-    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon', 'necromancer'],
-    baseSpawnInterval: 4.8,
+    zombiePool: ['runner', 'digger', 'bucket', 'creeper', 'balloon', 'necromancer', 'nightmare_boss'],
+    baseSpawnInterval: 3.2,
     routes: [
       [[15, 3], [12, 3], [12, 4], [9, 4]],
       [[0, 4], [3, 4], [3, 3], [6, 3]],
@@ -466,17 +471,11 @@ export const STAGES = [
       { gx: 13, gz: 1, kind: 'stone' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' },
-      { gx: 9, gz: 1, id: 'poppydash' },
-      { gx: 6, gz: 6, id: 'picky' },
-      { gx: 9, gz: 4, id: 'bobby' },
-      { gx: 6, gz: 3, id: 'bobby' },
-      { gx: 10, gz: 2, id: 'craftycorn' },
-      { gx: 5, gz: 5, id: 'kickin' }
+      { gx: 6, gz: 1, id: 'sunnyfox' }
     ]
   },
 
-  // Stage 5: 16 x 8 — Four-Gate Starlight Finale (Sanctuary at 7.5, 3.5; Portals E, W, N, S)
+  // Stage 5: 16 x 8 — Four-Gate Starlight Finale (All 4 Cardinal Portals E, W, N, S!)
   {
     index: 4,
     stageNumber: 5,
@@ -485,10 +484,9 @@ export const STAGES = [
     gridH: 8,
     altarGx: 7.5,
     altarGz: 3.5,
-    moonTarget: 90,
+    moonTarget: 95,
     portals: ['E', 'W', 'N', 'S'],
     zombiePool: [
-      'walker',
       'runner',
       'digger',
       'bucket',
@@ -497,7 +495,7 @@ export const STAGES = [
       'necromancer',
       'nightmare_boss'
     ],
-    baseSpawnInterval: 4.6,
+    baseSpawnInterval: 2.9,
     routes: [
       [[15, 3], [11, 3], [9, 3]],
       [[0, 4], [4, 4], [6, 4]],
@@ -515,14 +513,7 @@ export const STAGES = [
       { gx: 14, gz: 6, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' },
-      { gx: 9, gz: 1, id: 'poppydash' },
-      { gx: 6, gz: 6, id: 'picky' },
-      { gx: 9, gz: 6, id: 'bubba' },
-      { gx: 9, gz: 3, id: 'bobby' },
-      { gx: 6, gz: 4, id: 'bobby' },
-      { gx: 10, gz: 2, id: 'craftycorn' },
-      { gx: 5, gz: 5, id: 'dogday' }
+      { gx: 6, gz: 1, id: 'sunnyfox' }
     ]
   }
 ];
@@ -578,10 +569,10 @@ export function getStageConfig(stageIndex = 0) {
   };
 }
 
-// Progressive cost scaling (+12% per duplicate unit on the board)
+// Progressive cost scaling (+18% per duplicate unit on the board to prevent single-unit spam!)
 export function computeDynamicResourceCosts(def, existingCount = 0) {
   if (!def || !def.cost) return { sun: 0, wood: 0, stone: 0, crystal: 0 };
-  const mult = existingCount <= 0 ? 1.0 : Math.pow(1.12, existingCount);
+  const mult = existingCount <= 0 ? 1.0 : Math.pow(1.18, existingCount);
   const c = def.cost;
   return {
     sun: c.sun > 0 ? Math.round(c.sun * mult) : 0,
@@ -593,13 +584,13 @@ export function computeDynamicResourceCosts(def, existingCount = 0) {
 
 // Cost to upgrade an existing placed Critter (Lv.1 -> Lv.2 -> Lv.3)
 export function computeUpgradeCost(def, currentLevel = 1) {
-  const c = def?.cost || { sun: 25, wood: 10, stone: 10, crystal: 5 };
-  const lvMult = currentLevel === 1 ? 0.80 : 1.25;
+  const c = def?.cost || { sun: 30, wood: 15, stone: 15, crystal: 8 };
+  const lvMult = currentLevel === 1 ? 0.90 : 1.45;
   return {
-    sun: Math.max(15, Math.round((c.sun || 20) * lvMult)),
-    wood: Math.round((c.wood || (def?.role === 'attack' ? 10 : 0)) * lvMult),
-    stone: Math.round((c.stone || (def?.role === 'defend' ? 10 : 0)) * lvMult),
-    crystal: Math.max(currentLevel === 1 ? 3 : 6, Math.round((c.crystal || 3) * lvMult))
+    sun: Math.max(20, Math.round((c.sun || 25) * lvMult)),
+    wood: Math.round((c.wood || (def?.role === 'attack' ? 15 : 0)) * lvMult),
+    stone: Math.round((c.stone || (def?.role === 'defend' ? 15 : 0)) * lvMult),
+    crystal: Math.max(currentLevel === 1 ? 5 : 10, Math.round((c.crystal || 5) * lvMult))
   };
 }
 
@@ -629,18 +620,21 @@ export function computeBalanceState({
   wave = 1
 }) {
   const stageCfg = getStageConfig(stageIndex);
-  let defensePower = 30;
+  let defensePower = 15;
   for (const u of placedUnits) {
-    const lvMult = 1 + ((u.level || 1) - 1) * 0.5;
+    const lvMult = 1 + ((u.level || 1) - 1) * 0.45;
     if (u.def?.atk) {
-      defensePower += ((u.def.atk || 30) / (u.def.fireInterval || 1.2)) * lvMult;
-    } else if (u.def?.role === 'defend') {
-      defensePower += ((u.hp || 400) / 30) * lvMult;
+      defensePower += ((u.def.atk || 15) / (u.def.fireInterval || 1.4)) * lvMult;
+    }
+    if (u.def?.role === 'defend') {
+      defensePower += ((u.hp || 350) / 35) * lvMult;
     }
   }
-  const threat = (16 + wave * 7 + moonShards * 0.4) * (0.85 + stageIndex * 0.10);
-  const pressureIndex = Number((threat / Math.max(30, defensePower)).toFixed(2));
-  const spawnIntervalMult = pressureIndex > 1.25 ? 1.20 : (pressureIndex < 0.70 ? 0.90 : 1.0);
+  // Threat scales sharply with wave AND with Moon Restoration progress (the closer the Moon is to restored, the harder CatNap attacks!)
+  const moonRage = 1 + (moonShards / Math.max(1, stageCfg.moonTarget)) * 0.65;
+  const threat = (24 + wave * 12 + stageIndex * 14) * moonRage;
+  const pressureIndex = Number((threat / Math.max(20, defensePower)).toFixed(2));
+  const spawnIntervalMult = Math.max(0.55, Math.min(1.05, 1 / Math.sqrt(moonRage)));
   return {
     stageIndex,
     moonTarget: stageCfg.moonTarget,

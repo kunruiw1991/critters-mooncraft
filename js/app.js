@@ -274,12 +274,12 @@ const S = {
   sanctuaryShake: 0,
   sanctuaryFireTimer: 0,
   res: { ...INITIAL_RESOURCES },
-  hp: 15,
-  maxHp: 15,
+  hp: 10,
+  maxHp: 10,
   moonShards: 0,
-  moonGoal: 28,
+  moonGoal: 35,
   wave: 1,
-  waveTimer: 6.5,
+  waveTimer: 10.0,
   spawnQueue: [],
   spawnCooldown: 0,
   selectedTool: 'sunnyfox',
@@ -318,6 +318,10 @@ export function buildStageWorld(stageIdx) {
   S.sanctuaryGz = cfg.altarGz;
   S.sanctuaryWorld = gridToWorld(cfg.altarGx, cfg.altarGz);
   S.hp = S.maxHp;
+  S.wave = 1;
+  S.waveTimer = 10.0;
+  S.spawnCooldown = 0;
+  document.getElementById('victoryModal')?.classList.add('hidden');
 
   clearGroup(tileGroup);
   clearGroup(unitGroup);
@@ -507,12 +511,12 @@ export function buildStageWorld(stageIdx) {
     tileGroup.add(portal);
   }
 
-  // Place Stage Starter Critters
+  // Place Stage Starter Critters (only 1 basic SunnyFox gatherer — player must build their own defense!)
   for (const st of (cfg.starterUnits || [])) {
     placeUnitOnTile(st.gx, st.gz, st.id, true);
   }
 
-  // Spawn initial zombie along the winding portal road so the action and goal are immediately clear!
+  // Spawn initial vanguard scout along the winding portal road so pressure starts immediately!
   spawnZombie('walker');
 
   updateCameraFraming();
@@ -896,7 +900,7 @@ export function tryUpgradeUnit(u) {
   return true;
 }
 
-// All-Resource & Surplus-Resource Moon Sanctuary Forge (No resource is ever stuck in surplus!)
+// Moon Sanctuary Forge: Requires active resource investment & triggers a Lunar Retaliation Wave!
 export function forgeMoonAtSanctuary() {
   if (S.sandbox) {
     addMoonShards(6);
@@ -906,18 +910,28 @@ export function forgeMoonAtSanctuary() {
     return true;
   }
 
-  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 20 + 🪵 10 + 🪨 10 + 💎 5 -> +6 🌕)
-  const bundleCost = { sun: 20, wood: 10, stone: 10, crystal: 5 };
+  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 25 + 🪵 12 + 🪨 12 + 💎 6 -> +6 🌕)
+  const bundleCost = { sun: 25, wood: 12, stone: 12, crystal: 6 };
   if (checkAfford(bundleCost)) {
     spendCost(bundleCost);
     addMoonShards(6);
     sound.shard();
     spawnBurst(S.sanctuaryWorld.x, 1.6, S.sanctuaryWorld.z, 0xffd43b, 8);
-    showBubble('☀️🪵🪨💎 ➔ +6 🌕', 1.4);
+    // Forging Moon Shards unleashes a defensive Sanctuary shockwave within 3.2 tiles...
+    for (const z of S.zombies) {
+      if (Math.hypot(z.x - S.sanctuaryWorld.x, z.z - S.sanctuaryWorld.z) <= 3.2) {
+        z.hp -= 75;
+        z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
+      }
+    }
+    // ...AND provokes Nightmare CatNap's portals to spawn a retaliation runner!
+    S.spawnQueue.push('runner');
+    showBubble('☀️🪵🪨💎 ➔ +6 🌕 ⚡🧟', 1.4);
+    updateTopHUD();
     return true;
   }
 
-  // Mode 2: Surplus-Resource Converter! If ANY single resource has >= 35, convert 35 of it into +4 🌕!
+  // Mode 2: Surplus-Resource Emergency Converter! Requires 45 of a single resource -> +4 🌕 (less efficient than 4-resource forging!)
   const entries = [
     ['crystal', '💎'],
     ['stone', '🪨'],
@@ -926,17 +940,18 @@ export function forgeMoonAtSanctuary() {
   ].sort((a, b) => (S.res[b[0]] || 0) - (S.res[a[0]] || 0));
 
   const [bestKey, bestIcon] = entries[0];
-  if ((S.res[bestKey] || 0) >= 35) {
-    S.res[bestKey] -= 35;
+  if ((S.res[bestKey] || 0) >= 45) {
+    S.res[bestKey] -= 45;
     addMoonShards(4);
     sound.shard();
     spawnBurst(S.sanctuaryWorld.x, 1.6, S.sanctuaryWorld.z, 0xffd43b, 8);
-    showBubble(`${bestIcon}35 ➔ +4 🌕`, 1.4);
+    S.spawnQueue.push('runner');
+    showBubble(`${bestIcon}45 ➔ +4 🌕 ⚡🧟`, 1.4);
     updateTopHUD();
     return true;
   }
 
-  showBubble('☀️20 🪵10 🪨10 💎5 ❌', 1.4);
+  showBubble('☀️25 🪵12 🪨12 💎6 ❌', 1.4);
   return false;
 }
 
@@ -951,19 +966,21 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
     return forgeMoonAtSanctuary();
   }
 
-  // 1. Shovel Reclaim Tool — 100% Full Refund so repositioning units has ZERO penalty!
+  // 1. Shovel Reclaim Tool — 75% refund scaled by remaining HP% (cannot cheese free heals on dying units!)
   if (def.role === 'tool') {
     const target = tile.stackedUnit || tile.unit;
     if (!target) return false;
     if (!S.sandbox) {
-      S.res.sun += Math.round(target.def.cost?.sun || 15);
-      S.res.wood += Math.round(target.def.cost?.wood || 0);
-      S.res.stone += Math.round(target.def.cost?.stone || 0);
-      S.res.crystal += Math.round(target.def.cost?.crystal || 0);
+      const hpRatio = Math.max(0, Math.min(1, (target.hp || 1) / Math.max(1, target.maxHp || 1)));
+      const refundMult = hpRatio < 0.35 ? 0 : 0.75 * hpRatio;
+      S.res.sun += Math.round((target.def.cost?.sun || 0) * refundMult);
+      S.res.wood += Math.round((target.def.cost?.wood || 0) * refundMult);
+      S.res.stone += Math.round((target.def.cost?.stone || 0) * refundMult);
+      S.res.crystal += Math.round((target.def.cost?.crystal || 0) * refundMult);
     }
     removeUnit(target);
     sound.place();
-    showBubble('♻️ 100% ✨', 1.1);
+    showBubble('♻️ ✨', 1.1);
     updateTopHUD();
     return true;
   }
@@ -1032,12 +1049,12 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
     return false;
   }
 
-  // 6. Stacking on Mikey's Watchtower OR Tapping an Existing Unit to Upgrade It (`⭐1 -> ⭐2 -> ⭐3`)!
+  // 6. Stacking on Mikey's Watchtower OR Tapping Matching Unit / Upgrade Tool to Upgrade It (`⭐1 -> ⭐2 -> ⭐3`)!
   let stackingOnTower = false;
   if (tile.unit) {
     if (tile.unit.def.stackable && !tile.stackedUnit && def.id !== 'mikey') {
       stackingOnTower = true;
-    } else if (!free) {
+    } else if (!free && (def.id === 'upgrade_star' || tile.unit.id === def.id || tile.stackedUnit?.id === def.id)) {
       return tryUpgradeUnit(tile.stackedUnit || tile.unit);
     } else {
       return false;
@@ -1063,17 +1080,10 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
   mesh.position.set(wpos.x, yBase, wpos.z);
   unitGroup.add(mesh);
 
-  // Check if placed on OR adjacent to matching resource vein
-  let nearVein = tile.baseType === def.veinBonusNode;
-  if (!nearVein && def.veinBonusNode) {
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dz = -1; dz <= 1; dz++) {
-        if (tiles[gx + dx]?.[gz + dz]?.baseType === def.veinBonusNode) {
-          nearVein = true;
-        }
-      }
-    }
-  }
+  // Strict Resource Vein check: must be placed directly ON the matching Resource Vein tile (or Water for Bubba)!
+  const nearVein =
+    tile.baseType === def.veinBonusNode ||
+    (def.id === 'bubba' && tile.baseType === 'water');
 
   const unitObj = {
     id: def.id,
@@ -1084,8 +1094,8 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
     hp: def.hp,
     maxHp: def.hp,
     mesh,
-    prodTimer: Math.random() * 1.2,
-    atkTimer: Math.random() * 0.4,
+    prodTimer: Math.random() * 0.8,
+    atkTimer: Math.random() * 0.3,
     stacked: stackingOnTower,
     onHighGround: stackingOnTower || tile.type === 'cliff',
     onVein: nearVein
@@ -1129,7 +1139,7 @@ function removeUnit(u) {
 }
 
 // ============================================================================
-// ZOMBIE SPAWNING ON WINDING COBBLESTONE ROADS & CONTROLLED WAVE PACING
+// ZOMBIE SPAWNING ON WINDING COBBLESTONE ROADS & ESCALATING WAVE PRESSURE
 // ============================================================================
 export function spawnZombie(typeId, customPos = null) {
   const def = ZOMBIE_TYPES[typeId] || ZOMBIE_TYPES.walker;
@@ -1146,7 +1156,7 @@ export function spawnZombie(typeId, customPos = null) {
   if (customPos) {
     gx = customPos.gx;
     gz = customPos.gz;
-    wpIndex = chosenRoute.length; // March straight toward Sanctuary from custom test position
+    wpIndex = chosenRoute.length;
   }
 
   const wpos = gridToWorld(gx, gz);
@@ -1154,7 +1164,8 @@ export function spawnZombie(typeId, customPos = null) {
   mesh.position.set(wpos.x, yPos, wpos.z);
   zombieGroup.add(mesh);
 
-  const hpScale = 1 + (S.wave - 1) * 0.06 + S.stageIndex * 0.05;
+  // +22% HP per wave and +16% per stage so waves genuinely require upgrades & Tier-2/3 tech!
+  const hpScale = 1 + (S.wave - 1) * 0.22 + S.stageIndex * 0.16;
   const maxHp = Math.round(def.hp * hpScale);
 
   const zObj = {
@@ -1170,9 +1181,10 @@ export function spawnZombie(typeId, customPos = null) {
     hp: maxHp,
     maxHp,
     armor: def.armor || 0,
-    speed: def.speed,
+    speed: def.speed * (1 + Math.min(0.25, (S.wave - 1) * 0.03)),
     atkTimer: 0,
-    specialTimer: 3.5,
+    rangedTimer: 0.9,
+    specialTimer: 4.5,
     slowTimer: 0,
     markTimer: 0,
     walkPhase: Math.random() * 6.28
@@ -1189,18 +1201,25 @@ function triggerNextWave() {
     moonShards: S.moonShards,
     wave: S.wave
   });
-  const pool = S.stageCfg?.zombiePool || ['walker', 'runner', 'digger'];
-  const count = Math.min(8, 3 + Math.floor(S.wave * 0.8) + S.stageIndex);
+  const pool = S.stageCfg?.zombiePool || ['walker', 'runner', 'digger', 'bucket', 'creeper'];
+  const count = Math.min(14, 4 + Math.floor(S.wave * 1.5) + S.stageIndex * 2);
 
   for (let i = 0; i < count; i++) {
-    const zType = (S.wave % 3 === 0 && i === count - 1 && pool.includes('nightmare_boss'))
-      ? 'nightmare_boss'
-      : pool[(S.wave + i) % pool.length];
+    let zType = pool[(S.wave + i) % pool.length];
+    if (S.wave >= 2 && i === Math.floor(count / 2) && pool.includes('bucket')) {
+      zType = 'bucket';
+    }
+    if (S.wave >= 2 && i === count - 2 && pool.includes('creeper')) {
+      zType = 'creeper';
+    }
+    if (S.wave >= 3 && i === count - 1) {
+      zType = pool.includes('nightmare_boss') ? 'nightmare_boss' : (pool.includes('balloon') ? 'balloon' : 'bucket');
+    }
     S.spawnQueue.push(zType);
   }
   showBubble(`🧟⛩️ ${S.wave} ➔ 🌕✨`, 1.3);
   S.wave++;
-  S.waveTimer = 22.0 * (bal.spawnIntervalMult || 1.0);
+  S.waveTimer = 14.5 * (bal.spawnIntervalMult || 1.0);
 }
 
 // ============================================================================
@@ -1234,7 +1253,7 @@ function collectOrb(orb) {
 }
 
 export function addMoonShards(n) {
-  if (S.phase === 'victory') return;
+  if (S.phase === 'victory' || S.phase === 'defeat') return;
   S.moonShards = Math.min(S.moonGoal, S.moonShards + n);
   const progress = S.moonShards / Math.max(1, S.moonGoal);
   setMoonRestoreProgress(progress);
@@ -1266,13 +1285,13 @@ function triggerDefeat() {
 }
 
 // ============================================================================
-// MAIN SIMULATION LOOP (ALL-UNIT 360° COMBAT + WINDING ROAD PATHING)
+// MAIN SIMULATION LOOP (TACTICAL ROLES, COUNTER-PLAY & ACTIVE MOON FORGING)
 // ============================================================================
 function updateGameplay(dt) {
-  if (S.paused) return;
+  if (S.paused || S.phase !== 'playing') return;
 
-  // Steady solar income + active Critter gatherers
-  S.res.sun += 0.65 * dt;
+  // Low passive solar trickle (+0.22/s) — player MUST build SunnyFox on Sun Shrines!
+  S.res.sun += 0.22 * dt;
 
   // Animate road markers pulsing toward the 3D Moon Sanctuary
   const nowSec = performance.now() * 0.004;
@@ -1282,7 +1301,7 @@ function updateGameplay(dt) {
     rm.mesh.scale.set(pulse, 1, pulse);
   }
 
-  // Rotate the 3D Moon Sanctuary's star ring & fire its Golden Starlight Guardian Beam!
+  // Rotate the 3D Moon Sanctuary's star ring (NO free auto-turret — player must defend the Sanctuary!)
   const sancX = S.sanctuaryWorld.x;
   const sancZ = S.sanctuaryWorld.z;
   if (S.sanctuaryMesh) {
@@ -1295,67 +1314,34 @@ function updateGameplay(dt) {
     } else {
       S.sanctuaryMesh.position.set(sancX, 0.36, sancZ);
     }
-
-    // Sanctuary Guardian Beam zaps any zombie that gets within 3.8 tiles of the Castle!
-    S.sanctuaryFireTimer += dt;
-    if (S.sanctuaryFireTimer >= 1.4 && S.zombies.length > 0) {
-      let nearestZ = null;
-      let nearestDist = 3.8;
-      for (const z of S.zombies) {
-        const d = Math.hypot(z.x - sancX, z.z - sancZ);
-        if (d <= nearestDist) {
-          nearestDist = d;
-          nearestZ = z;
-        }
-      }
-      if (nearestZ) {
-        S.sanctuaryFireTimer = 0;
-        const pMesh = vox(0.22, 0.22, 0.22, 0xffd43b, sancX, 1.85, sancZ, {
-          emissive: 0xffe066,
-          emissiveIntensity: 1.0
-        });
-        projGroup.add(pMesh);
-        S.projectiles.push({
-          mesh: pMesh,
-          x: sancX,
-          y: 1.85,
-          z: sancZ,
-          target: nearestZ,
-          dmg: 58,
-          splash: 1.1,
-          meltsArmor: true,
-          marksTarget: false,
-          chainCount: 0,
-          knockback: 0.45,
-          flyerBonus: 1.2,
-          color: 0xffd43b
-        });
-      }
-    }
   }
 
-  // Calm, controlled wave pacing: advance early if wave is cleared (after 3.5s breather)
+  // Relentless wave pacing: advance early if wave is cleared (after 2.2s breather)
   if (S.zombies.length === 0 && S.spawnQueue.length === 0) {
-    S.waveTimer = Math.min(S.waveTimer, 3.5);
+    S.waveTimer = Math.min(S.waveTimer, 2.2);
   }
   S.waveTimer -= dt;
   if (S.waveTimer <= 0) triggerNextWave();
 
-  const maxActiveZombies = 8 + S.stageIndex;
+  const maxActiveZombies = 14 + S.stageIndex * 2;
   if (S.spawnQueue.length > 0 && S.zombies.length < maxActiveZombies) {
     S.spawnCooldown -= dt;
     if (S.spawnCooldown <= 0) {
       spawnZombie(S.spawnQueue.shift());
-      S.spawnCooldown = 1.35;
+      S.spawnCooldown = 0.92;
     }
   }
 
-  // Update All Placed Critter Units (360° Combat + 4-Resource Production!)
+  // Update All Placed Critter Units
   for (let i = S.units.length - 1; i >= 0; i--) {
     const u = S.units[i];
+    if (u.hp <= 0) {
+      removeUnit(u);
+      continue;
+    }
     const wpos = gridToWorld(u.gx, u.gz);
     const tile = tiles[u.gx]?.[u.gz];
-    const lvMult = 1 + ((u.level || 1) - 1) * 0.50;
+    const lvMult = 1 + ((u.level || 1) - 1) * 0.45;
 
     if (u.mesh.userData.rotor) {
       u.mesh.userData.rotor.rotation.z += dt * 4.5;
@@ -1364,29 +1350,39 @@ function updateGameplay(dt) {
     let haste = 1.0;
     for (const ally of S.units) {
       if (ally.def.hasteRadius && Math.hypot(ally.gx - u.gx, ally.gz - u.gz) <= ally.def.hasteRadius) {
-        haste = ally.def.hasteMult || 1.3;
+        haste = ally.def.hasteMult || 1.25;
         break;
       }
     }
+    // Check if slowed by Nightmare Boss Poppy-Gas Aura
+    for (const z of S.zombies) {
+      if (z.def.poppyAuraRadius && Math.hypot(z.gx - u.gx, z.gz - u.gz) <= z.def.poppyAuraRadius) {
+        haste *= 0.65;
+        break;
+      }
+    }
+
     u.prodTimer = (u.prodTimer || 0) + dt * haste;
     u.atkTimer = (u.atkTimer || 0) + dt * haste;
 
-    // 1. Spike Trap damage
+    // 1. Spike Trap damage (takes wear-and-tear durability damage as it shreds enemies!)
     if (u.isTrap) {
       for (const z of S.zombies) {
         if (!z.def.flying && Math.hypot(z.x - wpos.x, z.z - wpos.z) < 0.62) {
           z.hp -= u.def.dmg * dt;
           z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
+          u.hp -= 18 * dt;
         }
       }
+      if (u.hp <= 0) removeUnit(u);
       continue;
     }
 
-    // 2. 4-Resource Production (with single gentle rising sparkle instead of noisy cube bursts!)
-    if (u.def.prod && u.prodTimer >= (u.def.prodInterval || 3.8)) {
+    // 2. 4-Resource Production (2.5x-2.7x output when placed directly on matching Resource Vein!)
+    if (u.def.prod && u.prodTimer >= (u.def.prodInterval || 4.2)) {
       u.prodTimer = 0;
       const p = u.def.prod;
-      const veinBoost = u.onVein ? (u.def.veinMult || 2.25) : 1.0;
+      const veinBoost = u.onVein ? (u.def.veinMult || 2.5) : 1.0;
 
       if (p.sun > 0) {
         S.res.sun += Math.round(p.sun * veinBoost * lvMult);
@@ -1401,23 +1397,23 @@ function updateGameplay(dt) {
         spawnSoftSparkle(wpos.x, 0.95, wpos.z, 0x74c0fc);
       }
       if (p.crystal > 0) {
-        const wBoost = (u.onVein || tile?.baseType === 'water') ? (u.def.veinMult || 2.4) : 1.0;
+        const wBoost = (u.onVein || tile?.baseType === 'water') ? (u.def.veinMult || 2.7) : 1.0;
         S.res.crystal += Math.round(p.crystal * wBoost * lvMult);
         spawnSoftSparkle(wpos.x, 0.95, wpos.z, 0xda77f2);
       }
       updateTopHUD();
     }
 
-    // 3. PickyPiggy Healing Aura (+22 HP/s)
+    // 3. PickyPiggy Healing Aura (+18 HP/s to nearby allies)
     if (u.def.healRadius) {
       for (const ally of S.units) {
         if (ally.hp < ally.maxHp && Math.hypot(ally.gx - u.gx, ally.gz - u.gz) <= u.def.healRadius) {
-          ally.hp = Math.min(ally.maxHp, ally.hp + (u.def.healPerSec || 22) * lvMult * dt);
+          ally.hp = Math.min(ally.maxHp, ally.hp + (u.def.healPerSec || 18) * lvMult * dt);
         }
       }
     }
 
-    // 4. Bubba Cryo Slow Dome (50% slow)
+    // 4. Bubba Cryo Slow Dome (48% slow)
     if (u.def.slowRadius) {
       for (const z of S.zombies) {
         if (Math.hypot(z.gx - u.gx, z.gz - u.gz) <= u.def.slowRadius) {
@@ -1426,28 +1422,29 @@ function updateGameplay(dt) {
       }
     }
 
-    // 5. CraftyCorn Moon Shard Weaving (+2 🌕 every 5.0s)
+    // 5. CraftyCorn Moon Shard Weaving (+1 🌕 every 8.5s)
     if (u.def.shardWeaver) {
       u.moonTimer = (u.moonTimer || 0) + dt;
-      if (u.moonTimer >= (u.def.shardInterval || 5.0)) {
+      if (u.moonTimer >= (u.def.shardInterval || 8.5)) {
         u.moonTimer = 0;
-        addMoonShards(Math.round((u.def.shardYield || 2) * lvMult));
+        addMoonShards(Math.round((u.def.shardYield || 1) * lvMult));
         spawnSoftSparkle(wpos.x, 1.15, wpos.z, 0xfff3bf);
       }
     }
 
-    // 6. 360° Zero-Dead-Angle Combat for ALL 10 Critters!
+    // 6. 360° Turret Combat (Strict Range & Anti-Air Enforcement!)
     if (u.def.atk > 0 && u.atkTimer >= (u.def.fireInterval || 1.2)) {
-      const rangeBonus = u.stacked ? 1.45 : (u.onHighGround ? 1.25 : 1.0);
-      const dmgBonus = (u.stacked ? 1.35 : (u.onHighGround ? 1.15 : 1.0)) * lvMult;
-      const effRange = (u.def.range || 7.0) * rangeBonus;
+      const rangeBonus = u.stacked ? 1.40 : (u.onHighGround ? 1.28 : 1.0);
+      const dmgBonus = (u.stacked ? 1.28 : (u.onHighGround ? 1.18 : 1.0)) * lvMult;
+      const effRange = (u.def.range || 3.5) * rangeBonus;
+      const canHitAir = Boolean(u.def.antiAir || u.stacked || u.onHighGround);
 
       let target = null;
       let bestScore = Infinity;
       for (const z of S.zombies) {
+        if (z.def.flying && !canHitAir) continue;
         const d = Math.hypot(z.gx - u.gx, z.gz - u.gz);
         if (d <= effRange) {
-          // Prioritize zombies closest to the Moon Sanctuary Castle!
           const dSanc = Math.hypot(z.x - sancX, z.z - sancZ);
           if (dSanc < bestScore) {
             bestScore = dSanc;
@@ -1458,7 +1455,6 @@ function updateGameplay(dt) {
 
       if (target) {
         u.atkTimer = 0;
-        // Smooth 360° turret rotation toward target zombie (zero directional dead angle!)
         u.mesh.rotation.y = Math.atan2(target.x - wpos.x, target.z - wpos.z);
 
         sound.shoot();
@@ -1474,7 +1470,7 @@ function updateGameplay(dt) {
           y: u.mesh.position.y + 0.55,
           z: wpos.z,
           target,
-          dmg: (u.def.atk || 32) * dmgBonus,
+          dmg: (u.def.atk || 20) * dmgBonus,
           splash: u.def.splashRadius || 0,
           meltsArmor: (u.def.armorMelt || 0) > 0,
           marksTarget: (u.def.vulnBonus || 0) > 0,
@@ -1513,22 +1509,25 @@ function updateGameplay(dt) {
     }
   }
 
-  // Update Zombies — Follow Winding Cobblestone Road Waypoints to the 3D Moon Sanctuary!
+  // Update Zombies — Follow Winding Cobblestone Road + Execute Ranged & Aura Counter-Attacks!
   for (let i = S.zombies.length - 1; i >= 0; i--) {
     const z = S.zombies[i];
 
     if (z.hp <= 0) {
       spawnBurst(z.x, z.y + 0.4, z.z, z.def.skinColor || '#69db7c', 5);
       const rw = z.def.reward || {};
-      addMoonShards(rw.shard > 0 ? rw.shard : 1);
+      // Normal zombies drop 0 free Moon Shards — only Elites/Bosses drop shards directly!
+      if (rw.shard > 0) {
+        addMoonShards(rw.shard);
+      }
       if (rw.sun) S.res.sun += rw.sun;
       if (rw.wood) S.res.wood += rw.wood;
       if (rw.stone) S.res.stone += rw.stone;
       if (rw.crystal) S.res.crystal += rw.crystal;
-      if (Math.random() < 0.35) {
+      if (Math.random() < 0.32) {
         const kinds = ['sun', 'wood', 'stone', 'crystal'];
         const k = kinds[Math.floor(Math.random() * kinds.length)];
-        spawnCollectibleOrb(z.x, z.z, k, 6);
+        spawnCollectibleOrb(z.x, z.z, k, 5);
       }
       zombieGroup.remove(z.mesh);
       S.zombies.splice(i, 1);
@@ -1558,29 +1557,69 @@ function updateGameplay(dt) {
       z.mesh.userData.bossOrbs.rotation.y -= dt * 2.8;
     }
 
-    // Necromancer / Shaman Special: Heal nearby zombies
+    // Necromancer / Shaman Special: Heal nearby zombies & summon runners
     if (z.def.healPerSec) {
       for (const other of S.zombies) {
-        if (other.hp < other.maxHp && Math.hypot(other.gx - z.gx, other.gz - z.gz) <= (z.def.healRadius || 2.8)) {
+        if (other.hp < other.maxHp && Math.hypot(other.gx - z.gx, other.gz - z.gz) <= (z.def.healRadius || 3.0)) {
           other.hp = Math.min(other.maxHp, other.hp + z.def.healPerSec * dt);
           other.mesh.userData.updateHearts(other.hp, other.maxHp, other.armor);
         }
       }
       z.specialTimer -= dt;
       if (z.specialTimer <= 0 && S.zombies.length < maxActiveZombies) {
-        z.specialTimer = z.def.summonInterval || 9.5;
+        z.specialTimer = z.def.summonInterval || 7.5;
         spawnZombie('runner', { gx: z.gx, gz: z.gz });
+      }
+    }
+
+    // Nightmare Boss Special: Crimson Poppy-Gas Aura damages nearby Critter units!
+    if (z.def.poppyAuraRadius && z.def.poppyAuraDps) {
+      for (let ui = S.units.length - 1; ui >= 0; ui--) {
+        const u = S.units[ui];
+        if (!u.isTrap && Math.hypot(u.gx - z.gx, u.gz - z.gz) <= z.def.poppyAuraRadius) {
+          u.hp -= z.def.poppyAuraDps * dt;
+          if (u.hp <= 0) removeUnit(u);
+        }
+      }
+    }
+
+    // Zombie Ranged Counter-Attack (Digger pickaxe toss, Balloon bomb, Necromancer dark bolt)
+    if (z.def.rangedAtk && z.def.rangedRange) {
+      z.rangedTimer = (z.rangedTimer || 0) + dt;
+      if (z.rangedTimer >= 1.65) {
+        let bestTarget = null;
+        let bestScore = Infinity;
+        for (const u of S.units) {
+          if (u.isTrap) continue;
+          const distU = Math.hypot(u.gx - z.gx, u.gz - z.gz);
+          if (distU <= z.def.rangedRange) {
+            // Prioritize Bobby BearHug (taunt tank!) if in range, otherwise closest unit
+            const score = (u.id === 'bobby' ? -10 : 0) + distU;
+            if (score < bestScore) {
+              bestScore = score;
+              bestTarget = u;
+            }
+          }
+        }
+        if (bestTarget) {
+          z.rangedTimer = 0;
+          const uw = gridToWorld(bestTarget.gx, bestTarget.gz);
+          spawnSoftSparkle(uw.x, 0.75, uw.z, 0xff4d6d);
+          bestTarget.hp -= z.def.rangedAtk;
+          if (bestTarget.hp <= 0) removeUnit(bestTarget);
+        }
       }
     }
 
     if (z.slowTimer > 0) z.slowTimer -= dt;
     if (z.markTimer > 0) z.markTimer -= dt;
 
-    // 1. Check if zombie has reached the 3D Moon Sanctuary Castle!
+    // 1. Check if zombie has breached the 3D Moon Sanctuary Castle!
     const distToSanctuary = Math.hypot(sancX - z.x, sancZ - z.z);
-    if (distToSanctuary <= 1.25) {
-      S.hp = Math.max(0, S.hp - 1);
-      S.sanctuaryShake = 0.5;
+    if (distToSanctuary <= 1.28) {
+      const breach = z.def.breachDmg || 1;
+      S.hp = Math.max(0, S.hp - breach);
+      S.sanctuaryShake = 0.65;
       spawnBurst(sancX, 1.1, sancZ, 0xff4d6d, 6);
       zombieGroup.remove(z.mesh);
       S.zombies.splice(i, 1);
@@ -1592,14 +1631,16 @@ function updateGameplay(dt) {
       continue;
     }
 
-    // 2. Check if a blocking Critter or Wall is directly in front of the zombie
+    // 2. Check if a blocking Critter or Wall is in front of the zombie
     let blocker = null;
     if (!z.def.flying) {
-      let bestBlockDist = 0.72;
+      let bestBlockDist = 0.78;
       for (const u of S.units) {
         if (u.isTrap) continue;
+        // Bobby BearHug has a wider taunt/intercept radius (1.15 tiles) so he can guard the road from adjacent tiles!
+        const interceptRadius = u.id === 'bobby' ? 1.15 : 0.75;
         const dUnit = Math.hypot(u.gx - z.gx, u.gz - z.gz);
-        if (dUnit < bestBlockDist) {
+        if (dUnit <= interceptRadius && dUnit < bestBlockDist + (u.id === 'bobby' ? 0.45 : 0)) {
           bestBlockDist = dUnit;
           blocker = u;
         }
@@ -1607,11 +1648,20 @@ function updateGameplay(dt) {
     }
 
     if (blocker) {
-      // Creeper deals single-target front burst to the blocker only (never wipes surrounding towers!)
+      // Creeper detonates on frontline contact (Bobby's 60% blastResist counters it; fragile units get wiped!)
       if (z.def.frontBurstDmg) {
         const resist = blocker.def.blastResist || 0;
         blocker.hp -= z.def.frontBurstDmg * (1 - resist);
         if (blocker.hp <= 0) removeUnit(blocker);
+        if (z.def.splashBurstDmg) {
+          for (let ui = S.units.length - 1; ui >= 0; ui--) {
+            const otherU = S.units[ui];
+            if (otherU !== blocker && !otherU.isTrap && Math.hypot(otherU.gx - z.gx, otherU.gz - z.gz) <= 1.25) {
+              otherU.hp -= z.def.splashBurstDmg * (1 - (otherU.def.blastResist || 0));
+              if (otherU.hp <= 0) removeUnit(otherU);
+            }
+          }
+        }
         spawnBurst(z.x, z.y + 0.4, z.z, 0xff922b, 6);
         zombieGroup.remove(z.mesh);
         S.zombies.splice(i, 1);
@@ -1623,10 +1673,10 @@ function updateGameplay(dt) {
         z.mesh.userData.armL.rotation.z = Math.sin(z.walkPhase * 2) * 0.55;
         z.mesh.userData.armR.rotation.z = -Math.sin(z.walkPhase * 2) * 0.55;
       }
-      if (z.atkTimer >= 0.80) {
+      if (z.atkTimer >= 0.75) {
         z.atkTimer = 0;
-        const wallMult = z.def.wallBreaker ? 1.8 : 1.0;
-        blocker.hp -= (z.def.dps || 15) * wallMult;
+        const wallMult = z.def.wallBreaker ? 2.2 : 1.0;
+        blocker.hp -= (z.def.dps || 22) * wallMult;
 
         if (blocker.def.thornsDmg) {
           z.hp -= blocker.def.thornsDmg;
@@ -1659,7 +1709,7 @@ function updateGameplay(dt) {
         }
       }
 
-      const slowMult = z.slowTimer > 0 ? 0.5 : 1.0;
+      const slowMult = z.slowTimer > 0 ? 0.52 : 1.0;
       const dx = targetWorldX - z.x;
       const dz = targetWorldZ - z.z;
       const d = Math.hypot(dx, dz) || 1;
@@ -1675,14 +1725,27 @@ function updateGameplay(dt) {
     }
   }
 
-  // Update Collectible Orbs (auto-collect after 2.4s)
+  // Update Collectible Orbs: auto-harvest if near a Gatherer, or expire after 6.5s if ignored!
   for (let i = S.orbs.length - 1; i >= 0; i--) {
     const o = S.orbs[i];
     o.age += dt;
     o.mesh.rotation.y += dt * 3.2;
     o.mesh.position.y = 0.68 + Math.sin(o.age * 5) * 0.14;
-    if (o.age >= 2.4) {
+    let nearGatherer = false;
+    for (const u of S.units) {
+      if (u.def.role === 'produce') {
+        const uw = gridToWorld(u.gx, u.gz);
+        if (Math.hypot(uw.x - o.x, uw.z - o.z) <= 2.4) {
+          nearGatherer = true;
+          break;
+        }
+      }
+    }
+    if (nearGatherer && o.age >= 1.2) {
       collectOrb(o);
+    } else if (o.age >= 6.5) {
+      fxGroup.remove(o.mesh);
+      S.orbs.splice(i, 1);
     }
   }
 
