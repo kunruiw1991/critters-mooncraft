@@ -274,12 +274,12 @@ const S = {
   sanctuaryShake: 0,
   sanctuaryFireTimer: 0,
   res: { ...INITIAL_RESOURCES },
-  hp: 10,
-  maxHp: 10,
+  hp: 12,
+  maxHp: 12,
   moonShards: 0,
-  moonGoal: 35,
-  wave: 1,
-  waveTimer: 10.0,
+  moonGoal: 30,
+  wave: 0,
+  waveTimer: 14.0,
   spawnQueue: [],
   spawnCooldown: 0,
   selectedTool: 'sunnyfox',
@@ -318,8 +318,8 @@ export function buildStageWorld(stageIdx) {
   S.sanctuaryGz = cfg.altarGz;
   S.sanctuaryWorld = gridToWorld(cfg.altarGx, cfg.altarGz);
   S.hp = S.maxHp;
-  S.wave = 1;
-  S.waveTimer = 10.0;
+  S.wave = 0;
+  S.waveTimer = 14.0;
   S.spawnCooldown = 0;
   document.getElementById('victoryModal')?.classList.add('hidden');
 
@@ -515,9 +515,6 @@ export function buildStageWorld(stageIdx) {
   for (const st of (cfg.starterUnits || [])) {
     placeUnitOnTile(st.gx, st.gz, st.id, true);
   }
-
-  // Spawn initial vanguard scout along the winding portal road so pressure starts immediately!
-  spawnZombie('walker');
 
   updateCameraFraming();
   updateStageButtons();
@@ -900,7 +897,7 @@ export function tryUpgradeUnit(u) {
   return true;
 }
 
-// Moon Sanctuary Forge: Requires active resource investment & triggers a Lunar Retaliation Wave!
+// Moon Sanctuary Forge: Convert gathered resources into +6 Moon Shards + a golden Starlight Shockwave!
 export function forgeMoonAtSanctuary() {
   if (S.sandbox) {
     addMoonShards(6);
@@ -910,28 +907,26 @@ export function forgeMoonAtSanctuary() {
     return true;
   }
 
-  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 25 + 🪵 12 + 🪨 12 + 💎 6 -> +6 🌕)
-  const bundleCost = { sun: 25, wood: 12, stone: 12, crystal: 6 };
+  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 20 + 🪵 10 + 🪨 10 + 💎 5 -> +6 🌕)
+  const bundleCost = { sun: 20, wood: 10, stone: 10, crystal: 5 };
   if (checkAfford(bundleCost)) {
     spendCost(bundleCost);
     addMoonShards(6);
     sound.shard();
     spawnBurst(S.sanctuaryWorld.x, 1.6, S.sanctuaryWorld.z, 0xffd43b, 8);
-    // Forging Moon Shards unleashes a defensive Sanctuary shockwave within 3.2 tiles...
+    // Forging Moon Shards unleashes a defensive Sanctuary shockwave within 3.8 tiles!
     for (const z of S.zombies) {
-      if (Math.hypot(z.x - S.sanctuaryWorld.x, z.z - S.sanctuaryWorld.z) <= 3.2) {
-        z.hp -= 75;
+      if (Math.hypot(z.x - S.sanctuaryWorld.x, z.z - S.sanctuaryWorld.z) <= 3.8) {
+        z.hp -= 90;
         z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
       }
     }
-    // ...AND provokes Nightmare CatNap's portals to spawn a retaliation runner!
-    S.spawnQueue.push('runner');
-    showBubble('☀️🪵🪨💎 ➔ +6 🌕 ⚡🧟', 1.4);
+    showBubble('☀️🪵🪨💎 ➔ +6 🌕 ✨', 1.4);
     updateTopHUD();
     return true;
   }
 
-  // Mode 2: Surplus-Resource Emergency Converter! Requires 45 of a single resource -> +4 🌕 (less efficient than 4-resource forging!)
+  // Mode 2: Surplus-Resource Converter! Spend 35 of any single resource -> +4 🌕
   const entries = [
     ['crystal', '💎'],
     ['stone', '🪨'],
@@ -940,18 +935,17 @@ export function forgeMoonAtSanctuary() {
   ].sort((a, b) => (S.res[b[0]] || 0) - (S.res[a[0]] || 0));
 
   const [bestKey, bestIcon] = entries[0];
-  if ((S.res[bestKey] || 0) >= 45) {
-    S.res[bestKey] -= 45;
+  if ((S.res[bestKey] || 0) >= 35) {
+    S.res[bestKey] -= 35;
     addMoonShards(4);
     sound.shard();
     spawnBurst(S.sanctuaryWorld.x, 1.6, S.sanctuaryWorld.z, 0xffd43b, 8);
-    S.spawnQueue.push('runner');
-    showBubble(`${bestIcon}45 ➔ +4 🌕 ⚡🧟`, 1.4);
+    showBubble(`${bestIcon}35 ➔ +4 🌕 ✨`, 1.4);
     updateTopHUD();
     return true;
   }
 
-  showBubble('☀️25 🪵12 🪨12 💎6 ❌', 1.4);
+  showBubble('☀️20 🪵10 🪨10 💎5 ❌', 1.4);
   return false;
 }
 
@@ -1080,10 +1074,20 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
   mesh.position.set(wpos.x, yBase, wpos.z);
   unitGroup.add(mesh);
 
-  // Strict Resource Vein check: must be placed directly ON the matching Resource Vein tile (or Water for Bubba)!
-  const nearVein =
+  // Resource Vein check: +75% bonus when placed on OR adjacent (<= 1.5 tiles) to matching Resource Vein (or Water for Bubba)!
+  let nearVein =
     tile.baseType === def.veinBonusNode ||
     (def.id === 'bubba' && tile.baseType === 'water');
+  if (!nearVein && def.veinBonusNode) {
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dz = -1; dz <= 1; dz++) {
+        const nt = tiles[gx + dx]?.[gz + dz];
+        if (nt && (nt.baseType === def.veinBonusNode || (def.id === 'bubba' && nt.baseType === 'water'))) {
+          nearVein = true;
+        }
+      }
+    }
+  }
 
   const unitObj = {
     id: def.id,
@@ -1139,7 +1143,7 @@ function removeUnit(u) {
 }
 
 // ============================================================================
-// ZOMBIE SPAWNING ON WINDING COBBLESTONE ROADS & ESCALATING WAVE PRESSURE
+// ZOMBIE SPAWNING ON WINDING COBBLESTONE ROADS & PROGRESSIVE PVZ-STYLE WAVES
 // ============================================================================
 export function spawnZombie(typeId, customPos = null) {
   const def = ZOMBIE_TYPES[typeId] || ZOMBIE_TYPES.walker;
@@ -1164,8 +1168,9 @@ export function spawnZombie(typeId, customPos = null) {
   mesh.position.set(wpos.x, yPos, wpos.z);
   zombieGroup.add(mesh);
 
-  // +22% HP per wave and +16% per stage so waves genuinely require upgrades & Tier-2/3 tech!
-  const hpScale = 1 + (S.wave - 1) * 0.22 + S.stageIndex * 0.16;
+  // Gentle +10% HP per wave and +10% per stage so waves escalate smoothly!
+  const waveIdx = Math.max(1, S.wave);
+  const hpScale = 1 + (waveIdx - 1) * 0.10 + S.stageIndex * 0.10;
   const maxHp = Math.round(def.hp * hpScale);
 
   const zObj = {
@@ -1181,10 +1186,10 @@ export function spawnZombie(typeId, customPos = null) {
     hp: maxHp,
     maxHp,
     armor: def.armor || 0,
-    speed: def.speed * (1 + Math.min(0.25, (S.wave - 1) * 0.03)),
+    speed: def.speed * (1 + Math.min(0.12, (waveIdx - 1) * 0.015)),
     atkTimer: 0,
     rangedTimer: 0.9,
-    specialTimer: 4.5,
+    specialTimer: 5.5,
     slowTimer: 0,
     markTimer: 0,
     walkPhase: Math.random() * 6.28
@@ -1194,32 +1199,54 @@ export function spawnZombie(typeId, customPos = null) {
 }
 
 function triggerNextWave() {
+  // Increment wave FIRST so S.wave (1, 2, 3...) is the exact current wave on the field!
+  S.wave++;
+  const w = S.wave;
+
   const bal = computeBalanceState({
     placedUnits: S.units,
     zombies: S.zombies,
     stageIndex: S.stageIndex,
     moonShards: S.moonShards,
-    wave: S.wave
+    wave: w
   });
-  const pool = S.stageCfg?.zombiePool || ['walker', 'runner', 'digger', 'bucket', 'creeper'];
-  const count = Math.min(14, 4 + Math.floor(S.wave * 1.5) + S.stageIndex * 2);
+  const stagePool = S.stageCfg?.zombiePool || ['walker', 'runner', 'digger', 'bucket', 'creeper'];
+
+  // PvZ-Style Progressive Wave Gating:
+  // Wave 1: ONLY slow walkers (3 zombies) so player can build economy & first towers calmly!
+  // Wave 2: Walkers + 1 Runner (4 zombies)
+  // Wave 3: Walkers + Runners + 1 Digger (5 zombies)
+  // Wave 4: Walkers + Runners + Digger + 1 Buckethead (6 zombies)
+  // Wave 5+: Full stage pool (6-8 zombies)
+  let count = Math.min(9, 2 + w + Math.floor(S.stageIndex * 0.8));
+  if (w === 1) count = 3;
+  else if (w === 2) count = 4;
 
   for (let i = 0; i < count; i++) {
-    let zType = pool[(S.wave + i) % pool.length];
-    if (S.wave >= 2 && i === Math.floor(count / 2) && pool.includes('bucket')) {
-      zType = 'bucket';
-    }
-    if (S.wave >= 2 && i === count - 2 && pool.includes('creeper')) {
-      zType = 'creeper';
-    }
-    if (S.wave >= 3 && i === count - 1) {
-      zType = pool.includes('nightmare_boss') ? 'nightmare_boss' : (pool.includes('balloon') ? 'balloon' : 'bucket');
+    let zType = 'walker';
+    if (w === 1) {
+      zType = 'walker';
+    } else if (w === 2) {
+      zType = i === count - 1 ? 'runner' : 'walker';
+    } else if (w === 3) {
+      if (i === count - 1 && stagePool.includes('digger')) zType = 'digger';
+      else if (i % 2 === 1) zType = 'runner';
+      else zType = 'walker';
+    } else if (w === 4) {
+      if (i === count - 1 && stagePool.includes('bucket')) zType = 'bucket';
+      else if (i === count - 2 && stagePool.includes('digger')) zType = 'digger';
+      else if (i % 2 === 1) zType = 'runner';
+      else zType = 'walker';
+    } else {
+      zType = stagePool[(w + i) % stagePool.length];
+      if (i === count - 1 && w >= 5 && stagePool.includes('nightmare_boss')) {
+        zType = 'nightmare_boss';
+      }
     }
     S.spawnQueue.push(zType);
   }
-  showBubble(`🧟⛩️ ${S.wave} ➔ 🌕✨`, 1.3);
-  S.wave++;
-  S.waveTimer = 14.5 * (bal.spawnIntervalMult || 1.0);
+  showBubble(`🧟⛩️ ${w} ➔ 🌕✨`, 1.3);
+  S.waveTimer = 18.0 * (bal.spawnIntervalMult || 1.0);
 }
 
 // ============================================================================
@@ -1285,13 +1312,15 @@ function triggerDefeat() {
 }
 
 // ============================================================================
-// MAIN SIMULATION LOOP (TACTICAL ROLES, COUNTER-PLAY & ACTIVE MOON FORGING)
+// MAIN SIMULATION LOOP (PVZ-STYLE WAVE PACING, AUTO-ORBS & GUARDIAN BEAM)
 // ============================================================================
 function updateGameplay(dt) {
   if (S.paused || S.phase !== 'playing') return;
 
-  // Low passive solar trickle (+0.22/s) — player MUST build SunnyFox on Sun Shrines!
-  S.res.sun += 0.22 * dt;
+  // Steady passive resource trickle so the player never gets resource-deadlocked!
+  S.res.sun += 1.4 * dt;
+  S.res.wood += 0.45 * dt;
+  S.res.stone += 0.45 * dt;
 
   // Animate road markers pulsing toward the 3D Moon Sanctuary
   const nowSec = performance.now() * 0.004;
@@ -1301,7 +1330,7 @@ function updateGameplay(dt) {
     rm.mesh.scale.set(pulse, 1, pulse);
   }
 
-  // Rotate the 3D Moon Sanctuary's star ring (NO free auto-turret — player must defend the Sanctuary!)
+  // Rotate the 3D Moon Sanctuary's star ring + Last-Ditch Guardian Beam at the Castle Steps!
   const sancX = S.sanctuaryWorld.x;
   const sancZ = S.sanctuaryWorld.z;
   if (S.sanctuaryMesh) {
@@ -1316,19 +1345,60 @@ function updateGameplay(dt) {
     }
   }
 
-  // Relentless wave pacing: advance early if wave is cleared (after 2.2s breather)
-  if (S.zombies.length === 0 && S.spawnQueue.length === 0) {
-    S.waveTimer = Math.min(S.waveTimer, 2.2);
+  // Sanctuary Guardian Beam: zaps leaked zombies right at the Castle steps (within 2.8 tiles every 2.8s)
+  S.sanctuaryFireTimer = (S.sanctuaryFireTimer || 0) + dt;
+  if (S.sanctuaryFireTimer >= 2.8 && S.zombies.length > 0) {
+    let closeZ = null;
+    let bestD = 2.8;
+    for (const z of S.zombies) {
+      const d = Math.hypot(z.x - sancX, z.z - sancZ);
+      if (d <= bestD) {
+        bestD = d;
+        closeZ = z;
+      }
+    }
+    if (closeZ) {
+      S.sanctuaryFireTimer = 0;
+      const beamMesh = vox(0.20, 0.20, 0.20, 0xffe066, sancX, 1.35, sancZ, {
+        emissive: 0xffd43b,
+        emissiveIntensity: 0.95
+      });
+      projGroup.add(beamMesh);
+      S.projectiles.push({
+        mesh: beamMesh,
+        x: sancX,
+        y: 1.35,
+        z: sancZ,
+        target: closeZ,
+        dmg: 26,
+        splash: 0,
+        meltsArmor: false,
+        marksTarget: false,
+        chainCount: 0,
+        knockback: 0.15,
+        flyerBonus: 1.0,
+        color: 0xffe066
+      });
+    }
   }
-  S.waveTimer -= dt;
-  if (S.waveTimer <= 0) triggerNextWave();
 
-  const maxActiveZombies = 14 + S.stageIndex * 2;
+  // Wave Pacing: NEVER stack a new wave while spawnQueue has zombies or >1 zombie is still on the field!
+  if (S.spawnQueue.length === 0) {
+    if (S.zombies.length === 0) {
+      S.waveTimer = Math.min(S.waveTimer, 4.0);
+      S.waveTimer -= dt;
+    } else if (S.zombies.length <= 1) {
+      S.waveTimer -= dt * 0.25;
+    }
+    if (S.waveTimer <= 0) triggerNextWave();
+  }
+
+  const maxActiveZombies = 10 + S.stageIndex * 2;
   if (S.spawnQueue.length > 0 && S.zombies.length < maxActiveZombies) {
     S.spawnCooldown -= dt;
     if (S.spawnCooldown <= 0) {
       spawnZombie(S.spawnQueue.shift());
-      S.spawnCooldown = 0.92;
+      S.spawnCooldown = 1.65;
     }
   }
 
@@ -1725,27 +1795,14 @@ function updateGameplay(dt) {
     }
   }
 
-  // Update Collectible Orbs: auto-harvest if near a Gatherer, or expire after 6.5s if ignored!
+  // Update Collectible Orbs: auto-collect after 1.4s so players never lose drops!
   for (let i = S.orbs.length - 1; i >= 0; i--) {
     const o = S.orbs[i];
     o.age += dt;
     o.mesh.rotation.y += dt * 3.2;
     o.mesh.position.y = 0.68 + Math.sin(o.age * 5) * 0.14;
-    let nearGatherer = false;
-    for (const u of S.units) {
-      if (u.def.role === 'produce') {
-        const uw = gridToWorld(u.gx, u.gz);
-        if (Math.hypot(uw.x - o.x, uw.z - o.z) <= 2.4) {
-          nearGatherer = true;
-          break;
-        }
-      }
-    }
-    if (nearGatherer && o.age >= 1.2) {
+    if (o.age >= 1.4) {
       collectOrb(o);
-    } else if (o.age >= 6.5) {
-      fxGroup.remove(o.mesh);
-      S.orbs.splice(i, 1);
     }
   }
 
