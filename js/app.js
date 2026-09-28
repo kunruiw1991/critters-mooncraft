@@ -263,13 +263,17 @@ const S = {
   zoomOut: false,
   camMode: 0,
   camYaw: 0,
+  camPitch: 0,
+  camZoom: 1.0,
+  camPanX: 0,
+  camPanZ: 0,
   stageIndex: 0,
   clearedStages: new Set(),
-  cols: 14,
-  rows: 8,
+  cols: 18,
+  rows: 12,
   stageCfg: null,
-  sanctuaryGx: 1,
-  sanctuaryGz: 3.5,
+  sanctuaryGx: 2.5,
+  sanctuaryGz: 5.5,
   sanctuaryWorld: { x: 0, z: 0 },
   sanctuaryMesh: null,
   sanctuaryShake: 0,
@@ -281,7 +285,7 @@ const S = {
   moonShards: 0,
   moonGoal: 30,
   wave: 0,
-  waveTimer: 14.0,
+  waveTimer: 18.0,
   spawnQueue: [],
   spawnCooldown: 0,
   selectedTool: 'sunnyfox',
@@ -321,9 +325,14 @@ export function buildStageWorld(stageIdx) {
   S.sanctuaryWorld = gridToWorld(cfg.altarGx, cfg.altarGz);
   S.hp = S.maxHp;
   S.wave = 0;
-  S.waveTimer = 14.0;
+  S.waveTimer = 18.0; // Generous 18s opening prep before Wave 1!
   S.spawnCooldown = 0;
   S.forgeCount = 0;
+  S.camPanX = 0;
+  S.camPanZ = 0;
+  S.camYaw = 0;
+  S.camPitch = 0;
+  S.camZoom = 1.0;
   document.getElementById('victoryModal')?.classList.add('hidden');
 
   clearGroup(tileGroup);
@@ -357,6 +366,9 @@ export function buildStageWorld(stageIdx) {
   for (let rx = -Math.floor(S.cols / 3); rx <= Math.floor(S.cols / 3); rx += 2) {
     islandPedestal.add(vox(0.45, 0.28, 0.22, 0xb5a2e8, rx * 1.3, -0.62, islD * 0.5 - 0.12));
   }
+  islandPedestal.traverse(child => {
+    child.raycast = () => {};
+  });
   tileGroup.add(islandPedestal);
 
   for (let gx = 0; gx < S.cols; gx++) {
@@ -392,6 +404,7 @@ export function buildStageWorld(stageIdx) {
       tGroup.position.set(wpos.x, 0, wpos.z);
 
       const dirt = vox(0.99, 0.28, 0.99, 0xd48c5c, 0, -0.14, 0);
+      dirt.raycast = () => {};
       tGroup.add(dirt);
 
       // Warm Sage-Pistachio Meadow Greens & Pastel-Lilac Cobblestones (Pinterest Palette!)
@@ -439,6 +452,7 @@ export function buildStageWorld(stageIdx) {
       // Soft Molded Toy Bevel Cap on every tile
       if (type !== 'water') {
         const cap = vox(0.88, 0.035, 0.88, bevelColor, 0, height + 0.017, 0, topOpts);
+        cap.raycast = () => {};
         tGroup.add(cap);
       }
 
@@ -447,6 +461,8 @@ export function buildStageWorld(stageIdx) {
         const tuft = vox(0.08, 0.11, 0.08, 0x74c69d, -0.26, height + 0.07, -0.24);
         const flCol = (gx + gz) % 3 === 0 ? 0xff8787 : ((gx + gz) % 3 === 1 ? 0xffe066 : 0xe599f7);
         const blossom = vox(0.09, 0.07, 0.09, flCol, 0.26, height + 0.06, 0.24, { emissive: flCol, emissiveIntensity: 0.25 });
+        tuft.raycast = () => {};
+        blossom.raycast = () => {};
         tGroup.add(tuft, blossom);
       }
 
@@ -456,6 +472,7 @@ export function buildStageWorld(stageIdx) {
           emissive: 0xffd43b,
           emissiveIntensity: 0.7
         });
+        marker.raycast = () => {};
         tGroup.add(marker);
         S.roadMarkers.push({ mesh: marker, gx, gz });
       }
@@ -464,6 +481,9 @@ export function buildStageWorld(stageIdx) {
       if (type === 'sun' || type === 'wood' || type === 'stone' || type === 'crystal') {
         nodeMesh = buildResourceNodeMesh(type);
         nodeMesh.position.y = height + 0.02;
+        nodeMesh.traverse(child => {
+          child.raycast = () => {};
+        });
         tGroup.add(nodeMesh);
       }
 
@@ -485,9 +505,10 @@ export function buildStageWorld(stageIdx) {
     }
   }
 
-  // Place the Giant 3D Moon Sanctuary Castle & Rebuild Cradle at (altarGx, altarGz)!
-  // Disable raycast interception on the Castle mesh so adjacent tiles have ZERO click dead angles!
+  // Place the 3D Moon Sanctuary Castle & Rebuild Cradle at (altarGx, altarGz)!
+  // Compact 0.84x scale + disabled raycast so adjacent tiles have ZERO visual or click dead angles!
   const sanctuaryMesh = buildMoonSanctuaryMesh();
+  sanctuaryMesh.scale.setScalar(0.84);
   sanctuaryMesh.position.set(S.sanctuaryWorld.x, 0.36, S.sanctuaryWorld.z);
   sanctuaryMesh.traverse(child => {
     child.raycast = () => {};
@@ -496,7 +517,7 @@ export function buildStageWorld(stageIdx) {
   tileGroup.add(sanctuaryMesh);
   S.sanctuaryMesh = sanctuaryMesh;
 
-  // Spawn 3D Portal Arches at the start of every winding route
+  // Spawn 3D Portal Arches at the start of every winding route (raycast disabled so they never block tile clicks!)
   const seenPortals = new Set();
   for (const route of (cfg.routes || [])) {
     const [pgx, pgz] = route[0];
@@ -512,10 +533,13 @@ export function buildStageWorld(stageIdx) {
     portal.add(vox(0.24, 1.35, 0.24, 0x5f3dc4, 0, 0.68, 0.42));
     portal.add(vox(0.30, 0.26, 1.14, 0x7950f2, 0, 1.38, 0, { emissive: 0x9775fa, emissiveIntensity: 0.6 }));
     portal.add(vox(0.08, 1.12, 0.66, 0xda77f2, 0, 0.65, 0, { emissive: 0xf72585, emissiveIntensity: 0.9, opacity: 0.78 }));
+    portal.traverse(child => {
+      child.raycast = () => {};
+    });
     tileGroup.add(portal);
   }
 
-  // Place Stage Starter Critters (only 1 basic SunnyFox gatherer — player must build their own defense!)
+  // Place Stage Starter Critters (SunnyFox + PoppyDash Skunk)
   for (const st of (cfg.starterUnits || [])) {
     placeUnitOnTile(st.gx, st.gz, st.id, true);
   }
@@ -527,26 +551,32 @@ export function buildStageWorld(stageIdx) {
 
 function updateCameraFraming() {
   if (S.phase === 'cutscene') return;
-  const scaleFactor = Math.max(1, S.cols / 14.5);
-  let camY = 12.2 * scaleFactor;
-  let camDist = 11.8 * scaleFactor;
+  const baseScale = Math.max(1.05, Math.max(S.cols / 15.2, S.rows / 9.2));
+  const zoomMult = Math.max(0.55, Math.min(1.45, S.camZoom || 1.0));
+  const scaleFactor = baseScale * zoomMult;
+
+  let camY = (13.4 + (S.camPitch || 0) * 4.5) * scaleFactor;
+  let camDist = (11.8 - (S.camPitch || 0) * 3.0) * scaleFactor;
   if (S.camMode === 1 || S.zoomOut) {
     // High Tactical Overview (zero perspective occlusion)
-    camY = 15.8 * scaleFactor;
-    camDist = 9.2 * scaleFactor;
+    camY = 17.0 * scaleFactor;
+    camDist = 8.4 * scaleFactor;
   } else if (S.camMode === 2) {
     // Angled Isometric Diorama View
-    camY = 11.6 * scaleFactor;
+    camY = 12.6 * scaleFactor;
     camDist = 12.4 * scaleFactor;
   }
-  const yaw = S.camYaw + (S.camMode === 2 ? 0.26 : 0);
+  const yaw = (S.camYaw || 0) + (S.camMode === 2 ? 0.28 : 0);
+  const panX = S.camPanX || 0;
+  const panZ = S.camPanZ || 0;
+
   camera.position.set(
-    Math.sin(yaw) * camDist,
+    panX + Math.sin(yaw) * camDist,
     camY,
-    Math.cos(yaw) * camDist
+    panZ + Math.cos(yaw) * camDist
   );
-  // Look slightly below board center so the entire island sits well above #bottomDock!
-  camera.lookAt(0, -1.05, 0.85);
+  // Look at panned target so the entire island (including North portals at z=0) sits cleanly between #topBar and #bottomDock!
+  camera.lookAt(panX, -0.85, panZ + 0.45);
 }
 
 // ============================================================================
@@ -601,8 +631,12 @@ function getEffectiveUnitCost(def) {
   const existingCount = S.units.filter(u => u.id === def.id).length;
   const cost = computeDynamicResourceCosts(def, existingCount);
   // Anti-softlock safeguard: if the player has 0 SunnyFox or 0 PoppyDash (Skunk) on the board,
-  // cap its Sun cost at current Sun so the player can NEVER get resource-deadlocked!
-  if (existingCount === 0 && (def.id === 'sunnyfox' || def.id === 'poppydash')) {
+  // cap its resource cost at current bank so the player can NEVER get resource-deadlocked!
+  if (existingCount === 0 && def.id === 'sunnyfox') {
+    if ((S.res.wood || 0) < cost.wood) {
+      cost.wood = Math.max(0, Math.floor(S.res.wood || 0));
+    }
+  } else if (existingCount === 0 && def.id === 'poppydash') {
     if ((S.res.sun || 0) < cost.sun) {
       cost.sun = Math.max(0, Math.floor(S.res.sun || 0));
     }
@@ -975,12 +1009,38 @@ export function forgeMoonAtSanctuary() {
 
 export function placeUnitOnTile(gx, gz, toolId, free = false) {
   if (gx < 0 || gx >= S.cols || gz < 0 || gz >= S.rows) return false;
-  const tile = tiles[gx][gz];
+  let tile = tiles[gx][gz];
   const def = CRITTER_UNITS.find(u => u.id === toolId);
   if (!def) return false;
 
-  // Clicking on the 3D Moon Sanctuary tiles triggers the Moon Forge!
-  if (tile.type === 'sanctuary' && !free) {
+  // If the player clicks on a Sanctuary or Portal tile while holding a buildable Critter,
+  // automatically snap to the nearest empty buildable tile within 2.2 tiles so there are ZERO placement dead angles!
+  const isBuildableCritter = def.role === 'produce' || def.role === 'defend' || def.role === 'attack';
+  if (!free && isBuildableCritter && (tile.type === 'sanctuary' || tile.type === 'corrupted')) {
+    let bestTile = null;
+    let bestDist = 2.25;
+    for (let tx = 0; tx < S.cols; tx++) {
+      for (let tz = 0; tz < S.rows; tz++) {
+        const cand = tiles[tx]?.[tz];
+        if (!cand) continue;
+        if (cand.type === 'sanctuary' || cand.type === 'corrupted') continue;
+        if (cand.type === 'water' && !cand.hasBridge && !def.amphibious) continue;
+        if (cand.unit && !(cand.unit.def.stackable && !cand.stackedUnit && def.id !== 'mikey')) continue;
+        const d = Math.hypot(tx - gx, tz - gz);
+        if (d < bestDist) {
+          bestDist = d;
+          bestTile = cand;
+        }
+      }
+    }
+    if (bestTile) {
+      gx = bestTile.gx;
+      gz = bestTile.gz;
+      tile = bestTile;
+    } else if (tile.type === 'sanctuary') {
+      return forgeMoonAtSanctuary();
+    }
+  } else if (tile.type === 'sanctuary' && !free) {
     return forgeMoonAtSanctuary();
   }
 
@@ -1003,11 +1063,11 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
     return true;
   }
 
-  // 2. Explicit Upgrade Tool (`upgrade_star`) — also snaps to nearest upgradable Critter within 1.25 tiles if clicked slightly off-center!
+  // 2. Explicit Upgrade Tool (`upgrade_star`) — also snaps to nearest upgradable Critter within 1.45 tiles if clicked slightly off-center!
   if (def.role === 'upgrade') {
     let target = tile.stackedUnit || tile.unit;
     if (!target || target.isTrap) {
-      let bestDist = 1.35;
+      let bestDist = 1.45;
       for (const u of S.units) {
         if (u.isTrap) continue;
         const d = Math.hypot(u.gx - gx, u.gz - gz);
@@ -1418,13 +1478,17 @@ function updateGameplay(dt) {
     }
   }
 
-  // Wave Pacing: NEVER stack a new wave while spawnQueue has zombies or >1 zombie is still on the field!
+  // Wave Pacing:
+  // - Before Wave 1 (S.wave === 0): preserve the full 18.0s opening preparation time!
+  // - After Wave 1+ is cleared: give a comfortable 7.5s breathing room before the next wave!
   if (S.spawnQueue.length === 0) {
     if (S.zombies.length === 0) {
-      S.waveTimer = Math.min(S.waveTimer, 4.0);
+      if (S.wave > 0) {
+        S.waveTimer = Math.min(S.waveTimer, 7.5);
+      }
       S.waveTimer -= dt;
     } else if (S.zombies.length <= 1) {
-      S.waveTimer -= dt * 0.25;
+      S.waveTimer -= dt * 0.22;
     }
     if (S.waveTimer <= 0) triggerNextWave();
   }
@@ -1920,23 +1984,39 @@ function applyProjectileHit(p, target) {
 }
 
 // ============================================================================
-// POINTER, CAMERA ORBIT & BUTTON INTERACTIONS (ZERO DEAD ANGLES!)
+// POINTER, DRAG-TO-PAN CAMERA, ORBIT ROTATION, WHEEL ZOOM & TAP-TO-BUILD
 // ============================================================================
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let isOrbitDragging = false;
+let isPanDragging = false;
+let isLeftPointerDown = false;
+let didDragCamera = false;
+let pointerDownX = 0;
+let pointerDownY = 0;
+let panStartX = 0;
+let panStartZ = 0;
 let orbitLastX = 0;
+let orbitLastY = 0;
 
 function updatePointerRay(e) {
   const rect = canvas.getBoundingClientRect();
-  const cx = e.touches ? e.touches[0].clientX : e.clientX;
-  const cy = e.touches ? e.touches[0].clientY : e.clientY;
+  const touch = e.touches?.[0] || e.changedTouches?.[0];
+  const cx = touch ? touch.clientX : e.clientX;
+  const cy = touch ? touch.clientY : e.clientY;
   mouse.x = ((cx - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((cy - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
 }
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+function clampCameraPan() {
+  const maxPanX = Math.max(4, S.cols * 0.45);
+  const maxPanZ = Math.max(3, S.rows * 0.45);
+  S.camPanX = Math.max(-maxPanX, Math.min(maxPanX, S.camPanX || 0));
+  S.camPanZ = Math.max(-maxPanZ, Math.min(maxPanZ, S.camPanZ || 0));
+}
 
 function pickBoardCoords() {
   // When using Upgrade or Shovel (or clicking directly on a placed Critter's 3D head/body),
@@ -1962,15 +2042,64 @@ function pickBoardCoords() {
   return null;
 }
 
+canvas.addEventListener('pointerdown', e => {
+  if (S.phase === 'cutscene') return;
+  if (e.button === 2 || e.button === 1 || (e.button === 0 && e.shiftKey)) {
+    isOrbitDragging = true;
+    orbitLastX = e.clientX;
+    orbitLastY = e.clientY;
+    canvas.style.cursor = 'grabbing';
+    return;
+  }
+  if (e.button === 0) {
+    isLeftPointerDown = true;
+    isPanDragging = false;
+    didDragCamera = false;
+    pointerDownX = e.clientX;
+    pointerDownY = e.clientY;
+    panStartX = S.camPanX || 0;
+    panStartZ = S.camPanZ || 0;
+  }
+});
+
 canvas.addEventListener('pointermove', e => {
   if (S.phase !== 'playing') return;
   if (isOrbitDragging) {
     const dx = e.clientX - orbitLastX;
+    const dy = e.clientY - orbitLastY;
     orbitLastX = e.clientX;
-    S.camYaw = Math.max(-0.65, Math.min(0.65, S.camYaw - dx * 0.005));
+    orbitLastY = e.clientY;
+    S.camYaw = Math.max(-1.25, Math.min(1.25, (S.camYaw || 0) - dx * 0.006));
+    S.camPitch = Math.max(-0.35, Math.min(0.45, (S.camPitch || 0) + dy * 0.004));
     updateCameraFraming();
     return;
   }
+
+  if (isLeftPointerDown) {
+    const dx = e.clientX - pointerDownX;
+    const dy = e.clientY - pointerDownY;
+    if (!isPanDragging && Math.hypot(dx, dy) > 6) {
+      isPanDragging = true;
+      didDragCamera = true;
+      canvas.style.cursor = 'grabbing';
+      cursorMesh.visible = false;
+    }
+    if (isPanDragging) {
+      // Convert screen drag (dx, dy) into world-plane pan aligned with current camera yaw & zoom!
+      const panSpeed = 0.024 * Math.max(0.7, S.camZoom || 1.0);
+      const yaw = (S.camYaw || 0) + (S.camMode === 2 ? 0.28 : 0);
+      const cosY = Math.cos(yaw);
+      const sinY = Math.sin(yaw);
+      const localRightX = -dx * panSpeed;
+      const localForwardZ = -dy * panSpeed * 1.15;
+      S.camPanX = panStartX + localRightX * cosY + localForwardZ * sinY;
+      S.camPanZ = panStartZ - localRightX * sinY + localForwardZ * cosY;
+      clampCameraPan();
+      updateCameraFraming();
+      return;
+    }
+  }
+
   updatePointerRay(e);
   const picked = pickBoardCoords();
   if (picked) {
@@ -1986,28 +2115,26 @@ canvas.addEventListener('pointermove', e => {
   }
 });
 
-window.addEventListener('pointerup', () => {
-  isOrbitDragging = false;
-});
-
-window.addEventListener('keydown', e => {
-  if (S.phase !== 'playing') return;
-  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
-    S.camYaw = Math.max(-0.65, S.camYaw - 0.12);
-    updateCameraFraming();
-  } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
-    S.camYaw = Math.min(0.65, S.camYaw + 0.12);
-    updateCameraFraming();
-  }
-});
-
-canvas.addEventListener('pointerdown', e => {
-  if (S.phase === 'cutscene') return;
-  if (e.button === 2) {
-    isOrbitDragging = true;
-    orbitLastX = e.clientX;
+window.addEventListener('pointerup', e => {
+  if (isOrbitDragging) {
+    isOrbitDragging = false;
+    canvas.style.cursor = '';
     return;
   }
+  if (!isLeftPointerDown) return;
+  isLeftPointerDown = false;
+  isPanDragging = false;
+  canvas.style.cursor = '';
+
+  if (S.phase === 'cutscene') return;
+
+  // If the user dragged the camera (> 6px), finish the pan without placing a unit!
+  if (didDragCamera) {
+    didDragCamera = false;
+    return;
+  }
+
+  // Otherwise, treat it as a clean tap/click to collect an orb or place/upgrade a Critter!
   updatePointerRay(e);
 
   for (const o of S.orbs) {
@@ -2020,6 +2147,52 @@ canvas.addEventListener('pointerdown', e => {
   const picked = pickBoardCoords();
   if (picked) {
     placeUnitOnTile(picked.gx, picked.gz, S.selectedTool, false);
+  }
+});
+
+// Mouse Wheel & Trackpad Pinch/Scroll to Zoom & Pan Smoothly
+canvas.addEventListener(
+  'wheel',
+  e => {
+    if (S.phase !== 'playing') return;
+    e.preventDefault();
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.2 && !e.ctrlKey) {
+      S.camPanX = (S.camPanX || 0) + e.deltaX * 0.015;
+      clampCameraPan();
+    } else {
+      const zoomDelta = e.deltaY * 0.0012;
+      S.camZoom = Math.max(0.55, Math.min(1.45, (S.camZoom || 1.0) + zoomDelta));
+    }
+    updateCameraFraming();
+  },
+  { passive: false }
+);
+
+window.addEventListener('keydown', e => {
+  if (S.phase !== 'playing') return;
+  const step = 1.1;
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+    S.camPanX = (S.camPanX || 0) - step;
+    clampCameraPan();
+    updateCameraFraming();
+  } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+    S.camPanX = (S.camPanX || 0) + step;
+    clampCameraPan();
+    updateCameraFraming();
+  } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+    S.camPanZ = (S.camPanZ || 0) - step;
+    clampCameraPan();
+    updateCameraFraming();
+  } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+    S.camPanZ = (S.camPanZ || 0) + step;
+    clampCameraPan();
+    updateCameraFraming();
+  } else if (e.key === 'q' || e.key === 'Q') {
+    S.camYaw = Math.max(-1.25, (S.camYaw || 0) - 0.14);
+    updateCameraFraming();
+  } else if (e.key === 'e' || e.key === 'E') {
+    S.camYaw = Math.min(1.25, (S.camYaw || 0) + 0.14);
+    updateCameraFraming();
   }
 });
 
@@ -2045,6 +2218,10 @@ document.getElementById('camZoomBtn').addEventListener('click', e => {
   S.camMode = (S.camMode + 1) % 3;
   S.zoomOut = S.camMode === 1;
   S.camYaw = 0;
+  S.camPitch = 0;
+  S.camPanX = 0;
+  S.camPanZ = 0;
+  S.camZoom = 1.0;
   e.currentTarget.classList.toggle('active', S.camMode > 0);
   updateCameraFraming();
 });

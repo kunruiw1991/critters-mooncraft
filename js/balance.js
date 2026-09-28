@@ -8,9 +8,9 @@
 // ============================================================================
 
 export const INITIAL_RESOURCES = {
-  sun: 60,
-  wood: 20,
-  stone: 20,
+  sun: 75,
+  wood: 45,
+  stone: 35,
   crystal: 0
 };
 
@@ -28,9 +28,12 @@ export const MOON_FORGE_RECIPE = {
 };
 
 // ==================== 10 CRITTERS IN 3-TIER TACTICAL HIERARCHY ====================
+// Orthogonal Resource Roles:
+// - Sun-based units: SunnyFox (☀️30), PoppyDash (☀️30), Bubba (☀️35 🪵25 🧱25), DogDay (☀️50 🧱55 💎12), Kickin (☀️45 🪵45 💎12)
+// - SUN-FREE units (☀️0! Spend Wood & Brick directly without needing Sun!):
+//   Picky (🪵30), Bobby (🪵25 🧱30), Mikey (🪵35 🧱25), LunaBat (🪵40 🧱15), CraftyCorn (🪵55 🧱45 💎14), Upgrade (🪵30 🧱35)
 export const UNITS = [
   // -------------------- TIER 1: GATHERERS & SUPPORT --------------------
-  // Gatherers produce full yield ONLY when placed on/adjacent to a matching Resource Vein (35% yield off-vein).
   {
     id: 'sunnyfox',
     tier: 1,
@@ -40,15 +43,16 @@ export const UNITS = [
     fxIcon: '☀️',
     color: '#f59f00',
     accent: '#fff3bf',
-    cost: { sun: 35, wood: 0, stone: 0, crystal: 0 },
-    hp: 210,
-    prod: { sun: 4, wood: 0, stone: 0, crystal: 0 },
-    prodInterval: 5.5,
+    // SUN-FREE! Costs Wood (🪵25) to build a Sun Shrine Fox so you can always expand Sun production using Wood!
+    cost: { sun: 0, wood: 25, stone: 0, crystal: 0 },
+    hp: 220,
+    prod: { sun: 5, wood: 0, stone: 0, crystal: 0 },
+    prodInterval: 5.2,
     veinBonusNode: 'sun',
-    veinMult: 2.5, // +10 ☀️ every 5.5s on Sun Shrine Vein (only +4 off-vein!)
-    atk: 8,
-    fireInterval: 1.8,
-    range: 2.1,
+    veinMult: 2.4, // +12 ☀️ every 5.2s on Sun Shrine Vein
+    atk: 9,
+    fireInterval: 1.7,
+    range: 2.3,
     antiAir: false,
     lightRadius: 3.5
   },
@@ -61,17 +65,18 @@ export const UNITS = [
     fxIcon: '🪵',
     color: '#495057',
     accent: '#74c0fc',
-    cost: { sun: 35, wood: 0, stone: 0, crystal: 0 },
-    hp: 220,
-    prod: { sun: 0, wood: 3, stone: 0, crystal: 0 },
-    prodInterval: 5.5,
+    // Costs Sun (☀️25) to build a Wood Gatherer Skunk!
+    cost: { sun: 25, wood: 0, stone: 0, crystal: 0 },
+    hp: 230,
+    prod: { sun: 0, wood: 4, stone: 0, crystal: 0 },
+    prodInterval: 5.2,
     veinBonusNode: 'wood',
-    veinMult: 2.7, // +8 🪵 every 5.5s on Forest Vein (only +3 off-vein!)
-    hasteRadius: 2.6,
+    veinMult: 2.5, // +10 🪵 every 5.2s on Forest Vein
+    hasteRadius: 2.8,
     hasteMult: 1.25,
-    atk: 8,
-    fireInterval: 1.8,
-    range: 2.1,
+    atk: 9,
+    fireInterval: 1.7,
+    range: 2.3,
     antiAir: false,
     knockback: 0.12
   },
@@ -84,18 +89,19 @@ export const UNITS = [
     fxIcon: '🧱',
     color: '#f783ac',
     accent: '#ffdeeb',
-    cost: { sun: 35, wood: 25, stone: 0, crystal: 0 },
-    hp: 250,
-    prod: { sun: 0, wood: 0, stone: 3, crystal: 0 },
-    prodInterval: 5.5,
+    // SUN-FREE! Built 100% with Wood (🪵25) so you never need Sun to start Brick production!
+    cost: { sun: 0, wood: 25, stone: 0, crystal: 0 },
+    hp: 260,
+    prod: { sun: 0, wood: 0, stone: 4, crystal: 0 },
+    prodInterval: 5.2,
     veinBonusNode: 'stone',
-    veinMult: 2.7, // +8 🧱 every 5.5s on Brick Quarry Vein (only +3 off-vein!)
-    healRadius: 2.8,
+    veinMult: 2.5, // +10 🧱 every 5.2s on Brick Quarry Vein
+    healRadius: 3.0,
     healPerSec: 18,
-    atk: 10,
+    atk: 11,
     fireInterval: 1.5,
-    range: 2.5,
-    splashRadius: 0.8,
+    range: 2.6,
+    splashRadius: 0.85,
     antiAir: false
   },
 
@@ -109,18 +115,18 @@ export const UNITS = [
     fxIcon: '💎',
     color: '#339af0',
     accent: '#d0ebff',
-    cost: { sun: 45, wood: 30, stone: 30, crystal: 0 },
-    hp: 350,
+    cost: { sun: 30, wood: 25, stone: 25, crystal: 0 },
+    hp: 360,
     amphibious: true,
     prod: { sun: 0, wood: 0, stone: 0, crystal: 2 },
-    prodInterval: 6.0,
+    prodInterval: 5.6,
     veinBonusNode: 'crystal',
-    veinMult: 3.0, // +6 💎 every 6.0s on Crystal Vein or Water (only +2 off-vein!)
-    slowRadius: 3.0,
-    slowFactor: 0.50,
-    atk: 16,
-    fireInterval: 1.35,
-    range: 3.4,
+    veinMult: 3.0, // +6 💎 every 5.6s on Crystal Vein or Water
+    slowRadius: 3.2,
+    slowFactor: 0.48,
+    atk: 18,
+    fireInterval: 1.3,
+    range: 3.6,
     antiAir: true
   },
   {
@@ -132,14 +138,15 @@ export const UNITS = [
     fxIcon: '🛡️',
     color: '#e03131',
     accent: '#ffc9c9',
-    cost: { sun: 35, wood: 25, stone: 35, crystal: 0 },
-    hp: 820,
-    thornsDmg: 24,
+    // SUN-FREE! Pure Wood + Brick (🪵20 🧱25) frontline shield wall!
+    cost: { sun: 0, wood: 20, stone: 25, crystal: 0 },
+    hp: 860,
+    thornsDmg: 26,
     blastResist: 0.65,
-    atk: 24,
-    fireInterval: 1.35,
-    range: 2.1,
-    splashRadius: 1.4,
+    atk: 25,
+    fireInterval: 1.3,
+    range: 2.2,
+    splashRadius: 1.45,
     antiAir: false
   },
   {
@@ -151,15 +158,16 @@ export const UNITS = [
     fxIcon: '🗼',
     color: '#37b24d',
     accent: '#b2f2bb',
-    cost: { sun: 35, wood: 30, stone: 35, crystal: 0 },
-    hp: 480,
+    // SUN-FREE! Pure Wood + Brick (🪵30 🧱25) stackable watchtower!
+    cost: { sun: 0, wood: 30, stone: 25, crystal: 0 },
+    hp: 500,
     stackable: true,
     towerRangeBonus: 1.40,
     towerDmgBonus: 1.30,
     grantsAntiAir: true,
-    atk: 20,
-    fireInterval: 1.15,
-    range: 4.4,
+    atk: 22,
+    fireInterval: 1.1,
+    range: 4.6,
     antiAir: true,
     deathBlastDmg: 140
   },
@@ -172,17 +180,18 @@ export const UNITS = [
     fxIcon: '🏹',
     color: '#7950f2',
     accent: '#e5dbff',
-    cost: { sun: 45, wood: 35, stone: 25, crystal: 0 },
-    hp: 230,
-    atk: 35,
-    fireInterval: 0.85,
-    range: 4.9,
+    // SUN-FREE! Heavy Wood + Brick (🪵35 🧱15) fast crossbow ballista!
+    cost: { sun: 0, wood: 35, stone: 15, crystal: 0 },
+    hp: 250,
+    atk: 36,
+    fireInterval: 0.82,
+    range: 5.2,
     pierce: 2,
     antiAir: true,
     bonusVsFlyerCreeper: 1.80
   },
 
-  // -------------------- TIER 3: HIGH-TIER TIMBER, MASONRY & ARCANE TOWERS (Heavy 🪵 Wood + 🧱 Brick + 💎 Diamond!) --------------------
+  // -------------------- TIER 3: HIGH-TIER TIMBER, MASONRY & ARCANE TOWERS --------------------
   {
     id: 'dogday',
     tier: 3,
@@ -192,12 +201,13 @@ export const UNITS = [
     fxIcon: '💥',
     color: '#fd7e14',
     accent: '#ffe8cc',
-    cost: { sun: 60, wood: 35, stone: 55, crystal: 14 },
-    hp: 310,
-    atk: 70,
-    fireInterval: 1.35,
-    range: 5.0,
-    splashRadius: 1.85,
+    // Heavy Masonry & Solar Mortar (☀️45 🧱55 💎12)
+    cost: { sun: 45, wood: 0, stone: 55, crystal: 12 },
+    hp: 330,
+    atk: 74,
+    fireInterval: 1.3,
+    range: 5.4,
+    splashRadius: 1.9,
     armorMelt: 0.80,
     antiAir: true
   },
@@ -210,15 +220,16 @@ export const UNITS = [
     fxIcon: '🌈',
     color: '#22b8cf',
     accent: '#c5f6fa',
-    cost: { sun: 65, wood: 45, stone: 50, crystal: 16 },
-    hp: 280,
-    atk: 52,
-    fireInterval: 1.0,
-    range: 5.8,
+    // SUN-FREE Tier-3 Tower! Uses Heavy Wood + Heavy Brick + Diamond (🪵50 🧱45 💎14)!
+    cost: { sun: 0, wood: 50, stone: 45, crystal: 14 },
+    hp: 300,
+    atk: 54,
+    fireInterval: 0.96,
+    range: 6.0,
     antiAir: true,
     vulnBonus: 0.35,
     shardWeaver: true,
-    shardInterval: 7.5,
+    shardInterval: 7.2,
     shardYield: 2
   },
   {
@@ -230,11 +241,12 @@ export const UNITS = [
     fxIcon: '⚡',
     color: '#fcc419',
     accent: '#fff9db',
-    cost: { sun: 60, wood: 40, stone: 50, crystal: 14 },
-    hp: 300,
-    atk: 44,
-    fireInterval: 0.92,
-    range: 4.8,
+    // Solar + Heavy Wood + Diamond Tesla Coil (☀️45 🪵45 💎12)
+    cost: { sun: 45, wood: 45, stone: 0, crystal: 12 },
+    hp: 320,
+    atk: 46,
+    fireInterval: 0.88,
+    range: 5.0,
     chainTargets: 4,
     knockback: 0.40,
     antiAir: true
@@ -242,14 +254,13 @@ export const UNITS = [
 ];
 
 // ==================== 7 DISTINCT ZOMBIE ARCHETYPES ====================
-// Zombies are a threat, NOT a free resource pinata!
-// Basic zombies drop 0 automatic resources and 0 free Moon Shards; only Elites/Bosses drop 1-3 shards.
+// Balanced walking speeds on the expanded 18x12 - 22x14 boards so players have plenty of time to react & build!
 export const ZOMBIE_TYPES = {
   walker: {
     id: 'walker',
-    hp: 115,
-    speed: 0.56,
-    dps: 16,
+    hp: 110,
+    speed: 0.42,
+    dps: 15,
     breachDmg: 1,
     reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 0 },
     scale: 0.92,
@@ -258,9 +269,9 @@ export const ZOMBIE_TYPES = {
   },
   runner: {
     id: 'runner',
-    hp: 95,
-    speed: 0.90,
-    dps: 16,
+    hp: 90,
+    speed: 0.68,
+    dps: 15,
     breachDmg: 1,
     reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 0 },
     scale: 0.84,
@@ -269,10 +280,10 @@ export const ZOMBIE_TYPES = {
   },
   bucket: {
     id: 'bucket',
-    hp: 280,
-    speed: 0.48,
-    dps: 24,
-    armor: 0.42,
+    hp: 260,
+    speed: 0.36,
+    dps: 22,
+    armor: 0.40,
     breachDmg: 1,
     reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
     scale: 1.15,
@@ -281,9 +292,9 @@ export const ZOMBIE_TYPES = {
   },
   digger: {
     id: 'digger',
-    hp: 190,
-    speed: 0.58,
-    dps: 26,
+    hp: 180,
+    speed: 0.45,
+    dps: 24,
     wallBreaker: true,
     breachDmg: 1,
     reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
@@ -293,11 +304,11 @@ export const ZOMBIE_TYPES = {
   },
   creeper: {
     id: 'creeper',
-    hp: 165,
-    speed: 0.64,
-    dps: 20,
-    frontBurstDmg: 120,
-    splashBurstDmg: 40,
+    hp: 155,
+    speed: 0.50,
+    dps: 18,
+    frontBurstDmg: 110,
+    splashBurstDmg: 35,
     breachDmg: 2,
     reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
     scale: 1.05,
@@ -306,9 +317,9 @@ export const ZOMBIE_TYPES = {
   },
   balloon: {
     id: 'balloon',
-    hp: 160,
-    speed: 0.60,
-    dps: 18,
+    hp: 150,
+    speed: 0.46,
+    dps: 16,
     flying: true,
     breachDmg: 1,
     reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
@@ -318,13 +329,13 @@ export const ZOMBIE_TYPES = {
   },
   necromancer: {
     id: 'necromancer',
-    hp: 300,
-    speed: 0.44,
-    dps: 22,
+    hp: 280,
+    speed: 0.34,
+    dps: 20,
     armor: 0.25,
     healRadius: 2.8,
-    healPerSec: 12,
-    summonInterval: 9.5,
+    healPerSec: 10,
+    summonInterval: 10.5,
     breachDmg: 2,
     reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 2 },
     scale: 1.20,
@@ -333,12 +344,12 @@ export const ZOMBIE_TYPES = {
   },
   nightmare_boss: {
     id: 'nightmare_boss',
-    hp: 820,
-    speed: 0.38,
-    dps: 38,
-    armor: 0.32,
+    hp: 760,
+    speed: 0.28,
+    dps: 34,
+    armor: 0.30,
     poppyAuraRadius: 2.2,
-    poppyAuraDps: 8,
+    poppyAuraDps: 7,
     breachDmg: 3,
     reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 4 },
     scale: 1.50,
@@ -365,151 +376,153 @@ function buildRoadTilesFromRoutes(routes = []) {
   return set;
 }
 
-// ==================== 5 ESCALATING STAGE MAPS ====================
+// ==================== 5 EXPANDED STAGE MAPS (18x12 TO 22x14, LONG WINDING ROADS, ZERO DEAD ANGLES) ====================
 export const STAGES = [
-  // Stage 1: 14 x 8 — S-Bend Meadow
+  // Stage 1: 18 x 12 (216 tiles!) — S-Bend Sunlit Meadow (20-22 tile winding paths)
   {
     index: 0,
     stageNumber: 1,
     id: 'stage_1_meadow',
-    gridW: 14,
-    gridH: 8,
-    altarGx: 1,
-    altarGz: 3.5,
+    gridW: 18,
+    gridH: 12,
+    altarGx: 2.5,
+    altarGz: 5.5,
     moonTarget: 30,
     portals: ['E'],
     zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper'],
-    baseSpawnInterval: 4.5,
+    baseSpawnInterval: 5.2,
     routes: [
-      [[13, 2], [10, 2], [10, 5], [6, 5], [6, 3], [2, 3]],
-      [[13, 5], [10, 5], [6, 5], [6, 4], [2, 4]]
+      [[17, 2], [13, 2], [13, 9], [8, 9], [8, 4], [4, 4], [4, 5]],
+      [[17, 9], [13, 9], [13, 4], [8, 4], [8, 7], [4, 7], [4, 6]]
     ],
-    waterTiles: ['8,0', '8,1', '8,6', '8,7'],
-    highCliffs: ['8,3', '5,2'],
+    waterTiles: ['10,0', '10,1', '10,10', '10,11'],
+    highCliffs: ['11,5', '11,6', '6,3', '6,8'],
     resourceNodes: [
-      { gx: 3, gz: 1, kind: 'sun' },
-      { gx: 3, gz: 6, kind: 'wood' },
+      { gx: 1, gz: 2, kind: 'sun' },
+      { gx: 1, gz: 9, kind: 'wood' },
       { gx: 5, gz: 1, kind: 'stone' },
-      { gx: 5, gz: 6, kind: 'crystal' },
-      { gx: 11, gz: 1, kind: 'sun' },
-      { gx: 11, gz: 6, kind: 'stone' }
+      { gx: 5, gz: 10, kind: 'crystal' },
+      { gx: 15, gz: 1, kind: 'sun' },
+      { gx: 15, gz: 10, kind: 'stone' }
     ],
-    // Start with both SunnyFox (☀️) and PoppyDash Skunk (🪵) so the player never deadlocks!
     starterUnits: [
-      { gx: 3, gz: 1, id: 'sunnyfox' },
-      { gx: 3, gz: 6, id: 'poppydash' }
+      { gx: 1, gz: 2, id: 'sunnyfox' },
+      { gx: 1, gz: 9, id: 'poppydash' }
     ]
   },
 
-  // Stage 2: 14 x 8 — Twin-Bridge River Canyon
+  // Stage 2: 18 x 12 (216 tiles!) — Twin-Bridge River Canyon (21-tile serpentine paths)
   {
     index: 1,
     stageNumber: 2,
     id: 'stage_2_canyon',
-    gridW: 14,
-    gridH: 8,
-    altarGx: 1,
-    altarGz: 3.5,
+    gridW: 18,
+    gridH: 12,
+    altarGx: 2.5,
+    altarGz: 5.5,
     moonTarget: 40,
     portals: ['E'],
     zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon'],
-    baseSpawnInterval: 4.2,
+    baseSpawnInterval: 4.8,
     routes: [
-      [[13, 1], [9, 1], [9, 3], [5, 3], [2, 3]],
-      [[13, 6], [9, 6], [9, 4], [5, 4], [2, 4]]
+      [[17, 1], [12, 1], [12, 4], [7, 4], [7, 2], [4, 2], [4, 5]],
+      [[17, 10], [12, 10], [12, 7], [7, 7], [7, 9], [4, 9], [4, 6]]
     ],
-    waterTiles: ['7,0', '7,1', '7,2', '7,5', '7,6', '7,7'],
-    highCliffs: ['6,2', '6,5', '10,3', '10,4'],
+    waterTiles: ['9,0', '9,1', '9,2', '9,5', '9,6', '9,9', '9,10', '9,11'],
+    highCliffs: ['6,5', '6,6', '11,2', '11,9'],
     resourceNodes: [
-      { gx: 3, gz: 1, kind: 'sun' },
-      { gx: 3, gz: 6, kind: 'wood' },
-      { gx: 5, gz: 1, kind: 'stone' },
-      { gx: 5, gz: 6, kind: 'crystal' },
-      { gx: 11, gz: 3, kind: 'sun' },
-      { gx: 11, gz: 4, kind: 'crystal' }
+      { gx: 1, gz: 2, kind: 'sun' },
+      { gx: 1, gz: 9, kind: 'wood' },
+      { gx: 5, gz: 0, kind: 'stone' },
+      { gx: 5, gz: 11, kind: 'crystal' },
+      { gx: 14, gz: 5, kind: 'sun' },
+      { gx: 14, gz: 6, kind: 'stone' }
     ],
     starterUnits: [
-      { gx: 3, gz: 1, id: 'sunnyfox' },
-      { gx: 3, gz: 6, id: 'poppydash' }
+      { gx: 1, gz: 2, id: 'sunnyfox' },
+      { gx: 1, gz: 9, id: 'poppydash' }
     ]
   },
 
-  // Stage 3: 15 x 8 — Central Moon Citadel
+  // Stage 3: 20 x 12 (240 tiles!) — Central Moon Citadel (19-tile East & West serpentine loops)
   {
     index: 2,
     stageNumber: 3,
     id: 'stage_3_highlands',
-    gridW: 15,
-    gridH: 8,
-    altarGx: 7,
-    altarGz: 3.5,
+    gridW: 20,
+    gridH: 12,
+    altarGx: 9.5,
+    altarGz: 5.5,
     moonTarget: 50,
     portals: ['E', 'W'],
     zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon', 'necromancer'],
-    baseSpawnInterval: 4.0,
+    baseSpawnInterval: 4.6,
     routes: [
-      [[14, 2], [11, 2], [11, 4], [8, 4]],
-      [[0, 5], [3, 5], [3, 3], [6, 3]]
+      [[19, 2], [15, 2], [15, 9], [12, 9], [12, 6], [11, 6]],
+      [[0, 9], [4, 9], [4, 2], [7, 2], [7, 5], [8, 5]]
     ],
-    waterTiles: ['4,0', '4,1', '10,6', '10,7'],
-    highCliffs: ['5,2', '9,5', '5,5', '9,2'],
+    waterTiles: ['6,0', '6,1', '13,10', '13,11'],
+    highCliffs: ['6,7', '13,4', '3,5', '16,6'],
     resourceNodes: [
-      { gx: 6, gz: 1, kind: 'sun' },
-      { gx: 8, gz: 1, kind: 'wood' },
-      { gx: 6, gz: 6, kind: 'stone' },
-      { gx: 8, gz: 6, kind: 'crystal' },
-      { gx: 2, gz: 2, kind: 'sun' },
-      { gx: 12, gz: 5, kind: 'crystal' }
+      { gx: 8, gz: 1, kind: 'sun' },
+      { gx: 11, gz: 1, kind: 'wood' },
+      { gx: 8, gz: 10, kind: 'stone' },
+      { gx: 11, gz: 10, kind: 'crystal' },
+      { gx: 2, gz: 1, kind: 'stone' },
+      { gx: 17, gz: 10, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' },
-      { gx: 8, gz: 1, id: 'poppydash' }
+      { gx: 8, gz: 1, id: 'sunnyfox' },
+      { gx: 11, gz: 1, id: 'poppydash' }
     ]
   },
 
-  // Stage 4: 16 x 8 — Three-Gate Star Fortress
+  // Stage 4: 22 x 14 (308 tiles!) — Three-Gate Star Fortress
+  // North portal at [10, 0] winds 16 tiles across the wide upper-west meadow ([10,0]->[10,2]->[5,2]->[5,6]->[9,6]),
+  // approaching the Moon Sanctuary from the West side with ZERO blind spot behind the Castle and 20+ open buildable tiles!
   {
     index: 3,
     stageNumber: 4,
     id: 'stage_4_labyrinth',
-    gridW: 16,
-    gridH: 8,
-    altarGx: 7.5,
-    altarGz: 3.5,
+    gridW: 22,
+    gridH: 14,
+    altarGx: 10.5,
+    altarGz: 6.5,
     moonTarget: 65,
     portals: ['E', 'W', 'N'],
     zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon', 'necromancer', 'nightmare_boss'],
-    baseSpawnInterval: 3.8,
+    baseSpawnInterval: 4.5,
     routes: [
-      [[15, 3], [12, 3], [12, 4], [9, 4]],
-      [[0, 4], [3, 4], [3, 3], [6, 3]],
-      [[7, 0], [7, 2]]
+      [[21, 3], [17, 3], [17, 10], [14, 10], [14, 7], [12, 7]],
+      [[0, 10], [4, 10], [4, 11], [8, 11], [8, 7], [9, 7]],
+      [[10, 0], [10, 2], [5, 2], [5, 6], [9, 6]]
     ],
-    waterTiles: ['4,0', '4,1', '11,6', '11,7'],
-    highCliffs: ['5,2', '10,2', '5,5', '10,5'],
+    waterTiles: ['2,0', '2,1', '19,12', '19,13'],
+    highCliffs: ['7,4', '15,5', '6,9', '15,9'],
     resourceNodes: [
-      { gx: 6, gz: 1, kind: 'sun' },
-      { gx: 9, gz: 1, kind: 'wood' },
-      { gx: 6, gz: 6, kind: 'stone' },
-      { gx: 9, gz: 6, kind: 'crystal' },
-      { gx: 2, gz: 6, kind: 'wood' },
-      { gx: 13, gz: 1, kind: 'stone' }
+      { gx: 13, gz: 2, kind: 'sun' },
+      { gx: 13, gz: 4, kind: 'wood' },
+      { gx: 10, gz: 10, kind: 'stone' },
+      { gx: 12, gz: 10, kind: 'crystal' },
+      { gx: 2, gz: 5, kind: 'wood' },
+      { gx: 19, gz: 2, kind: 'stone' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' },
-      { gx: 9, gz: 1, id: 'poppydash' }
+      { gx: 13, gz: 2, id: 'sunnyfox' },
+      { gx: 13, gz: 4, id: 'poppydash' }
     ]
   },
 
-  // Stage 5: 16 x 8 — Four-Gate Starlight Finale
+  // Stage 5: 22 x 14 (308 tiles!) — Four-Gate Starlight Finale
+  // All 4 portals (N, S, E, W) follow 16-tile serpentine paths that enter the Sanctuary from the East/West sides!
   {
     index: 4,
     stageNumber: 5,
     id: 'stage_5_citadel',
-    gridW: 16,
-    gridH: 8,
-    altarGx: 7.5,
-    altarGz: 3.5,
+    gridW: 22,
+    gridH: 14,
+    altarGx: 10.5,
+    altarGz: 6.5,
     moonTarget: 80,
     portals: ['E', 'W', 'N', 'S'],
     zombiePool: [
@@ -522,26 +535,26 @@ export const STAGES = [
       'necromancer',
       'nightmare_boss'
     ],
-    baseSpawnInterval: 3.6,
+    baseSpawnInterval: 4.4,
     routes: [
-      [[15, 3], [11, 3], [9, 3]],
-      [[0, 4], [4, 4], [6, 4]],
-      [[7, 0], [7, 2]],
-      [[8, 7], [8, 5]]
+      [[21, 9], [18, 9], [18, 11], [14, 11], [14, 7], [12, 7]],
+      [[0, 4], [3, 4], [3, 2], [7, 2], [7, 6], [9, 6]],
+      [[10, 0], [10, 2], [16, 2], [16, 6], [12, 6]],
+      [[11, 13], [11, 11], [5, 11], [5, 7], [9, 7]]
     ],
-    waterTiles: ['3,0', '3,1', '12,0', '12,1', '3,6', '3,7', '12,6', '12,7'],
-    highCliffs: ['5,2', '10,2', '5,5', '10,5'],
+    waterTiles: ['2,0', '2,1', '19,0', '19,1', '2,12', '2,13', '19,12', '19,13'],
+    highCliffs: ['6,4', '14,4', '7,9', '15,9'],
     resourceNodes: [
-      { gx: 6, gz: 1, kind: 'sun' },
-      { gx: 9, gz: 1, kind: 'wood' },
-      { gx: 6, gz: 6, kind: 'stone' },
-      { gx: 9, gz: 6, kind: 'crystal' },
-      { gx: 1, gz: 1, kind: 'sun' },
-      { gx: 14, gz: 6, kind: 'crystal' }
+      { gx: 9, gz: 4, kind: 'sun' },
+      { gx: 12, gz: 4, kind: 'wood' },
+      { gx: 9, gz: 9, kind: 'stone' },
+      { gx: 12, gz: 9, kind: 'crystal' },
+      { gx: 2, gz: 8, kind: 'stone' },
+      { gx: 19, gz: 5, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' },
-      { gx: 9, gz: 1, id: 'poppydash' }
+      { gx: 9, gz: 4, id: 'sunnyfox' },
+      { gx: 12, gz: 4, id: 'poppydash' }
     ]
   }
 ];
@@ -594,10 +607,10 @@ export function getStageConfig(stageIndex = 0) {
   };
 }
 
-// +22% cost scaling per existing copy of the same unit so players diversify & upgrade rather than spamming!
+// +18% cost scaling per existing copy of the same unit so players diversify & upgrade rather than spamming!
 export function computeDynamicResourceCosts(def, existingCount = 0) {
   if (!def || !def.cost) return { sun: 0, wood: 0, stone: 0, crystal: 0 };
-  const mult = existingCount <= 0 ? 1.0 : Math.pow(1.22, existingCount);
+  const mult = existingCount <= 0 ? 1.0 : Math.pow(1.18, existingCount);
   const c = def.cost;
   return {
     sun: c.sun > 0 ? Math.round(c.sun * mult) : 0,
@@ -607,9 +620,9 @@ export function computeDynamicResourceCosts(def, existingCount = 0) {
   };
 }
 
-// Universal fixed Upgrade Cost (Lv.1 -> Lv.2 -> Lv.3) — 100% matches the Upgrade card (☀️25 🪵30 🧱35) and consumes both Wood & Brick surplus!
+// Universal SUN-FREE Upgrade Cost (Lv.1 -> Lv.2 -> Lv.3): Pure Wood + Brick (🪵30 🧱35, ☀️0)!
 export const UPGRADE_COST = {
-  sun: 25,
+  sun: 0,
   wood: 30,
   stone: 35,
   crystal: 0
