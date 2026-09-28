@@ -4,6 +4,7 @@ import {
   UNITS,
   ZOMBIE_TYPES,
   STAGES,
+  UPGRADE_COST,
   getStageConfig,
   computeDynamicResourceCosts,
   computeUpgradeCost,
@@ -57,7 +58,7 @@ export const CRITTER_UNITS = [
     fxIcon: '🔼',
     color: '#ffd43b',
     accent: '#fff3bf',
-    cost: { sun: 25, wood: 0, stone: 0, crystal: 6 }
+    cost: { ...UPGRADE_COST }
   },
   {
     id: 'bridge',
@@ -69,7 +70,7 @@ export const CRITTER_UNITS = [
     fxIcon: '🌊',
     color: '#bc6c25',
     accent: '#dda15e',
-    cost: { sun: 0, wood: 15, stone: 0, crystal: 0 }
+    cost: { sun: 0, wood: 25, stone: 0, crystal: 0 }
   },
   {
     id: 'spike_trap',
@@ -81,7 +82,7 @@ export const CRITTER_UNITS = [
     fxIcon: '💥',
     color: '#ced4da',
     accent: '#ff6b6b',
-    cost: { sun: 0, wood: 10, stone: 15, crystal: 0 },
+    cost: { sun: 0, wood: 20, stone: 20, crystal: 0 },
     hp: 260,
     dmg: 32
   },
@@ -750,7 +751,11 @@ function updateTopHUD() {
       const effCost = getEffectiveUnitCost(def);
       const costRow = el.querySelector('.cost-row');
       if (costRow) costRow.innerHTML = formatCostPipsHTML(effCost, 4);
-      el.classList.toggle('locked', !checkAfford(effCost));
+      let canUse = checkAfford(effCost);
+      if (def.role === 'upgrade') {
+        canUse = canUse && S.units.some(u => !u.isTrap && (u.level || 1) < 3);
+      }
+      el.classList.toggle('locked', !canUse);
     }
   });
   updateRecipePill(CRITTER_UNITS.find(u => u.id === S.selectedTool));
@@ -919,11 +924,11 @@ export function forgeMoonAtSanctuary() {
   }
 
   const forgeMult = Math.pow(1.15, S.forgeCount || 0);
-  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 30 + 🪵 15 + 🧱 15 + 💎 8 * 1.15^N -> +6 🌕)
+  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 30 + 🪵 25 + 🧱 25 + 💎 8 * 1.15^N -> +6 🌕)
   const bundleCost = {
     sun: Math.round(30 * forgeMult),
-    wood: Math.round(15 * forgeMult),
-    stone: Math.round(15 * forgeMult),
+    wood: Math.round(25 * forgeMult),
+    stone: Math.round(25 * forgeMult),
     crystal: Math.round(8 * forgeMult)
   };
   if (checkAfford(bundleCost)) {
@@ -998,10 +1003,21 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
     return true;
   }
 
-  // 2. Explicit Upgrade Tool (`upgrade_star`)
+  // 2. Explicit Upgrade Tool (`upgrade_star`) — also snaps to nearest upgradable Critter within 1.25 tiles if clicked slightly off-center!
   if (def.role === 'upgrade') {
-    const target = tile.stackedUnit || tile.unit;
-    if (!target) {
+    let target = tile.stackedUnit || tile.unit;
+    if (!target || target.isTrap) {
+      let bestDist = 1.35;
+      for (const u of S.units) {
+        if (u.isTrap) continue;
+        const d = Math.hypot(u.gx - gx, u.gz - gz);
+        if (d <= bestDist) {
+          bestDist = d;
+          target = u;
+        }
+      }
+    }
+    if (!target || target.isTrap) {
       showBubble('⬆️⭐ ➔ 🐱', 1.1);
       return false;
     }
@@ -1088,6 +1104,10 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
   }
 
   const mesh = buildCritterUnitMesh(def, portraitTexMap.get(def.id));
+  mesh.traverse(child => {
+    child.userData.gx = gx;
+    child.userData.gz = gz;
+  });
   const wpos = gridToWorld(gx, gz);
   const yBase = stackingOnTower ? tile.height + 0.66 : tile.height;
   mesh.position.set(wpos.x, yBase, wpos.z);
@@ -1918,6 +1938,30 @@ function updatePointerRay(e) {
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 
+function pickBoardCoords() {
+  // When using Upgrade or Shovel (or clicking directly on a placed Critter's 3D head/body),
+  // check 3D unit meshes FIRST so isometric clicks on a Critter's head never pass through to the tile behind it!
+  if (S.selectedTool === 'upgrade_star' || S.selectedTool === 'shovel') {
+    const unitHits = raycaster.intersectObjects(unitGroup.children, true);
+    for (const h of unitHits) {
+      if (h.object?.userData?.gx !== undefined) {
+        return { gx: h.object.userData.gx, gz: h.object.userData.gz };
+      }
+    }
+  }
+  const hits = raycaster.intersectObjects(tilePickMeshes, false);
+  if (hits.length > 0) {
+    return hits[0].object.userData;
+  }
+  const unitHitsFallback = raycaster.intersectObjects(unitGroup.children, true);
+  for (const h of unitHitsFallback) {
+    if (h.object?.userData?.gx !== undefined) {
+      return { gx: h.object.userData.gx, gz: h.object.userData.gz };
+    }
+  }
+  return null;
+}
+
 canvas.addEventListener('pointermove', e => {
   if (S.phase !== 'playing') return;
   if (isOrbitDragging) {
@@ -1928,9 +1972,9 @@ canvas.addEventListener('pointermove', e => {
     return;
   }
   updatePointerRay(e);
-  const hits = raycaster.intersectObjects(tilePickMeshes, false);
-  if (hits.length > 0) {
-    const { gx, gz } = hits[0].object.userData;
+  const picked = pickBoardCoords();
+  if (picked) {
+    const { gx, gz } = picked;
     const t = tiles[gx]?.[gz];
     if (t) {
       const wp = gridToWorld(gx, gz);
@@ -1973,10 +2017,9 @@ canvas.addEventListener('pointerdown', e => {
     }
   }
 
-  const hits = raycaster.intersectObjects(tilePickMeshes, false);
-  if (hits.length > 0) {
-    const { gx, gz } = hits[0].object.userData;
-    placeUnitOnTile(gx, gz, S.selectedTool, false);
+  const picked = pickBoardCoords();
+  if (picked) {
+    placeUnitOnTile(picked.gx, picked.gz, S.selectedTool, false);
   }
 });
 

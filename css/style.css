@@ -876,7 +876,7 @@ body.inIntro #bottomDock {
   margin-top: 4px;
   min-height: 22px;
   max-width: 100%;
-  padding: 2px 5px;
+  padding: 2px 2.5px;
   border-radius: 999px;
   background: linear-gradient(180deg, #fff9e6 0%, #edd3a8 100%);
   border: 2px solid #fffdf7;
@@ -884,25 +884,25 @@ body.inIntro #bottomDock {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
   flex-wrap: nowrap;
 }
 
 .ucard .cost-pip .svg-ico {
-  width: 11px;
-  height: 11px;
+  width: 9px;
+  height: 9px;
 }
 
 .cost-pip {
   display: inline-flex;
   align-items: center;
-  gap: 1px;
+  gap: 0.5px;
   font-family: var(--font-round);
-  font-size: 10.5px;
+  font-size: 9px;
   line-height: 1;
   font-weight: 900;
   color: #ffffff;
-  -webkit-text-stroke: 2.2px var(--stroke-choco);
+  -webkit-text-stroke: 1.8px var(--stroke-choco);
   paint-order: stroke fill;
   white-space: nowrap;
 }

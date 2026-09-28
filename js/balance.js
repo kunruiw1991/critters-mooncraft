@@ -23,8 +23,8 @@ export const RESOURCE_META = {
 
 // Moon Sanctuary Forge Recipe: Base cost (escalates +15% per forge so resources always have a high-value sink!)
 export const MOON_FORGE_RECIPE = {
-  cost: { sun: 35, wood: 20, stone: 20, crystal: 10 },
-  shards: 5
+  cost: { sun: 30, wood: 25, stone: 25, crystal: 8 },
+  shards: 6
 };
 
 // ==================== 10 CRITTERS IN 3-TIER TACTICAL HIERARCHY ====================
@@ -84,7 +84,7 @@ export const UNITS = [
     fxIcon: '🧱',
     color: '#f783ac',
     accent: '#ffdeeb',
-    cost: { sun: 35, wood: 15, stone: 0, crystal: 0 },
+    cost: { sun: 35, wood: 25, stone: 0, crystal: 0 },
     hp: 250,
     prod: { sun: 0, wood: 0, stone: 3, crystal: 0 },
     prodInterval: 5.5,
@@ -109,7 +109,7 @@ export const UNITS = [
     fxIcon: '💎',
     color: '#339af0',
     accent: '#d0ebff',
-    cost: { sun: 45, wood: 20, stone: 20, crystal: 0 },
+    cost: { sun: 45, wood: 30, stone: 30, crystal: 0 },
     hp: 350,
     amphibious: true,
     prod: { sun: 0, wood: 0, stone: 0, crystal: 2 },
@@ -132,7 +132,7 @@ export const UNITS = [
     fxIcon: '🛡️',
     color: '#e03131',
     accent: '#ffc9c9',
-    cost: { sun: 35, wood: 0, stone: 20, crystal: 0 },
+    cost: { sun: 35, wood: 25, stone: 35, crystal: 0 },
     hp: 820,
     thornsDmg: 24,
     blastResist: 0.65,
@@ -151,7 +151,7 @@ export const UNITS = [
     fxIcon: '🗼',
     color: '#37b24d',
     accent: '#b2f2bb',
-    cost: { sun: 35, wood: 20, stone: 20, crystal: 0 },
+    cost: { sun: 35, wood: 30, stone: 35, crystal: 0 },
     hp: 480,
     stackable: true,
     towerRangeBonus: 1.40,
@@ -172,7 +172,7 @@ export const UNITS = [
     fxIcon: '🏹',
     color: '#7950f2',
     accent: '#e5dbff',
-    cost: { sun: 45, wood: 25, stone: 0, crystal: 0 },
+    cost: { sun: 45, wood: 35, stone: 25, crystal: 0 },
     hp: 230,
     atk: 35,
     fireInterval: 0.85,
@@ -182,7 +182,7 @@ export const UNITS = [
     bonusVsFlyerCreeper: 1.80
   },
 
-  // -------------------- TIER 3: ARCANE & SIEGE SPECIALISTS (Require 💎 Crystal!) --------------------
+  // -------------------- TIER 3: HIGH-TIER TIMBER, MASONRY & ARCANE TOWERS (Heavy 🪵 Wood + 🧱 Brick + 💎 Diamond!) --------------------
   {
     id: 'dogday',
     tier: 3,
@@ -192,7 +192,7 @@ export const UNITS = [
     fxIcon: '💥',
     color: '#fd7e14',
     accent: '#ffe8cc',
-    cost: { sun: 65, wood: 0, stone: 40, crystal: 16 },
+    cost: { sun: 60, wood: 35, stone: 55, crystal: 14 },
     hp: 310,
     atk: 70,
     fireInterval: 1.35,
@@ -210,7 +210,7 @@ export const UNITS = [
     fxIcon: '🌈',
     color: '#22b8cf',
     accent: '#c5f6fa',
-    cost: { sun: 70, wood: 35, stone: 0, crystal: 18 },
+    cost: { sun: 65, wood: 45, stone: 50, crystal: 16 },
     hp: 280,
     atk: 52,
     fireInterval: 1.0,
@@ -230,7 +230,7 @@ export const UNITS = [
     fxIcon: '⚡',
     color: '#fcc419',
     accent: '#fff9db',
-    cost: { sun: 65, wood: 0, stone: 35, crystal: 16 },
+    cost: { sun: 60, wood: 40, stone: 50, crystal: 14 },
     hp: 300,
     atk: 44,
     fireInterval: 0.92,
@@ -607,16 +607,16 @@ export function computeDynamicResourceCosts(def, existingCount = 0) {
   };
 }
 
-// Cost to upgrade an existing placed Critter (Lv.1 -> Lv.2 -> Lv.3) — major resource sink!
-export function computeUpgradeCost(def, currentLevel = 1) {
-  const c = def?.cost || { sun: 35, wood: 15, stone: 15, crystal: 8 };
-  const lvMult = currentLevel === 1 ? 0.90 : 1.45;
-  return {
-    sun: Math.max(25, Math.round((c.sun || 30) * lvMult)),
-    wood: Math.round((c.wood || (def?.role === 'attack' ? 15 : 0)) * lvMult),
-    stone: Math.round((c.stone || (def?.role === 'defend' ? 15 : 0)) * lvMult),
-    crystal: Math.max(currentLevel === 1 ? 6 : 12, Math.round((c.crystal || 6) * lvMult))
-  };
+// Universal fixed Upgrade Cost (Lv.1 -> Lv.2 -> Lv.3) — 100% matches the Upgrade card (☀️25 🪵30 🧱35) and consumes both Wood & Brick surplus!
+export const UPGRADE_COST = {
+  sun: 25,
+  wood: 30,
+  stone: 35,
+  crystal: 0
+};
+
+export function computeUpgradeCost() {
+  return { ...UPGRADE_COST };
 }
 
 export function canAffordCost(resources, costObj) {
