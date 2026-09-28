@@ -873,3 +873,310 @@ export function buildHighResCutsceneRig(THREE = window.THREE) {
 }
 
 export const buildHighResCutsceneWorld = buildHighResCutsceneRig;
+
+// ============================================================================
+// 60 FPS FULL-SCREEN HIGH-RESOLUTION 2.5D PIXAR/STORYBOOK OPENING MOVIE ENGINE
+// ============================================================================
+const movieState = {
+  canvas: null,
+  ctx: null,
+  images: [],
+  loaded: [false, false, false, false],
+  fireflies: [],
+  smokePuffs: [],
+  shards: [],
+  rocketTrail: []
+};
+
+export function initIntroMovieCanvas() {
+  const canvas = document.getElementById('introMovieCanvas');
+  if (!canvas) return;
+  movieState.canvas = canvas;
+  movieState.ctx = canvas.getContext('2d');
+
+  const urls = [
+    'assets/intro/act1.jpg',
+    'assets/intro/act2.jpg',
+    'assets/intro/act3.jpg',
+    'assets/intro/act4.jpg'
+  ];
+  movieState.images = urls.map((u, idx) => {
+    const img = new Image();
+    img.onload = () => {
+      movieState.loaded[idx] = true;
+    };
+    img.src = u;
+    return img;
+  });
+
+  // Pre-seed 36 glowing fireflies / starlight motes
+  movieState.fireflies = Array.from({ length: 36 }, (_, i) => ({
+    x: (i * 0.173) % 1,
+    y: 0.15 + ((i * 0.29) % 0.78),
+    r: 2.2 + (i % 4) * 1.3,
+    speedX: (i % 2 === 0 ? 1 : -1) * (0.015 + (i % 5) * 0.004),
+    speedY: -0.012 - (i % 4) * 0.004,
+    phase: i * 0.7,
+    hue: i % 3 === 0 ? '#a9e34b' : (i % 3 === 1 ? '#ffe066' : '#74c0fc')
+  }));
+
+  // Pre-seed 28 crimson poppy-gas smoke puffs for Act 2
+  movieState.smokePuffs = Array.from({ length: 28 }, (_, i) => ({
+    x: 0.18 + ((i * 0.09) % 0.48),
+    y: 0.45 + ((i * 0.13) % 0.52),
+    r: 36 + (i % 5) * 20,
+    phase: i * 0.5
+  }));
+
+  // Pre-seed 44 golden moon shards for Act 3 & Act 4
+  movieState.shards = Array.from({ length: 44 }, (_, i) => {
+    const ang = (i / 44) * TAU + (i % 3) * 0.12;
+    const spd = 0.22 + (i % 7) * 0.065;
+    return {
+      vx: Math.cos(ang) * spd,
+      vy: Math.sin(ang) * spd * 0.78 + 0.12,
+      size: 7 + (i % 4) * 4.5,
+      rotSpeed: (i % 2 === 0 ? 1 : -1) * (2.5 + (i % 4)),
+      isCrescent: i % 3 === 0
+    };
+  });
+}
+
+function drawCoverImage(ctx, img, w, h, zoom = 1.0, panX = 0, panY = 0, shakeX = 0, shakeY = 0, alpha = 1.0) {
+  if (!img || !img.complete || !img.naturalWidth) return;
+  ctx.save();
+  ctx.globalAlpha = clamp(alpha, 0, 1);
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+  const baseScale = Math.max(w / iw, h / ih) * zoom;
+  const dw = iw * baseScale;
+  const dh = ih * baseScale;
+  const dx = (w - dw) * 0.5 + panX * w + shakeX;
+  const dy = (h - dh) * 0.5 + panY * h + shakeY;
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
+}
+
+function drawLightningBolt(ctx, x1, y1, x2, y2, color, width, seed) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.shadowColor = '#da77f2';
+  ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  const segs = 7;
+  for (let i = 1; i < segs; i++) {
+    const f = i / segs;
+    const jitter = Math.sin(seed * 13.7 + i * 5.3) * 28;
+    ctx.lineTo(x1 + (x2 - x1) * f + jitter, y1 + (y2 - y1) * f + jitter * 0.4);
+  }
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+export function renderIntroMovieFrame(t) {
+  if (!movieState.canvas) initIntroMovieCanvas();
+  const { canvas, ctx, images } = movieState;
+  if (!canvas || !ctx) return;
+
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.floor(window.innerWidth * dpr);
+  const h = Math.floor(window.innerHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#0d0822';
+  ctx.fillRect(0, 0, w, h);
+
+  // --------------------------------------------------------------------------
+  // ACT 1 (0.0s - 2.5s): Cute CatNap on Moonlit Firefly Hilltop -> Storm Brews
+  // --------------------------------------------------------------------------
+  if (t < 2.65) {
+    const p = clamp(t / 2.5, 0, 1);
+    const zoom = 1.02 + p * 0.08;
+    const panX = -0.015 + p * 0.025;
+    const panY = 0.01 - p * 0.02;
+    drawCoverImage(ctx, images[0], w, h, zoom, panX, panY, 0, 0, 1.0);
+
+    // Pulsing Golden Moon Corona in upper right
+    const moonX = w * 0.655;
+    const moonY = h * 0.285;
+    const pulseR = Math.min(w, h) * (0.24 + Math.sin(t * 3.8) * 0.02);
+    const mg = ctx.createRadialGradient(moonX, moonY, pulseR * 0.15, moonX, moonY, pulseR);
+    mg.addColorStop(0, 'rgba(255, 249, 219, 0.35)');
+    mg.addColorStop(0.5, 'rgba(255, 212, 59, 0.16)');
+    mg.addColorStop(1, 'rgba(255, 212, 59, 0)');
+    ctx.fillStyle = mg;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, pulseR, 0, TAU);
+    ctx.fill();
+
+    // Animated Fireflies drifting around Cute CatNap
+    for (const ff of movieState.fireflies) {
+      const fx = ((ff.x + ff.speedX * t + 1) % 1) * w;
+      const fy = ((ff.y + ff.speedY * t + 1) % 1) * h;
+      const glow = 0.45 + 0.55 * Math.sin(t * 5.2 + ff.phase);
+      ctx.save();
+      ctx.globalAlpha = glow;
+      ctx.fillStyle = ff.hue;
+      ctx.shadowColor = ff.hue;
+      ctx.shadowBlur = 14 * dpr;
+      ctx.beginPath();
+      ctx.arc(fx, fy, ff.r * dpr, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // At t = 1.95s..2.65s: Crimson Poppy Smoke & Purple Transformation Cross-Dissolve!
+    if (t > 1.95) {
+      const tp = clamp((t - 1.95) / 0.70, 0, 1);
+      drawCoverImage(ctx, images[1], w, h, 1.06, 0, 0, Math.sin(t * 42) * 5 * dpr * tp, Math.cos(t * 48) * 5 * dpr * tp, tp);
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const flashG = ctx.createRadialGradient(w * 0.36, h * 0.44, 10, w * 0.36, h * 0.44, w * 0.42);
+      flashG.addColorStop(0, `rgba(229, 153, 247, ${tp * 0.48})`);
+      flashG.addColorStop(0.5, `rgba(224, 49, 49, ${tp * 0.28})`);
+      flashG.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = flashG;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+  }
+  // --------------------------------------------------------------------------
+  // ACT 2 (2.65s - 5.25s): Nightmare CatNap Launches Rocket at the Full Moon!
+  // --------------------------------------------------------------------------
+  else if (t < 5.25) {
+    const p = clamp((t - 2.65) / 2.6, 0, 1);
+    const shake = (t > 3.2 ? 5.5 : 2.2) * dpr;
+    const sx = Math.sin(t * 44) * shake;
+    const sy = Math.cos(t * 51) * shake;
+    drawCoverImage(ctx, images[1], w, h, 1.02 + p * 0.08, -p * 0.018, p * 0.012, sx, sy, 1.0);
+
+    // Animated Swirling Crimson Poppy-Gas Smoke Clouds (soft radial screen blend)
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    for (const sp of movieState.smokePuffs) {
+      const px = (sp.x + Math.sin(t * 1.8 + sp.phase) * 0.03) * w;
+      const py = (sp.y - ((t - 2.65) * 0.06 + sp.phase * 0.04) % 0.28) * h;
+      const rad = sp.r * dpr * (0.9 + 0.2 * Math.sin(t * 3 + sp.phase));
+      const sg = ctx.createRadialGradient(px, py, rad * 0.1, px, py, rad);
+      sg.addColorStop(0, 'rgba(255, 107, 107, 0.22)');
+      sg.addColorStop(0.6, 'rgba(190, 75, 219, 0.10)');
+      sg.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = sg;
+      ctx.beginPath();
+      ctx.arc(px, py, rad, 0, TAU);
+      ctx.fill();
+    }
+
+    // Dynamic Muzzle & Rocket Exhaust Bloom traveling along the rocket path
+    const rp = clamp((t - 2.85) / 2.2, 0, 1);
+    const flareX = w * (0.54 + rp * 0.26);
+    const flareY = h * (0.37 - rp * 0.20);
+    const flareR = Math.min(w, h) * (0.18 + 0.04 * Math.sin(t * 28));
+    const fg = ctx.createRadialGradient(flareX, flareY, flareR * 0.05, flareX, flareY, flareR);
+    fg.addColorStop(0, 'rgba(255, 249, 219, 0.68)');
+    fg.addColorStop(0.35, 'rgba(255, 146, 43, 0.36)');
+    fg.addColorStop(0.7, 'rgba(240, 62, 62, 0.14)');
+    fg.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = fg;
+    ctx.beginPath();
+    ctx.arc(flareX, flareY, flareR, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+
+    // Pre-impact lunar flash at t = 4.95s..5.25s
+    if (t > 4.95) {
+      const fp = clamp((t - 4.95) / 0.30, 0, 1);
+      drawCoverImage(ctx, images[2], w, h, 1.0, 0, 0, 0, 0, fp * 0.65);
+      ctx.fillStyle = `rgba(255, 249, 219, ${fp * 0.65})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+  }
+  // --------------------------------------------------------------------------
+  // ACT 3 (5.25s - 7.55s): The Moon Shatters in a Golden Cosmic Shockwave!
+  // --------------------------------------------------------------------------
+  else if (t < 7.55) {
+    const elapsed = t - 5.25;
+    const p = clamp(elapsed / 2.3, 0, 1);
+    const shake = Math.max(0, (1 - p * 1.2) * 10 * dpr);
+    const sx = Math.sin(t * 55) * shake;
+    const sy = Math.cos(t * 50) * shake;
+
+    drawCoverImage(ctx, images[2], w, h, 1.0 + p * 0.10, 0, p * 0.018, sx, sy, 1.0);
+
+    // Soft Additive Solar/Lunar Core Bloom & Drifting Sparkles
+    const cx = w * 0.50;
+    const cy = h * 0.38;
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    const coreR = Math.min(w, h) * (0.32 + p * 0.18);
+    const cg = ctx.createRadialGradient(cx, cy, coreR * 0.05, cx, cy, coreR);
+    cg.addColorStop(0, `rgba(255, 255, 240, ${0.55 * (1 - p * 0.4)})`);
+    cg.addColorStop(0.4, `rgba(255, 212, 59, ${0.28 * (1 - p * 0.3)})`);
+    cg.addColorStop(0.75, `rgba(218, 119, 242, ${0.14 * (1 - p * 0.2)})`);
+    cg.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = cg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle glowing star-dust motes radiating outward
+    for (let i = 0; i < 28; i++) {
+      const sh = movieState.shards[i];
+      const sxPos = cx + sh.vx * elapsed * w * 0.48;
+      const syPos = cy + (sh.vy * elapsed + 0.09 * elapsed * elapsed) * h * 0.48;
+      const moteR = (2.2 + (i % 3) * 1.4) * dpr;
+      const mg = ctx.createRadialGradient(sxPos, syPos, 0, sxPos, syPos, moteR * 3.2);
+      mg.addColorStop(0, 'rgba(255, 249, 219, 0.92)');
+      mg.addColorStop(0.4, 'rgba(255, 212, 59, 0.45)');
+      mg.addColorStop(1, 'rgba(255, 212, 59, 0)');
+      ctx.fillStyle = mg;
+      ctx.beginPath();
+      ctx.arc(sxPos, syPos, moteR * 3.2, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Impact flash fade-out at start of Act 3
+    if (elapsed < 0.30) {
+      ctx.fillStyle = `rgba(255, 249, 219, ${(1 - elapsed / 0.30) * 0.65})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    // Smooth cross-dissolve into Act 4 at t = 7.10s..7.55s
+    if (t > 7.10) {
+      const dp = clamp((t - 7.10) / 0.45, 0, 1);
+      drawCoverImage(ctx, images[3], w, h, 1.02, 0, 0, 0, 0, dp);
+    }
+  }
+  // --------------------------------------------------------------------------
+  // ACT 4 (7.55s - 10.0s): Zombies Emerge & Smiling Critters Squad Charges In!
+  // --------------------------------------------------------------------------
+  else {
+    const elapsed = t - 7.55;
+    const p = clamp(elapsed / 2.45, 0, 1);
+    drawCoverImage(ctx, images[3], w, h, 1.02 + p * 0.07, p * 0.015, -p * 0.01, 0, 0, 1.0);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    // Glowing Golden Hero Aura around the Smiling Critters on the left
+    const heroGlow = ctx.createRadialGradient(w * 0.28, h * 0.56, 20, w * 0.28, h * 0.56, w * 0.28);
+    heroGlow.addColorStop(0, `rgba(255, 212, 59, ${0.22 + Math.sin(t * 5) * 0.06})`);
+    heroGlow.addColorStop(1, 'rgba(255, 212, 59, 0)');
+    ctx.fillStyle = heroGlow;
+    ctx.fillRect(0, 0, w, h);
+
+    // Pulsing Purple Zombie Portal Glow on the bottom right
+    const portalGlow = ctx.createRadialGradient(w * 0.80, h * 0.78, 15, w * 0.80, h * 0.78, w * 0.24);
+    portalGlow.addColorStop(0, `rgba(218, 119, 242, ${0.26 + Math.cos(t * 6) * 0.08})`);
+    portalGlow.addColorStop(1, 'rgba(121, 80, 242, 0)');
+    ctx.fillStyle = portalGlow;
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+}
+

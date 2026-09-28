@@ -429,21 +429,41 @@ body.inIntro .sun-glow-orb {
 }
 
 /* ============================================================================
-   10-SECOND OPENING CUTSCENE 3-STEP VISUAL STORY PILL (ZERO TEXT)
+   FULL-SCREEN HIGH-RES 10-SECOND OPENING MOVIE CANVAS & STORY PILL (ZERO TEXT)
    ============================================================================ */
+#introMovieCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 23;
+  display: none;
+  background: #0d0822;
+}
+
+body.inIntro #introMovieCanvas {
+  display: block;
+}
+
+body.inIntro #topBar,
+body.inIntro #bottomDock {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .cine-banner {
   position: absolute;
-  top: 78px;
+  bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 8px 18px;
-  background: linear-gradient(180deg, #fffdf7 0%, #f3e8ff 100%);
+  background: linear-gradient(180deg, rgba(255, 253, 247, 0.94) 0%, rgba(243, 232, 255, 0.94) 100%);
   border: 3px solid #ffffff;
   border-radius: 999px;
-  box-shadow: 0 6px 0 #7950f2, 0 12px 28px rgba(20, 10, 45, 0.35);
+  box-shadow: 0 6px 0 #7950f2, 0 12px 28px rgba(10, 5, 28, 0.55);
   z-index: 25;
 }
 
@@ -482,7 +502,7 @@ body.inIntro .sun-glow-orb {
 }
 
 .cine-progress-track {
-  width: 110px;
+  width: 130px;
   height: 12px;
   background: #4c2a85;
   border-radius: 999px;
@@ -494,12 +514,12 @@ body.inIntro .sun-glow-orb {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, #fcc419, #ff6b6b, #da77f2);
-  transition: width 0.1s linear;
+  transition: width 0.08s linear;
 }
 
 .skip-btn {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 2.5px solid #ffffff;
   background: linear-gradient(180deg, #ffe066 0%, #f59f00 100%);
