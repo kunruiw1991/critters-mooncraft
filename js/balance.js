@@ -17,8 +17,8 @@ export const INITIAL_RESOURCES = {
 export const RESOURCE_META = {
   sun:     { id: 'sun',     symbol: '☀️', color: '#ffd43b' },
   wood:    { id: 'wood',    symbol: '🪵', color: '#51cf66' },
-  stone:   { id: 'stone',   symbol: '🪨', color: '#74c0fc' },
-  crystal: { id: 'crystal', symbol: '💎', color: '#da77f2' }
+  stone:   { id: 'stone',   symbol: '🧱', color: '#f76707' },
+  crystal: { id: 'crystal', symbol: '💎', color: '#22b8cf' }
 };
 
 // Moon Sanctuary Forge Recipe: Base cost (escalates +15% per forge so resources always have a high-value sink!)
@@ -46,9 +46,9 @@ export const UNITS = [
     prodInterval: 5.5,
     veinBonusNode: 'sun',
     veinMult: 2.5, // +10 ☀️ every 5.5s on Sun Shrine Vein (only +4 off-vein!)
-    atk: 9,
-    fireInterval: 1.6,
-    range: 2.5,
+    atk: 8,
+    fireInterval: 1.8,
+    range: 2.1,
     antiAir: false,
     lightRadius: 3.5
   },
@@ -61,7 +61,7 @@ export const UNITS = [
     fxIcon: '🪵',
     color: '#495057',
     accent: '#74c0fc',
-    cost: { sun: 35, wood: 10, stone: 0, crystal: 0 },
+    cost: { sun: 35, wood: 0, stone: 0, crystal: 0 },
     hp: 220,
     prod: { sun: 0, wood: 3, stone: 0, crystal: 0 },
     prodInterval: 5.5,
@@ -69,11 +69,11 @@ export const UNITS = [
     veinMult: 2.7, // +8 🪵 every 5.5s on Forest Vein (only +3 off-vein!)
     hasteRadius: 2.6,
     hasteMult: 1.25,
-    atk: 10,
-    fireInterval: 1.5,
-    range: 2.5,
+    atk: 8,
+    fireInterval: 1.8,
+    range: 2.1,
     antiAir: false,
-    knockback: 0.15
+    knockback: 0.12
   },
   {
     id: 'picky',
@@ -81,7 +81,7 @@ export const UNITS = [
     role: 'produce',
     icon: 'icons/picky.jpg',
     portrait: 'icons/picky.jpg',
-    fxIcon: '🪨',
+    fxIcon: '🧱',
     color: '#f783ac',
     accent: '#ffdeeb',
     cost: { sun: 35, wood: 15, stone: 0, crystal: 0 },
@@ -89,7 +89,7 @@ export const UNITS = [
     prod: { sun: 0, wood: 0, stone: 3, crystal: 0 },
     prodInterval: 5.5,
     veinBonusNode: 'stone',
-    veinMult: 2.7, // +8 🪨 every 5.5s on Quarry Vein (only +3 off-vein!)
+    veinMult: 2.7, // +8 🧱 every 5.5s on Brick Quarry Vein (only +3 off-vein!)
     healRadius: 2.8,
     healPerSec: 18,
     atk: 10,
@@ -129,7 +129,7 @@ export const UNITS = [
     role: 'defend',
     icon: 'icons/bobby.jpg',
     portrait: 'icons/bobby.jpg',
-    fxIcon: '🧱',
+    fxIcon: '🛡️',
     color: '#e03131',
     accent: '#ffc9c9',
     cost: { sun: 35, wood: 0, stone: 20, crystal: 0 },
@@ -230,7 +230,7 @@ export const UNITS = [
     fxIcon: '⚡',
     color: '#fcc419',
     accent: '#fff9db',
-    cost: { sun: 65, wood: 25, stone: 25, crystal: 16 },
+    cost: { sun: 65, wood: 0, stone: 35, crystal: 16 },
     hp: 300,
     atk: 44,
     fireInterval: 0.92,
@@ -394,9 +394,10 @@ export const STAGES = [
       { gx: 11, gz: 1, kind: 'sun' },
       { gx: 11, gz: 6, kind: 'stone' }
     ],
-    // Only 1 starter SunnyFox on Sun Shrine — player must build their own economy!
+    // Start with both SunnyFox (☀️) and PoppyDash Skunk (🪵) so the player never deadlocks!
     starterUnits: [
-      { gx: 3, gz: 1, id: 'sunnyfox' }
+      { gx: 3, gz: 1, id: 'sunnyfox' },
+      { gx: 3, gz: 6, id: 'poppydash' }
     ]
   },
 
@@ -428,7 +429,8 @@ export const STAGES = [
       { gx: 11, gz: 4, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 3, gz: 1, id: 'sunnyfox' }
+      { gx: 3, gz: 1, id: 'sunnyfox' },
+      { gx: 3, gz: 6, id: 'poppydash' }
     ]
   },
 
@@ -460,7 +462,8 @@ export const STAGES = [
       { gx: 12, gz: 5, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' }
+      { gx: 6, gz: 1, id: 'sunnyfox' },
+      { gx: 8, gz: 1, id: 'poppydash' }
     ]
   },
 
@@ -493,7 +496,8 @@ export const STAGES = [
       { gx: 13, gz: 1, kind: 'stone' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' }
+      { gx: 6, gz: 1, id: 'sunnyfox' },
+      { gx: 9, gz: 1, id: 'poppydash' }
     ]
   },
 
@@ -536,7 +540,8 @@ export const STAGES = [
       { gx: 14, gz: 6, kind: 'crystal' }
     ],
     starterUnits: [
-      { gx: 6, gz: 1, id: 'sunnyfox' }
+      { gx: 6, gz: 1, id: 'sunnyfox' },
+      { gx: 9, gz: 1, id: 'poppydash' }
     ]
   }
 ];

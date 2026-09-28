@@ -51,24 +51,31 @@
 
     <!-- Floating Puffy Claymorphism Top HUD (Zero Text, Custom 3D Glossy Icons) -->
     <header id="topBar">
-      <!-- Left Floating Cluster: Puffy Resource Pills + Stage Medallions -->
+      <!-- Left Floating Cluster: All 4 Production Resources (☀️ Sun, 🪵 Wood, 🧱 Brick, 💎 Diamond) -->
       <div class="hud-left">
         <div class="clay-capsule sun-capsule" id="sunChip">
           <div class="res-svg-wrap" id="sunSvgSlot"></div>
-          <span id="sunCount" class="clay-num">65</span>
+          <span id="sunCount" class="clay-num">60</span>
         </div>
 
-        <div class="clay-capsule nature-capsule">
-          <div class="clay-pair" id="woodChip">
-            <div class="res-svg-wrap" id="woodSvgSlot"></div>
-            <span id="woodCount" class="clay-num">25</span>
-          </div>
-          <div class="clay-pair" id="stoneChip">
-            <div class="res-svg-wrap" id="stoneSvgSlot"></div>
-            <span id="stoneCount" class="clay-num">25</span>
-          </div>
+        <div class="clay-capsule wood-capsule" id="woodChip">
+          <div class="res-svg-wrap" id="woodSvgSlot"></div>
+          <span id="woodCount" class="clay-num">20</span>
         </div>
 
+        <div class="clay-capsule brick-capsule" id="stoneChip">
+          <div class="res-svg-wrap" id="stoneSvgSlot"></div>
+          <span id="stoneCount" class="clay-num">20</span>
+        </div>
+
+        <div class="clay-capsule magic-capsule" id="crystalChip">
+          <div class="res-svg-wrap" id="crystalSvgSlot"></div>
+          <span id="crystalCount" class="clay-num">0</span>
+        </div>
+      </div>
+
+      <!-- Center Floating Hero: Sculpted 3D Golden Crescent Moon Shrine Gauge + Stage Medallions -->
+      <div class="hud-center">
         <div id="stageBar" class="stage-bar">
           <button class="stage-btn active" data-stage="0">1</button>
           <button class="stage-btn" data-stage="1">2</button>
@@ -76,10 +83,7 @@
           <button class="stage-btn" data-stage="3">4</button>
           <button class="stage-btn" data-stage="4">5</button>
         </div>
-      </div>
 
-      <!-- Center Floating Hero: Sculpted 3D Golden Crescent Moon Shrine Gauge -->
-      <div class="hud-center">
         <div class="moon-shrine-wrap">
           <div class="moon-crescent-badge" id="crescentSvgSlot"></div>
           <div class="moon-bar-bg">
@@ -99,18 +103,11 @@
         </div>
       </div>
 
-      <!-- Right Floating Cluster: Crystal & Heart Clay Pills + Tactile Toy Controls -->
+      <!-- Right Floating Cluster: Heart Clay Pill + Tactile Toy Controls -->
       <div class="hud-right">
-        <div class="clay-capsule magic-capsule">
-          <div class="clay-pair" id="crystalChip">
-            <div class="res-svg-wrap" id="crystalSvgSlot"></div>
-            <span id="crystalCount" class="clay-num">10</span>
-          </div>
-        </div>
-
         <div class="clay-capsule heart-capsule" id="hpChip">
           <div class="res-svg-wrap" id="heartSvgSlot"></div>
-          <span id="hpCount" class="clay-num">15</span>
+          <span id="hpCount" class="clay-num">12</span>
         </div>
 
         <div class="control-pebbles">

@@ -167,6 +167,16 @@ body.inIntro .sun-glow-orb {
   border-color: #fffbe6;
 }
 
+.wood-capsule {
+  background: linear-gradient(180deg, #e3f9e5 0%, #96f2aa 100%);
+  border-color: #f2fff4;
+}
+
+.brick-capsule {
+  background: linear-gradient(180deg, #ffe8d9 0%, #ffad85 100%);
+  border-color: #fff4ed;
+}
+
 .nature-capsule {
   background: linear-gradient(180deg, #e0f7ff 0%, #ade3ff 100%);
   border-color: #f0fbff;
@@ -174,8 +184,8 @@ body.inIntro .sun-glow-orb {
 }
 
 .magic-capsule {
-  background: linear-gradient(180deg, #f8e5ff 0%, #e5b8ff 100%);
-  border-color: #fcf2ff;
+  background: linear-gradient(180deg, #e5f6ff 0%, #a5d8ff 48%, #d0bfff 100%);
+  border-color: #f3f9ff;
 }
 
 .heart-capsule {
@@ -864,9 +874,9 @@ body.inIntro #bottomDock {
 /* Tactile Cream Cost Pill sitting on the Wooden Shelf Ledge under each Card */
 .ucard .cost-row {
   margin-top: 4px;
-  min-height: 23px;
+  min-height: 22px;
   max-width: 100%;
-  padding: 2px 6px;
+  padding: 2px 5px;
   border-radius: 999px;
   background: linear-gradient(180deg, #fff9e6 0%, #edd3a8 100%);
   border: 2px solid #fffdf7;
@@ -874,8 +884,13 @@ body.inIntro #bottomDock {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   flex-wrap: nowrap;
+}
+
+.ucard .cost-pip .svg-ico {
+  width: 11px;
+  height: 11px;
 }
 
 .cost-pip {
@@ -883,11 +898,11 @@ body.inIntro #bottomDock {
   align-items: center;
   gap: 1px;
   font-family: var(--font-round);
-  font-size: 11px;
+  font-size: 10.5px;
   line-height: 1;
   font-weight: 900;
   color: #ffffff;
-  -webkit-text-stroke: 2.4px var(--stroke-choco);
+  -webkit-text-stroke: 2.2px var(--stroke-choco);
   paint-order: stroke fill;
   white-space: nowrap;
 }

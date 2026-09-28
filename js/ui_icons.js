@@ -7,68 +7,56 @@ export const UI_SVGS = {
   // --------------------------------------------------------------------------
   // 1. 5 CORE RESOURCE & STAT 3D GLOSSY ICONS
   // --------------------------------------------------------------------------
-  sun: `<svg viewBox="0 0 48 48" class="svg-ico"><defs>
-    <radialGradient id="gSun" cx="35%" cy="30%" r="65%">
-      <stop offset="0%" stop-color="#fff9db"/>
-      <stop offset="45%" stop-color="#ffd43b"/>
-      <stop offset="100%" stop-color="#f08c00"/>
-    </radialGradient>
-  </defs>
-  <circle cx="24" cy="24" r="20" fill="#ffe066" opacity="0.45"/>
-  <circle cx="24" cy="24" r="16" fill="url(#gSun)" stroke="#5c3d2e" stroke-width="3"/>
-  <ellipse cx="18" cy="16" rx="6" ry="3.2" transform="rotate(-28 18 16)" fill="#ffffff" opacity="0.85"/>
-  <circle cx="29" cy="30" r="2" fill="#fff3bf" opacity="0.6"/>
+  sun: `<svg viewBox="0 0 48 48" class="svg-ico">
+  <circle cx="24" cy="24" r="21" fill="#ffe066" opacity="0.5"/>
+  <circle cx="24" cy="24" r="16.5" fill="#f59f00" stroke="#5c3d2e" stroke-width="3"/>
+  <circle cx="23" cy="23" r="13.5" fill="#ffd43b"/>
+  <ellipse cx="18" cy="16" rx="6" ry="3.2" transform="rotate(-28 18 16)" fill="#ffffff" opacity="0.9"/>
+  <circle cx="29" cy="30" r="2.2" fill="#fff9db" opacity="0.8"/>
   </svg>`,
 
-  wood: `<svg viewBox="0 0 48 48" class="svg-ico"><defs>
-    <linearGradient id="gBark" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#d9822b"/>
-      <stop offset="55%" stop-color="#a65a1a"/>
-      <stop offset="100%" stop-color="#753b09"/>
-    </linearGradient>
-    <linearGradient id="gCut" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#fff3d1"/>
-      <stop offset="100%" stop-color="#e8c382"/>
-    </linearGradient>
-  </defs>
-  <g transform="rotate(-14 24 25)">
-    <rect x="8" y="14" width="28" height="20" rx="9" fill="url(#gBark)" stroke="#4a2c11" stroke-width="3"/>
-    <ellipse cx="13" cy="24" rx="6.5" ry="10" fill="url(#gCut)" stroke="#4a2c11" stroke-width="2.8"/>
-    <ellipse cx="13" cy="24" rx="3" ry="5" fill="none" stroke="#b0753b" stroke-width="1.8"/>
-    <path d="M20 18 H32" stroke="#f4a261" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
-    <path d="M27 13 C28 6, 36 6, 35 13 C32 15, 28 15, 27 13 Z" fill="#69db7c" stroke="#2b8a3e" stroke-width="2.2"/>
+  wood: `<svg viewBox="0 0 48 48" class="svg-ico">
+  <g transform="rotate(-12 24 25)">
+    <rect x="8" y="14" width="29" height="20" rx="9" fill="#a65a1a" stroke="#4a2c11" stroke-width="3"/>
+    <path d="M14 15.5 H31 C34 15.5 35.5 18 35.5 21 H14 Z" fill="#d9822b"/>
+    <ellipse cx="13.5" cy="24" rx="6.5" ry="10" fill="#ffe8b6" stroke="#4a2c11" stroke-width="2.8"/>
+    <ellipse cx="13.5" cy="24" rx="3.2" ry="5" fill="none" stroke="#b0753b" stroke-width="2"/>
+    <path d="M21 19 H32" stroke="#ffd8a8" stroke-width="2.4" stroke-linecap="round" opacity="0.85"/>
+    <path d="M26 13 C27 5.5, 36 5.5, 35 13 C32 15, 28 15, 26 13 Z" fill="#51cf66" stroke="#1b4332" stroke-width="2.4"/>
   </g></svg>`,
 
-  stone: `<svg viewBox="0 0 48 48" class="svg-ico"><defs>
-    <linearGradient id="gRockTop" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#dee2e6"/>
-      <stop offset="100%" stop-color="#868e96"/>
-    </linearGradient>
-    <linearGradient id="gRockSide" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#adb5bd"/>
-      <stop offset="100%" stop-color="#495057"/>
-    </linearGradient>
-  </defs>
-  <polygon points="16,9 34,11 41,25 35,38 13,38 7,24" fill="url(#gRockSide)" stroke="#343a40" stroke-width="3" stroke-linejoin="round"/>
-  <polygon points="16,9 34,11 29,24 14,22" fill="url(#gRockTop)"/>
-  <polygon points="14,22 29,24 35,38 13,38 7,24" fill="#868e96" opacity="0.65"/>
-  <polyline points="7,24 14,22 29,24 41,25" fill="none" stroke="#f8f9fa" stroke-width="2.2" stroke-linecap="round" opacity="0.85"/>
-  <polyline points="29,24 35,38" fill="none" stroke="#343a40" stroke-width="2.2" opacity="0.55"/>
+  stone: `<svg viewBox="0 0 48 48" class="svg-ico">
+  <!-- 3D Isometric Brick Stack / Masonry Brick Block (砖) -->
+  <rect x="5" y="24" width="38" height="17" rx="3.5" fill="#d9480f" stroke="#4a1d0c" stroke-width="3"/>
+  <rect x="7" y="25.5" width="16.5" height="6.5" rx="1.5" fill="#ff7b54"/>
+  <rect x="25.5" y="25.5" width="15.5" height="6.5" rx="1.5" fill="#f76707"/>
+  <rect x="7" y="33.5" width="10" height="6" rx="1.5" fill="#e8590c"/>
+  <rect x="19" y="33.5" width="12" height="6" rx="1.5" fill="#ff7b54"/>
+  <rect x="33" y="33.5" width="8" height="6" rx="1.5" fill="#d9480f"/>
+  <line x1="6" y1="32.5" x2="42" y2="32.5" stroke="#fff3d6" stroke-width="2.4"/>
+  <line x1="24.5" y1="25" x2="24.5" y2="32.5" stroke="#fff3d6" stroke-width="2.4"/>
+  <line x1="18" y1="32.5" x2="18" y2="40" stroke="#fff3d6" stroke-width="2.4"/>
+  <line x1="32" y1="32.5" x2="32" y2="40" stroke="#fff3d6" stroke-width="2.4"/>
+  <!-- Upper Brick stacked on top with 3D studs -->
+  <rect x="11" y="11" width="26" height="13" rx="3" fill="#f76707" stroke="#4a1d0c" stroke-width="3"/>
+  <rect x="13" y="12.5" width="22" height="4.5" rx="1.5" fill="#ffa94d"/>
+  <line x1="24" y1="12" x2="24" y2="23" stroke="#fff3d6" stroke-width="2.4"/>
+  <rect x="15" y="7" width="6" height="4" rx="1.5" fill="#ff922b" stroke="#4a1d0c" stroke-width="2.2"/>
+  <rect x="27" y="7" width="6" height="4" rx="1.5" fill="#ff922b" stroke="#4a1d0c" stroke-width="2.2"/>
   </svg>`,
 
-  crystal: `<svg viewBox="0 0 48 48" class="svg-ico"><defs>
-    <linearGradient id="gGem" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f3d9fa"/>
-      <stop offset="45%" stop-color="#da77f2"/>
-      <stop offset="100%" stop-color="#862e9c"/>
-    </linearGradient>
-  </defs>
-  <polygon points="24,5 39,19 24,43 9,19" fill="url(#gGem)" stroke="#4a154b" stroke-width="3" stroke-linejoin="round"/>
-  <polygon points="24,5 39,19 24,23" fill="#e599f7" opacity="0.85"/>
-  <polygon points="24,5 24,23 9,19" fill="#f8f0fc" opacity="0.9"/>
-  <polygon points="9,19 24,23 24,43" fill="#be4bdb" opacity="0.75"/>
-  <circle cx="19" cy="14" r="2.2" fill="#ffffff"/>
-  <path d="M38 9 L40 12 L43 13 L40 14 L38 17 L36 14 L33 13 L36 12 Z" fill="#fff3bf"/>
+  crystal: `<svg viewBox="0 0 48 48" class="svg-ico">
+  <!-- 3D Faceted Brilliant Cut Diamond (钻石) -->
+  <polygon points="14,9 34,9 43,20 24,43 5,20" fill="#22b8cf" stroke="#183153" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="14,9 34,9 29,20 19,20" fill="#e3fafc"/>
+  <polygon points="5,20 14,9 19,20" fill="#99e9f2"/>
+  <polygon points="34,9 43,20 29,20" fill="#66d9e8"/>
+  <polygon points="5,20 19,20 24,43" fill="#3bc9db"/>
+  <polygon points="19,20 29,20 24,43" fill="#74c0fc"/>
+  <polygon points="29,20 43,20 24,43" fill="#1098ad"/>
+  <polyline points="5,20 43,20" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+  <polyline points="14,9 19,20 24,43 29,20 34,9" fill="none" stroke="#e3fafc" stroke-width="1.8" stroke-linejoin="round" opacity="0.9"/>
+  <path d="M39 6 L40.8 10 L45 11.8 L40.8 13.5 L39 17.5 L37.2 13.5 L33 11.8 L37.2 10 Z" fill="#fff9db" stroke="#f59f00" stroke-width="1.2"/>
   </svg>`,
 
   heart: `<svg viewBox="0 0 48 48" class="svg-ico"><defs>

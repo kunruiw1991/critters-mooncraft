@@ -94,45 +94,41 @@ export function buildResourceNodeMesh(kind) {
     const flower = vox(0.08, 0.08, 0.08, 0xff8787, 0.28, 0.26, 0.22, { emissive: 0xff8787, emissiveIntensity: 0.3 });
     g.add(log1, trunk, puffMain, puffTop, bush, flower);
   } else if (kind === 'stone' || kind === 'stone_vein') {
-    // Sculpted Toy Quarry Boulders with Sky-Crystal Ore
-    const b1 = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(0.28, 0),
-      new THREE.MeshStandardMaterial({ color: 0x8d99ae, roughness: 0.45, metalness: 0.15 })
-    );
-    b1.position.set(-0.06, 0.20, 0);
-    b1.scale.set(1.15, 0.85, 1.05);
-    b1.castShadow = true;
-
-    const b2 = new THREE.Mesh(
-      new THREE.DodecahedronGeometry(0.19, 0),
-      new THREE.MeshStandardMaterial({ color: 0xadb5bd, roughness: 0.4, metalness: 0.2 })
-    );
-    b2.position.set(0.18, 0.15, 0.14);
-    const ore1 = vox(0.13, 0.18, 0.13, 0x74c0fc, 0.08, 0.34, -0.06, { emissive: 0x339af0, emissiveIntensity: 0.45 });
-    ore1.rotation.z = -0.25;
-    g.add(b1, b2, ore1);
+    // Sculpted 3D Masonry Brick Pallet & Terracotta Bricks (砖)
+    const pallet = vox(0.64, 0.08, 0.64, 0xd4a373, 0, 0.04, 0);
+    const row1A = vox(0.28, 0.16, 0.48, 0xd9480f, -0.15, 0.16, 0);
+    const row1B = vox(0.28, 0.16, 0.48, 0xe8590c, 0.15, 0.16, 0);
+    const mortar = vox(0.58, 0.04, 0.46, 0xfff3d6, 0, 0.25, 0);
+    const row2 = vox(0.46, 0.16, 0.34, 0xf76707, 0, 0.34, 0, { emissive: 0xd9480f, emissiveIntensity: 0.2 });
+    const stud1 = vox(0.12, 0.06, 0.12, 0xff922b, -0.11, 0.45, 0);
+    const stud2 = vox(0.12, 0.06, 0.12, 0xff922b, 0.11, 0.45, 0);
+    g.add(pallet, row1A, row1B, mortar, row2, stud1, stud2);
   } else {
-    // 'crystal' / 'crystal_vein' — Cozy Stump Pedestal + Glowing Amethyst Gem Cluster
+    // 'crystal' / 'crystal_vein' — Cozy Pedestal + Sparkling Cyan-Blue Diamond Cluster (钻石)
     const stump = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.26, 0.30, 0.16, 14),
-      new THREE.MeshStandardMaterial({ color: 0xb07d62, roughness: 0.65 })
+      new THREE.CylinderGeometry(0.26, 0.30, 0.14, 14),
+      new THREE.MeshStandardMaterial({ color: 0x748ffc, roughness: 0.45 })
     );
-    stump.position.set(0, 0.08, 0);
+    stump.position.set(0, 0.07, 0);
     g.add(stump);
-    for (let i = 0; i < 5; i++) {
-      const ang = (i / 5) * Math.PI * 2;
-      const dist = i === 0 ? 0 : 0.14;
-      const h = i === 0 ? 0.48 : 0.32;
-      const col = i % 2 === 0 ? 0xda77f2 : 0xe599f7;
-      const sp = vox(0.14, h, 0.14, col, Math.cos(ang) * dist, h * 0.5 + 0.12, Math.sin(ang) * dist, {
-        emissive: 0xae3ec9,
-        emissiveIntensity: 0.65
-      });
-      if (i > 0) {
-        sp.rotation.z = Math.cos(ang) * 0.26;
-        sp.rotation.x = Math.sin(ang) * 0.26;
-      }
-      g.add(sp);
+    const gemMat = new THREE.MeshStandardMaterial({
+      color: 0x66d9e8,
+      emissive: 0x22b8cf,
+      emissiveIntensity: 0.75,
+      roughness: 0.18,
+      metalness: 0.35
+    });
+    const centerGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.26, 0), gemMat);
+    centerGem.position.set(0, 0.36, 0);
+    centerGem.scale.set(0.95, 1.35, 0.95);
+    g.add(centerGem);
+    for (let i = 0; i < 4; i++) {
+      const ang = (i / 4) * Math.PI * 2 + 0.4;
+      const sideGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.15, 0), gemMat);
+      sideGem.position.set(Math.cos(ang) * 0.18, 0.24, Math.sin(ang) * 0.18);
+      sideGem.rotation.z = Math.cos(ang) * 0.32;
+      sideGem.rotation.x = Math.sin(ang) * 0.32;
+      g.add(sideGem);
     }
   }
   return g;

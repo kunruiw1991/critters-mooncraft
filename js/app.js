@@ -30,9 +30,9 @@ import { UI_SVGS, miniResSVG } from './ui_icons.js';
 const ROLE_ICONS = {
   sunnyfox:   { roleIcon: '⛏️', fxIcon: '☀️' },
   poppydash:  { roleIcon: '⛏️', fxIcon: '🪵' },
-  picky:      { roleIcon: '⛏️', fxIcon: '🪨' },
+  picky:      { roleIcon: '⛏️', fxIcon: '🧱' },
   bubba:      { roleIcon: '⛏️', fxIcon: '💎' },
-  bobby:      { roleIcon: '🛡️', fxIcon: '🧱' },
+  bobby:      { roleIcon: '🛡️', fxIcon: '🛡️' },
   mikey:      { roleIcon: '🛡️', fxIcon: '🗼' },
   lunabat:    { roleIcon: '⚔️', fxIcon: '🏹' },
   dogday:     { roleIcon: '⚔️', fxIcon: '💥' },
@@ -57,7 +57,7 @@ export const CRITTER_UNITS = [
     fxIcon: '🔼',
     color: '#ffd43b',
     accent: '#fff3bf',
-    cost: { sun: 20, wood: 10, stone: 10, crystal: 5 }
+    cost: { sun: 25, wood: 0, stone: 0, crystal: 6 }
   },
   {
     id: 'bridge',
@@ -598,7 +598,15 @@ function getEffectiveUnitCost(def) {
     return def.cost || { sun: 0, wood: 0, stone: 0, crystal: 0 };
   }
   const existingCount = S.units.filter(u => u.id === def.id).length;
-  return computeDynamicResourceCosts(def, existingCount);
+  const cost = computeDynamicResourceCosts(def, existingCount);
+  // Anti-softlock safeguard: if the player has 0 SunnyFox or 0 PoppyDash (Skunk) on the board,
+  // cap its Sun cost at current Sun so the player can NEVER get resource-deadlocked!
+  if (existingCount === 0 && (def.id === 'sunnyfox' || def.id === 'poppydash')) {
+    if ((S.res.sun || 0) < cost.sun) {
+      cost.sun = Math.max(0, Math.floor(S.res.sun || 0));
+    }
+  }
+  return cost;
 }
 
 function checkAfford(cost = {}) {
@@ -697,7 +705,7 @@ function buildHotbar() {
         ${visual}
         <span class="ucard-stars">${starsStr}</span>
       </div>
-      <div class="cost-row">${formatCostPipsHTML(getEffectiveUnitCost(u), 2)}</div>
+      <div class="cost-row">${formatCostPipsHTML(getEffectiveUnitCost(u), 4)}</div>
     `;
 
     card.addEventListener('click', () => {
@@ -741,7 +749,7 @@ function updateTopHUD() {
     if (def) {
       const effCost = getEffectiveUnitCost(def);
       const costRow = el.querySelector('.cost-row');
-      if (costRow) costRow.innerHTML = formatCostPipsHTML(effCost, 2);
+      if (costRow) costRow.innerHTML = formatCostPipsHTML(effCost, 4);
       el.classList.toggle('locked', !checkAfford(effCost));
     }
   });
@@ -882,7 +890,7 @@ export function tryUpgradeUnit(u) {
   }
   const upCost = computeUpgradeCost(u.def, u.level || 1);
   if (!checkAfford(upCost)) {
-    showBubble('⬆️⭐ ☀️🪵🪨💎 ❌', 1.5);
+    showBubble('⬆️⭐ ☀️🪵🧱💎 ❌', 1.5);
     return false;
   }
   spendCost(upCost);
@@ -911,7 +919,7 @@ export function forgeMoonAtSanctuary() {
   }
 
   const forgeMult = Math.pow(1.15, S.forgeCount || 0);
-  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 30 + 🪵 15 + 🪨 15 + 💎 8 * 1.15^N -> +6 🌕)
+  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 30 + 🪵 15 + 🧱 15 + 💎 8 * 1.15^N -> +6 🌕)
   const bundleCost = {
     sun: Math.round(30 * forgeMult),
     wood: Math.round(15 * forgeMult),
@@ -930,7 +938,7 @@ export function forgeMoonAtSanctuary() {
         z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
       }
     }
-    showBubble('☀️🪵🪨💎 ➔ +6 🌕 ✨', 1.4);
+    showBubble('☀️🪵🧱💎 ➔ +6 🌕 ✨', 1.4);
     updateTopHUD();
     return true;
   }
@@ -939,7 +947,7 @@ export function forgeMoonAtSanctuary() {
   const singleCost = Math.round(45 * Math.pow(1.15, S.forgeCount || 0));
   const entries = [
     ['crystal', '💎'],
-    ['stone', '🪨'],
+    ['stone', '🧱'],
     ['wood', '🪵'],
     ['sun', '☀️']
   ].sort((a, b) => (S.res[b[0]] || 0) - (S.res[a[0]] || 0));
@@ -956,7 +964,7 @@ export function forgeMoonAtSanctuary() {
     return true;
   }
 
-  showBubble(`☀️${bundleCost.sun} 🪵${bundleCost.wood} 🪨${bundleCost.stone} 💎${bundleCost.crystal} ❌`, 1.4);
+  showBubble(`☀️${bundleCost.sun} 🪵${bundleCost.wood} 🧱${bundleCost.stone} 💎${bundleCost.crystal} ❌`, 1.4);
   return false;
 }
 
@@ -1004,7 +1012,7 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
   if (def.role === 'terraform') {
     const effCost = getEffectiveUnitCost(def);
     if (!free && !checkAfford(effCost)) {
-      showBubble('🪵🪨 ❌', 1.2);
+      showBubble('🪵🧱 ❌', 1.2);
       return false;
     }
     if (def.id === 'bridge') {
@@ -1068,7 +1076,7 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
 
   const effCost = getEffectiveUnitCost(def);
   if (!free && !checkAfford(effCost)) {
-    showBubble('☀️🪵🪨💎 ❌', 1.3);
+    showBubble('☀️🪵🧱💎 ❌', 1.3);
     return false;
   }
   if (!free) spendCost(effCost);
