@@ -1,10 +1,16 @@
+/* ============================================================================
+   CRITTERCRAFT: MOONLESS NIGHT — PINTEREST 3D TOY DIORAMA & CLAYMORPHISM UI
+   Inspired by Clash Mini, Animal Crossing: Pocket Camp & Super Mario 3D World
+   ============================================================================ */
+
 :root {
-  --surface-cream: rgba(255, 253, 245, 0.95);
-  --surface-white: #ffffff;
-  --border-gold: #ffd43b;
-  --border-soft: #ffe8a3;
-  --text-dark: #2b2d42;
-  --shadow-warm: 0 8px 24px rgba(80, 60, 20, 0.16);
+  --font-round: "Fredoka", "Nunito", "PingFang SC", system-ui, -apple-system, sans-serif;
+  --stroke-choco: #5a3821;
+  --cream-soft: #fffbf2;
+  --wood-top: #e39d60;
+  --wood-mid: #c77b3e;
+  --wood-deep: #8f4f1d;
+  --clay-shadow: 0 8px 18px rgba(45, 30, 65, 0.18), 0 3px 0 rgba(90, 56, 33, 0.16);
 }
 
 * {
@@ -20,15 +26,84 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #3b6998;
-  font-family: "Nunito", "Fredoka", "PingFang SC", system-ui, -apple-system, sans-serif;
-  color: var(--text-dark);
+  font-family: var(--font-round);
+  background: #68b5ff;
 }
 
 #app {
   position: relative;
   width: 100vw;
   height: 100vh;
+}
+
+/* ============================================================================
+   DREAMY SUNLIT PASTEL SKY & FLUFFY 3D CUMULUS CLOUDS BACKDROP
+   ============================================================================ */
+#skyBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    #58a6ff 0%,
+    #8ecbff 42%,
+    #d2ebff 68%,
+    #ffebd2 88%,
+    #ffd7b3 100%
+  );
+  transition: background 0.8s ease;
+}
+
+body.inIntro #skyBackdrop {
+  background: radial-gradient(circle at 50% 28%, #342263 0%, #191038 65%, #0d0821 100%);
+}
+
+body.inIntro .cloud-cluster,
+body.inIntro .sun-glow-orb {
+  opacity: 0.15;
+}
+
+.sun-glow-orb {
+  position: absolute;
+  top: -80px;
+  right: 8%;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 248, 205, 0.88) 0%, rgba(255, 224, 130, 0.35) 45%, rgba(255, 224, 130, 0) 72%);
+  transition: opacity 0.6s ease;
+}
+
+.cloud-cluster {
+  position: absolute;
+  filter: drop-shadow(0 14px 24px rgba(55, 85, 135, 0.16));
+  transition: opacity 0.6s ease;
+}
+
+.cloud-left {
+  top: 14%;
+  left: -28px;
+  width: clamp(220px, 24vw, 350px);
+}
+
+.cloud-right {
+  top: 12%;
+  right: -24px;
+  width: clamp(230px, 25vw, 370px);
+}
+
+.cloud-bottom-left {
+  bottom: 16%;
+  left: 2%;
+  width: clamp(180px, 19vw, 280px);
+}
+
+.cloud-bottom-right {
+  bottom: 15%;
+  right: 2%;
+  width: clamp(180px, 19vw, 280px);
 }
 
 #gameCanvas {
@@ -38,229 +113,319 @@ html, body {
   height: 100%;
   display: block;
   touch-action: none;
+  z-index: 2;
 }
 
 /* ============================================================================
-   TOP BRIGHT PASTEL HUD BAR (100% ICON-ONLY)
+   FLOATING PUFFY CLAYMORPHISM TOP HUD (NO FULL-WIDTH WHITE BAR!)
    ============================================================================ */
 #topBar {
   position: absolute;
-  top: 10px;
-  left: 12px;
-  right: 12px;
+  top: 12px;
+  left: 14px;
+  right: 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 7px 12px;
-  background: var(--surface-cream);
-  border: 3px solid var(--surface-white);
-  outline: 2px solid var(--border-gold);
-  border-radius: 24px;
-  box-shadow: var(--shadow-warm);
+  gap: 6px;
   z-index: 20;
+  pointer-events: none;
 }
 
-.hud-left, .hud-center, .hud-right {
+.hud-left,
+.hud-center,
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  pointer-events: auto;
+}
+
+/* Puffy 3D Clay Capsules (Modeled on Pinterest Reference) */
+.clay-capsule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 8px;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    inset 0 4px 6px rgba(255, 255, 255, 0.9),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.08),
+    0 6px 0 rgba(70, 50, 30, 0.18),
+    0 10px 20px rgba(30, 45, 80, 0.18);
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.clay-capsule.pulse,
+.clay-pair.pulse {
+  transform: scale(1.14);
+}
+
+.sun-capsule {
+  background: linear-gradient(180deg, #fff6cc 0%, #ffdf78 100%);
+  border-color: #fffbe6;
+}
+
+.nature-capsule {
+  background: linear-gradient(180deg, #e0f7ff 0%, #ade3ff 100%);
+  border-color: #f0fbff;
+  gap: 11px;
+}
+
+.magic-capsule {
+  background: linear-gradient(180deg, #f8e5ff 0%, #e5b8ff 100%);
+  border-color: #fcf2ff;
+}
+
+.heart-capsule {
+  background: linear-gradient(180deg, #ffe3ea 0%, #ffb3c6 100%);
+  border-color: #fff2f5;
+}
+
+.clay-pair {
   display: flex;
   align-items: center;
   gap: 5px;
-  flex-wrap: nowrap;
+  transition: transform 0.16s ease;
 }
 
-.icon-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
-  border: 2.5px solid #ffe066;
-  background: #fff9db;
-  color: var(--text-dark);
-  font-size: 19px;
-  cursor: pointer;
+.res-svg-wrap {
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 3px 0 #fcc419;
-  transition: transform 0.12s ease, background 0.15s ease;
+  filter: drop-shadow(0 3px 3px rgba(60, 35, 15, 0.22));
 }
 
-.icon-btn:hover {
-  transform: translateY(-2px);
-  background: #fff3bf;
+.svg-ico {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.icon-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #fcc419;
+/* Chunky Chocolate-Outlined Puffy Toy Numbers */
+.clay-num {
+  font-family: var(--font-round);
+  font-weight: 900;
+  font-size: 18px;
+  line-height: 1;
+  color: #ffffff;
+  -webkit-text-stroke: 3.6px var(--stroke-choco);
+  paint-order: stroke fill;
+  text-shadow: 0 2.5px 0 var(--stroke-choco);
+  letter-spacing: 0.2px;
 }
 
-.icon-btn.active {
-  background: #ffd43b;
-  border-color: #f59f00;
-}
-
-/* 5-Stage Map Selector Bar */
+/* 5-Stage Island Medallions */
 .stage-bar {
   display: flex;
   align-items: center;
-  gap: 3px;
-  background: #edf2ff;
-  padding: 3px 5px;
-  border-radius: 14px;
-  border: 2px solid #bac8ff;
+  gap: 4px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #eef6ff 0%, #cce3ff 100%);
+  border: 3px solid #ffffff;
+  box-shadow:
+    inset 0 3px 5px rgba(255, 255, 255, 0.9),
+    0 5px 0 rgba(55, 85, 135, 0.22),
+    0 8px 16px rgba(30, 45, 80, 0.16);
 }
 
 .stage-btn {
-  min-width: 34px;
-  height: 33px;
-  padding: 0 4px;
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background: #ffffff;
-  font-size: 16px;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  border: 2.5px solid #ffffff;
+  background: linear-gradient(180deg, #a5d8ff 0%, #74c0fc 100%);
+  font-family: var(--font-round);
+  font-weight: 900;
+  font-size: 15px;
+  color: #ffffff;
+  -webkit-text-stroke: 3px var(--stroke-choco);
+  paint-order: stroke fill;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.12s ease, background 0.15s ease;
+  box-shadow: 0 3px 0 #339af0;
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .stage-btn:hover {
-  transform: scale(1.07);
+  transform: translateY(-2px) scale(1.06);
 }
 
 .stage-btn.active {
-  background: #ffd43b;
-  border-color: #f08c00;
-  box-shadow: 0 3px 0 #f08c00;
-  transform: translateY(-2px);
+  background: linear-gradient(180deg, #fff3bf 0%, #fcc419 100%);
+  border-color: #ffffff;
+  box-shadow: 0 4px 0 #e67700, 0 0 12px rgba(255, 212, 59, 0.8);
+  transform: translateY(-2px) scale(1.1);
 }
 
 .stage-btn.cleared {
-  background: #d3f9d8;
-  border-color: #40c057;
+  background: linear-gradient(180deg, #b2f2bb 0%, #51cf66 100%);
+  box-shadow: 0 3px 0 #2b8a3e;
 }
 
-/* 4-Resource Pastel Chips + Base Hearts */
-.res-chip {
+/* ============================================================================
+   CENTER HERO: SCULPTED 3D GOLDEN CRESCENT MOON SHRINE GAUGE
+   ============================================================================ */
+.moon-shrine-wrap {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 9px;
+  gap: 7px;
+  padding: 5px 9px 5px 38px;
   border-radius: 999px;
-  font-weight: 900;
-  font-size: 15px;
-  color: #2b2d42;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  white-space: nowrap;
-  transition: transform 0.15s ease;
+  background: linear-gradient(180deg, #d8c6ff 0%, #b197fc 100%);
+  border: 3.5px solid #f3e8ff;
+  box-shadow:
+    inset 0 4px 6px rgba(255, 255, 255, 0.85),
+    inset 0 -4px 6px rgba(65, 35, 120, 0.25),
+    0 6px 0 #6741d9,
+    0 12px 24px rgba(55, 25, 100, 0.26);
 }
 
-.res-chip.pulse {
-  transform: scale(1.16);
+.moon-crescent-badge {
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 54px;
+  height: 54px;
+  filter: drop-shadow(0 4px 8px rgba(240, 140, 0, 0.45));
+  pointer-events: none;
+  z-index: 3;
 }
 
-.res-ico {
-  font-size: 16px;
-}
-
-.sun-chip {
-  background: #fff3bf;
-  outline: 2px solid #fcc419;
-}
-
-.wood-chip {
-  background: #d3f9d8;
-  outline: 2px solid #51cf66;
-}
-
-.stone-chip {
-  background: #d0ebff;
-  outline: 2px solid #4dabf7;
-}
-
-.crystal-chip {
-  background: #f3d9fa;
-  outline: 2px solid #cc5de8;
-}
-
-.hp-chip {
-  background: #ffe3e3;
-  outline: 2px solid #ff6b6b;
-}
-
-/* Moon Shard Restoration Progress Bar */
-.moon-progress-wrap {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: #fff9db;
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 2px solid #fcc419;
-  white-space: nowrap;
-}
-
-.moon-ico {
-  font-size: 17px;
+.svg-crescent {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .moon-bar-bg {
-  width: 68px;
-  height: 12px;
-  background: #e9ecef;
+  position: relative;
+  width: 120px;
+  height: 20px;
+  background: linear-gradient(180deg, #4c2a85 0%, #6842a8 100%);
   border-radius: 999px;
   overflow: hidden;
-  border: 1.5px solid #adb5bd;
+  border: 2.5px solid #e5dbff;
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.45);
 }
 
 .moon-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #fcc419, #ffe066, #51cf66);
+  background: linear-gradient(90deg, #fcc419 0%, #ffe066 60%, #fff9db 100%);
   border-radius: 999px;
-  transition: width 0.3s ease;
+  box-shadow: 0 0 14px #ffd43b;
+  transition: width 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.moon-pearls {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  pointer-events: none;
+}
+
+.moon-pearl {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff9db;
+  box-shadow: 0 0 8px #ffd43b, 0 0 3px #ffffff;
+  opacity: 0.88;
 }
 
 .moon-num {
-  font-weight: 900;
-  font-size: 14px;
-  color: #d9480f;
+  font-size: 16px;
+  min-width: 44px;
+  text-align: center;
 }
 
 .craft-moon-btn {
-  padding: 3px 8px;
+  height: 32px;
+  padding: 0 8px;
   border-radius: 999px;
-  border: 2px solid #cc5de8;
-  background: linear-gradient(135deg, #f3d9fa, #fff3bf);
-  font-size: 14px;
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 2px 0 #ae3ec9;
-  transition: transform 0.12s ease;
-}
-
-.craft-moon-btn:hover {
-  transform: scale(1.06);
-}
-
-.action-pill {
-  height: 40px;
-  padding: 0 12px;
-  border-radius: 13px;
-  border: 2.5px solid #ff8787;
-  background: linear-gradient(135deg, #ffe3e3, #ffc9c9);
-  font-size: 18px;
+  border: 2.5px solid #ffffff;
+  background: linear-gradient(180deg, #fff3bf 0%, #fcc419 100%);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 3px 0 #fa5252;
+  box-shadow: 0 4px 0 #d9480f, inset 0 2px 3px #ffffff;
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.craft-moon-btn:hover {
+  transform: translateY(-2px) scale(1.06);
+}
+
+.craft-moon-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #d9480f;
+}
+
+.svg-forge {
+  width: 40px;
+  height: 26px;
+  display: block;
+}
+
+/* Tactile Control Pebbles */
+.control-pebbles {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 2.5px solid #ffffff;
+  background: linear-gradient(180deg, #fff9db 0%, #ffe066 100%);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.9),
+    0 4px 0 #e67700,
+    0 6px 12px rgba(45, 30, 65, 0.16);
   transition: transform 0.12s ease;
 }
 
-.action-pill:hover {
+.icon-btn:hover {
   transform: translateY(-2px);
+}
+
+.icon-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #e67700;
+}
+
+.icon-btn.active {
+  background: linear-gradient(180deg, #b2f2bb 0%, #51cf66 100%);
+  box-shadow: 0 4px 0 #2b8a3e;
+}
+
+.wave-pill {
+  background: linear-gradient(180deg, #ffc9c9 0%, #ff6b6b 100%);
+  box-shadow: 0 4px 0 #c92a2a, 0 6px 12px rgba(201, 42, 42, 0.22);
+}
+
+.ctrl-svg {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 /* ============================================================================
@@ -268,18 +433,17 @@ html, body {
    ============================================================================ */
 .cine-banner {
   position: absolute;
-  top: 74px;
+  top: 78px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 8px 18px;
-  background: var(--surface-cream);
+  background: linear-gradient(180deg, #fffdf7 0%, #f3e8ff 100%);
   border: 3px solid #ffffff;
-  outline: 2.5px solid var(--border-gold);
   border-radius: 999px;
-  box-shadow: var(--shadow-warm);
+  box-shadow: 0 6px 0 #7950f2, 0 12px 28px rgba(20, 10, 45, 0.35);
   z-index: 25;
 }
 
@@ -304,44 +468,44 @@ html, body {
 }
 
 .cine-step.active {
-  background: #fff3bf;
-  border: 2px solid #fcc419;
+  background: linear-gradient(180deg, #fff9db 0%, #ffe066 100%);
+  border: 2px solid #f08c00;
   opacity: 1;
   transform: scale(1.08);
-  box-shadow: 0 3px 10px rgba(252, 196, 25, 0.35);
+  box-shadow: 0 3px 10px rgba(252, 196, 25, 0.45);
 }
 
 .cine-arrow {
   font-size: 18px;
-  color: #adb5bd;
+  color: #845ef7;
   font-weight: 900;
 }
 
 .cine-progress-track {
   width: 110px;
   height: 12px;
-  background: #e9ecef;
+  background: #4c2a85;
   border-radius: 999px;
   overflow: hidden;
-  border: 1.5px solid #ced4da;
+  border: 2px solid #d0bfff;
 }
 
 .cine-progress-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #7950f2, #f72585, #fcc419);
+  background: linear-gradient(90deg, #fcc419, #ff6b6b, #da77f2);
   transition: width 0.1s linear;
 }
 
 .skip-btn {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  border: 2.5px solid #fcc419;
-  background: #ffd43b;
+  border: 2.5px solid #ffffff;
+  background: linear-gradient(180deg, #ffe066 0%, #f59f00 100%);
   font-size: 18px;
   cursor: pointer;
-  box-shadow: 0 3px 0 #f08c00;
+  box-shadow: 0 3px 0 #d9480f;
 }
 
 /* ============================================================================
@@ -349,17 +513,16 @@ html, body {
    ============================================================================ */
 .bubble {
   position: absolute;
-  top: 74px;
+  top: 76px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 6px 16px;
+  padding: 6px 18px;
   border-radius: 999px;
-  background: var(--surface-cream);
+  background: linear-gradient(180deg, #ffffff 0%, #fff3bf 100%);
   border: 3px solid #ffffff;
-  outline: 2.5px solid #fcc419;
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 900;
-  box-shadow: var(--shadow-warm);
+  box-shadow: 0 5px 0 #f08c00, 0 10px 22px rgba(45, 30, 65, 0.22);
   z-index: 22;
   pointer-events: none;
 }
@@ -369,47 +532,53 @@ html, body {
 }
 
 /* ============================================================================
-   BOTTOM CRITTER HOTBAR & VISUAL RECIPE PILL (ZERO TEXT)
+   COZY SCULPTED HONEY-WOOD & CREAM TOY-BOX SHELF (PINTEREST REFERENCE STYLE!)
    ============================================================================ */
 #bottomDock {
   position: absolute;
-  bottom: 10px;
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: min(98vw, 1250px);
+  width: min(99vw, 1260px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   z-index: 20;
+  pointer-events: none;
 }
 
+/* Floating Cream Recipe Pill right above the Toy Shelf */
 .recipe-pill {
+  pointer-events: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 5px 16px;
-  background: var(--surface-cream);
-  border: 2.5px solid #ffffff;
-  outline: 2px solid #ffe066;
+  gap: 8px;
+  padding: 4px 14px;
+  background: linear-gradient(180deg, #fffdf9 0%, #f7ebd4 100%);
+  border: 3px solid #ffffff;
   border-radius: 999px;
-  box-shadow: 0 4px 14px rgba(80, 60, 20, 0.14);
-  font-size: 17px;
+  box-shadow:
+    inset 0 2px 4px #ffffff,
+    0 4px 0 #c78d52,
+    0 8px 18px rgba(45, 25, 10, 0.2);
+  font-size: 15px;
   font-weight: 900;
+  color: var(--stroke-choco);
 }
 
 .recipe-thumb {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #fcc419;
+  border: 2px solid #f08c00;
   background: #fff9db;
 }
 
 .recipe-arrow {
-  color: #f08c00;
-  font-size: 17px;
+  color: #d97724;
+  font-size: 16px;
 }
 
 .recipe-chip {
@@ -418,140 +587,288 @@ html, body {
   gap: 3px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: #fff3bf;
-  border: 1.5px solid #fcc419;
-  font-size: 15px;
+  background: #fff5d6;
+  border: 1.5px solid #f59f00;
+  font-size: 14px;
+  color: var(--stroke-choco);
+}
+
+/* Outer Sculpted Honey-Wood Toy-Box Frame */
+.wood-toybox-frame {
+  pointer-events: auto;
+  width: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 7px 10px 9px 10px;
+  background: linear-gradient(180deg, #e09b5c 0%, #c47738 65%, #a65c21 100%);
+  border-top: 4px solid #f7c694;
+  border-left: 3px solid #f0b47a;
+  border-right: 3px solid #f0b47a;
+  border-radius: 30px 30px 0 0;
+  box-shadow:
+    inset 0 4px 8px rgba(255, 235, 205, 0.55),
+    0 -8px 26px rgba(45, 25, 10, 0.26);
+}
+
+.wood-wing {
+  width: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wing-deco {
+  width: 30px;
+  height: 60px;
+  filter: drop-shadow(0 2px 2px rgba(70, 35, 10, 0.35));
+}
+
+/* Recessed Warm Buttercream Card Well */
+.cream-shelf-well {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px 9px 8px;
+  background: linear-gradient(180deg, #fffbf0 0%, #f2dfc4 100%);
+  border-radius: 22px;
+  border: 3px solid #fffdf9;
+  box-shadow:
+    inset 0 5px 10px rgba(140, 90, 40, 0.22),
+    0 4px 0 #8f4f1d;
+}
+
+/* 3D Wooden Ledge Bar running underneath the Cards */
+.wood-shelf-ledge {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 29px;
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #d98e4e 0%, #a85e24 100%);
+  border-top: 2px solid #f5be8a;
+  box-shadow: 0 4px 6px rgba(80, 40, 10, 0.25);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .hotbar {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  max-width: 100%;
+  justify-content: space-between;
+  gap: 5px;
   overflow-x: auto;
-  background: var(--surface-cream);
-  border: 3px solid #ffffff;
-  outline: 2.5px solid var(--border-gold);
-  border-radius: 24px;
-  box-shadow: var(--shadow-warm);
+  scrollbar-width: none;
 }
 
+.hotbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Collectible 3D Toy Card + Bottom Wooden-Shelf Cost Pill */
 .ucard {
   position: relative;
-  min-width: 78px;
-  height: 90px;
-  padding: 5px 3px 4px 3px;
-  border-radius: 18px;
-  border: 2.5px solid #e9ecef;
-  background: #ffffff;
+  flex: 1 1 0;
+  min-width: 68px;
+  max-width: 84px;
+  height: 100px;
+  padding: 0;
+  border: none;
+  background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  box-shadow: 0 4px 0 #dee2e6;
-  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.ucard.tier-1 {
-  background: linear-gradient(180deg, #ffffff 0%, #fff9db 100%);
+.ucard-frame {
+  position: relative;
+  width: 100%;
+  height: 70px;
+  border-radius: 18px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #ffffff;
+  box-shadow:
+    inset 0 3px 5px rgba(255, 255, 255, 0.85),
+    0 5px 0 rgba(70, 45, 20, 0.25),
+    0 6px 12px rgba(40, 25, 10, 0.18);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+/* Neon-Pastel Role Frames (Modeled on Pinterest Reference Cards!) */
+.ucard.role-produce .ucard-frame {
+  background: radial-gradient(circle at 50% 35%, #fff9db 0%, #ffd43b 100%);
   border-color: #ffe066;
+  box-shadow:
+    0 0 0 2px #f08c00,
+    0 5px 0 #d9480f,
+    0 0 12px rgba(255, 212, 59, 0.55);
 }
 
-.ucard.tier-2 {
-  background: linear-gradient(180deg, #ffffff 0%, #e7f5ff 100%);
-  border-color: #74c0fc;
+.ucard.role-defend .ucard-frame {
+  background: radial-gradient(circle at 50% 35%, #e3fafc 0%, #4dabf7 100%);
+  border-color: #a5d8ff;
+  box-shadow:
+    0 0 0 2px #1c7ed6,
+    0 5px 0 #1864ab,
+    0 0 12px rgba(77, 171, 247, 0.55);
 }
 
-.ucard.tier-3 {
-  background: linear-gradient(180deg, #ffffff 0%, #f3d9fa 100%);
-  border-color: #da77f2;
+.ucard.role-attack .ucard-frame {
+  background: radial-gradient(circle at 50% 35%, #f8f0fc 0%, #cc5de8 100%);
+  border-color: #eebefa;
+  box-shadow:
+    0 0 0 2px #9c36b5,
+    0 5px 0 #70248a,
+    0 0 12px rgba(218, 119, 242, 0.55);
 }
 
-.ucard.tier-0 {
-  background: linear-gradient(180deg, #ffffff 0%, #ebfbee 100%);
-  border-color: #8ce99a;
+.ucard.role-utility .ucard-frame {
+  background: radial-gradient(circle at 50% 35%, #ebfbee 0%, #51cf66 100%);
+  border-color: #b2f2bb;
+  box-shadow:
+    0 0 0 2px #2f9e44,
+    0 5px 0 #237032,
+    0 0 12px rgba(81, 207, 102, 0.5);
 }
 
 .ucard:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
 }
 
 .ucard.active {
-  border-color: #f08c00;
-  outline: 3px solid #ffd43b;
-  box-shadow: 0 5px 0 #f08c00;
-  transform: translateY(-5px) scale(1.04);
+  transform: translateY(-6px) scale(1.05);
+}
+
+.ucard.active .ucard-frame {
+  border-color: #ffffff;
+  box-shadow:
+    0 0 0 3.5px #ffd43b,
+    0 6px 0 #e67700,
+    0 0 20px rgba(255, 212, 59, 0.95);
 }
 
 .ucard.locked {
-  opacity: 0.45;
-  filter: grayscale(0.45);
+  opacity: 0.48;
+  filter: saturate(0.45);
 }
 
 .ucard img {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-  border-radius: 11px;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  background: #fffdf7;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.16);
   pointer-events: none;
 }
 
-.ucard .tool-emoji {
-  font-size: 30px;
-  line-height: 42px;
-}
-
-.ucard .role-badge {
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  border: 2px solid #fcc419;
-  font-size: 12px;
+.tool-svg-wrap {
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+  filter: drop-shadow(0 2px 4px rgba(40, 20, 5, 0.25));
+}
+
+.tool-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Mini Stars & Corner Role Gem inside Card Frame */
+.ucard-stars {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: -1px;
+  filter: drop-shadow(0 1px 2px rgba(60, 30, 5, 0.6));
+  pointer-events: none;
 }
 
 .ucard .fx-badge {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 22px;
-  height: 22px;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: #fff9db;
-  border: 2px solid #74c0fc;
-  font-size: 12px;
+  background: #ffffff;
+  border: 2px solid #fcc419;
+  font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
 }
 
+.ucard .fx-badge .svg-ico,
+.recipe-chip .svg-ico,
+.cost-pip .svg-ico,
+.svg-ico.mini-res {
+  width: 13px;
+  height: 13px;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.recipe-chip .svg-ico {
+  width: 15px;
+  height: 15px;
+}
+
+.recipe-chip .tool-svg {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Tactile Cream Cost Pill sitting on the Wooden Shelf Ledge under each Card */
 .ucard .cost-row {
+  margin-top: 4px;
+  min-height: 23px;
+  max-width: 100%;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff9e6 0%, #edd3a8 100%);
+  border: 2px solid #fffdf7;
+  box-shadow: 0 3px 0 #a36c37, 0 4px 6px rgba(60, 30, 5, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  flex-wrap: wrap;
-  max-width: 72px;
+  gap: 3px;
+  flex-wrap: nowrap;
 }
 
 .cost-pip {
-  font-size: 10px;
-  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-family: var(--font-round);
+  font-size: 11px;
+  line-height: 1;
   font-weight: 900;
-  padding: 1px 3px;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid #dee2e6;
+  color: #ffffff;
+  -webkit-text-stroke: 2.4px var(--stroke-choco);
+  paint-order: stroke fill;
   white-space: nowrap;
 }
 
@@ -565,8 +882,8 @@ html, body {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(43, 76, 126, 0.55);
-  backdrop-filter: blur(6px);
+  background: rgba(43, 55, 95, 0.55);
+  backdrop-filter: blur(7px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -578,16 +895,16 @@ html, body {
 }
 
 .modal-card {
-  background: var(--surface-cream);
-  border: 4px solid #ffffff;
-  outline: 4px solid #ffd43b;
-  border-radius: 36px;
-  padding: 28px 36px;
+  background: linear-gradient(180deg, #fffdf7 0%, #f5e6cc 100%);
+  border: 5px solid #ffffff;
+  outline: 4px solid #e09b5c;
+  border-radius: 38px;
+  padding: 28px 38px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 18px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 12px 0 #a65c21, 0 24px 50px rgba(0, 0, 0, 0.35);
 }
 
 .modal-stars {
@@ -615,11 +932,17 @@ html, body {
 }
 
 .modal-stage-badge {
+  font-family: var(--font-round);
+  font-weight: 900;
   font-size: 32px;
-  padding: 8px 22px;
+  color: #ffffff;
+  -webkit-text-stroke: 4px var(--stroke-choco);
+  paint-order: stroke fill;
+  padding: 8px 24px;
   border-radius: 999px;
-  background: #fff3bf;
-  border: 3px solid #fcc419;
+  background: linear-gradient(180deg, #fff3bf 0%, #fcc419 100%);
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 0 #e67700;
 }
 
 .modal-btn-row {
@@ -635,7 +958,7 @@ html, body {
   border: 3px solid #ffffff;
   font-size: 32px;
   cursor: pointer;
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.18);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.22);
   transition: transform 0.12s ease;
 }
 
@@ -644,16 +967,22 @@ html, body {
 }
 
 .next-btn {
-  background: linear-gradient(135deg, #51cf66, #94d82d);
-  outline: 3px solid #2b8a3e;
+  background: linear-gradient(180deg, #69db7c 0%, #37b24d 100%);
 }
 
 .continue-btn {
-  background: linear-gradient(135deg, #ffd43b, #fcc419);
-  outline: 3px solid #e67700;
+  background: linear-gradient(180deg, #ffe066 0%, #f59f00 100%);
 }
 
 .replay-btn {
-  background: linear-gradient(135deg, #74c0fc, #4dabf7);
-  outline: 3px solid #1971c2;
+  background: linear-gradient(180deg, #74c0fc 0%, #339af0 100%);
+}
+
+@media (max-width: 1100px) {
+  .wood-wing {
+    display: none;
+  }
+  .moon-bar-bg {
+    width: 110px;
+  }
 }

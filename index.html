@@ -3,78 +3,129 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>🐱🌙 🚀🌕 🧟⚔️</title>
   <link rel="icon" href="icons/catnap.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Nunito:wght@800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="app">
+    <!-- Dreamy Sunlit Pastel Sky & Fluffy 3D Diorama Clouds Backdrop -->
+    <div id="skyBackdrop" aria-hidden="true">
+      <div class="sun-glow-orb"></div>
+      <svg class="cloud-cluster cloud-left" viewBox="0 0 360 220">
+        <defs>
+          <linearGradient id="cGradL" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="68%" stop-color="#fff5eb" />
+            <stop offset="100%" stop-color="#ebd8d0" />
+          </linearGradient>
+        </defs>
+        <path d="M20 185 Q10 135 55 125 Q70 75 130 85 Q175 45 230 85 Q285 80 305 125 Q345 135 335 185 Z" fill="url(#cGradL)" />
+        <path d="M40 175 Q35 142 72 135 Q90 95 140 102 Q178 72 220 102 Q265 98 282 135 Q312 142 305 175 Z" fill="#ffffff" opacity="0.65" />
+      </svg>
+      <svg class="cloud-cluster cloud-right" viewBox="0 0 380 230">
+        <defs>
+          <linearGradient id="cGradR" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="68%" stop-color="#fff4e6" />
+            <stop offset="100%" stop-color="#edd6c8" />
+          </linearGradient>
+        </defs>
+        <path d="M30 195 Q15 145 65 132 Q85 80 148 90 Q195 42 255 86 Q315 78 335 132 Q370 145 358 195 Z" fill="url(#cGradR)" />
+        <path d="M55 182 Q45 148 88 140 Q108 98 160 106 Q198 70 245 104 Q290 98 308 140 Q338 148 330 182 Z" fill="#ffffff" opacity="0.68" />
+      </svg>
+      <svg class="cloud-cluster cloud-bottom-left" viewBox="0 0 300 160">
+        <path d="M10 145 Q5 105 45 98 Q65 60 115 70 Q155 40 200 72 Q245 68 262 102 Q292 110 284 145 Z" fill="#fff8f0" opacity="0.88" />
+      </svg>
+      <svg class="cloud-cluster cloud-bottom-right" viewBox="0 0 300 160">
+        <path d="M15 145 Q8 105 48 98 Q68 58 120 68 Q162 38 208 72 Q252 68 268 102 Q295 110 286 145 Z" fill="#fff8f0" opacity="0.88" />
+      </svg>
+    </div>
+
     <canvas id="gameCanvas"></canvas>
 
-    <!-- Top Bright Pastel HUD Bar (100% Zero-Text Icon UI) -->
+    <!-- Floating Puffy Claymorphism Top HUD (Zero Text, Custom 3D Glossy Icons) -->
     <header id="topBar">
+      <!-- Left Floating Cluster: Puffy Resource Pills + Stage Medallions -->
       <div class="hud-left">
-        <button id="pauseBtn" class="icon-btn" aria-label="pause">⏸</button>
-        <button id="replayCineBtn" class="icon-btn" aria-label="cutscene">🎬</button>
-        <button id="camZoomBtn" class="icon-btn" aria-label="zoom">🗺️</button>
+        <div class="clay-capsule sun-capsule" id="sunChip">
+          <div class="res-svg-wrap" id="sunSvgSlot"></div>
+          <span id="sunCount" class="clay-num">65</span>
+        </div>
+
+        <div class="clay-capsule nature-capsule">
+          <div class="clay-pair" id="woodChip">
+            <div class="res-svg-wrap" id="woodSvgSlot"></div>
+            <span id="woodCount" class="clay-num">25</span>
+          </div>
+          <div class="clay-pair" id="stoneChip">
+            <div class="res-svg-wrap" id="stoneSvgSlot"></div>
+            <span id="stoneCount" class="clay-num">25</span>
+          </div>
+        </div>
+
         <div id="stageBar" class="stage-bar">
-          <button class="stage-btn active" data-stage="0">1️⃣</button>
-          <button class="stage-btn" data-stage="1">2️⃣</button>
-          <button class="stage-btn" data-stage="2">3️⃣</button>
-          <button class="stage-btn" data-stage="3">4️⃣</button>
-          <button class="stage-btn" data-stage="4">5️⃣</button>
+          <button class="stage-btn active" data-stage="0">1</button>
+          <button class="stage-btn" data-stage="1">2</button>
+          <button class="stage-btn" data-stage="2">3</button>
+          <button class="stage-btn" data-stage="3">4</button>
+          <button class="stage-btn" data-stage="4">5</button>
         </div>
       </div>
 
-      <!-- 4 Layered Production Materials + Base Hearts + Moon Shard Goal -->
+      <!-- Center Floating Hero: Sculpted 3D Golden Crescent Moon Shrine Gauge -->
       <div class="hud-center">
-        <div class="res-chip sun-chip" id="sunChip">
-          <span class="res-ico">☀️</span>
-          <span id="sunCount">110</span>
-        </div>
-        <div class="res-chip wood-chip" id="woodChip">
-          <span class="res-ico">🪵</span>
-          <span id="woodCount">35</span>
-        </div>
-        <div class="res-chip stone-chip" id="stoneChip">
-          <span class="res-ico">🪨</span>
-          <span id="stoneCount">30</span>
-        </div>
-        <div class="res-chip crystal-chip" id="crystalChip">
-          <span class="res-ico">💎</span>
-          <span id="crystalCount">15</span>
-        </div>
-        <div class="res-chip hp-chip" id="hpChip">
-          <span class="res-ico">❤️</span>
-          <span id="hpCount">25</span>
-        </div>
-
-        <div class="moon-progress-wrap">
-          <span class="moon-ico">🌑</span>
+        <div class="moon-shrine-wrap">
+          <div class="moon-crescent-badge" id="crescentSvgSlot"></div>
           <div class="moon-bar-bg">
             <div id="moonBarFill" class="moon-bar-fill" style="width: 0%"></div>
+            <div class="moon-pearls">
+              <span class="moon-pearl"></span>
+              <span class="moon-pearl"></span>
+              <span class="moon-pearl"></span>
+              <span class="moon-pearl"></span>
+              <span class="moon-pearl"></span>
+            </div>
           </div>
-          <span class="moon-ico">🌕</span>
-          <span id="moonShardText" class="moon-num">0/30</span>
+          <span id="moonShardText" class="clay-num moon-num">0/30</span>
           <button id="craftMoonBtn" class="craft-moon-btn" aria-label="craft-moon">
-            <span>⚗️➔🌕</span>
+            <span id="forgeSvgSlot"></span>
           </button>
         </div>
       </div>
 
+      <!-- Right Floating Cluster: Crystal & Heart Clay Pills + Tactile Toy Controls -->
       <div class="hud-right">
-        <button id="waveBtn" class="action-pill wave-pill" aria-label="wave">
-          <span>🧟⚡</span>
-        </button>
-        <button id="sandboxBtn" class="icon-btn" aria-label="sandbox">🧱</button>
-        <button id="musicBtn" class="icon-btn" aria-label="music">🎵</button>
-        <button id="sfxBtn" class="icon-btn" aria-label="sound">🔊</button>
+        <div class="clay-capsule magic-capsule">
+          <div class="clay-pair" id="crystalChip">
+            <div class="res-svg-wrap" id="crystalSvgSlot"></div>
+            <span id="crystalCount" class="clay-num">10</span>
+          </div>
+        </div>
+
+        <div class="clay-capsule heart-capsule" id="hpChip">
+          <div class="res-svg-wrap" id="heartSvgSlot"></div>
+          <span id="hpCount" class="clay-num">15</span>
+        </div>
+
+        <div class="control-pebbles">
+          <button id="waveBtn" class="icon-btn wave-pill" aria-label="wave"></button>
+          <button id="sandboxBtn" class="icon-btn" aria-label="sandbox"></button>
+          <button id="camZoomBtn" class="icon-btn" aria-label="zoom"></button>
+          <button id="replayCineBtn" class="icon-btn" aria-label="cutscene"></button>
+          <button id="pauseBtn" class="icon-btn" aria-label="pause"></button>
+          <button id="musicBtn" class="icon-btn" aria-label="music"></button>
+          <button id="sfxBtn" class="icon-btn" aria-label="sound"></button>
+        </div>
       </div>
     </header>
 
-    <!-- 10-Second Opening Cutscene 3-Step Visual Picture Pill (Zero Text) -->
+    <!-- 10-Second Opening Cutscene 3-Step Visual Story Pill (Zero Text) -->
     <div id="cineBanner" class="cine-banner hidden">
       <div class="cine-steps">
         <div id="cineStep1" class="cine-step active">🐱🌙</div>
@@ -89,13 +140,38 @@
       <button id="skipCineBtn" class="skip-btn" aria-label="skip">⏭️</button>
     </div>
 
-    <!-- Pure-Icon Visual Toast Pill (Zero Text) -->
+    <!-- Pure-Icon Floating Feedback Toast Pill (Zero Text) -->
     <div id="bubble" class="bubble hidden"></div>
 
-    <!-- Bottom Minecraft Critter Builder Hotbar + Visual Recipe Pill -->
+    <!-- Cozy Sculpted Honey-Wood & Cream Toy-Box Card Shelf (Zero Text) -->
     <footer id="bottomDock">
       <div id="unitInfo" class="recipe-pill"></div>
-      <div id="hotbar" class="hotbar"></div>
+      <div class="wood-toybox-frame">
+        <!-- Decorative Clay Flowers & Stars on Left Wooden Wing -->
+        <div class="wood-wing wood-wing-left" aria-hidden="true">
+          <svg viewBox="0 0 60 90" class="wing-deco">
+            <circle cx="26" cy="48" r="14" fill="#ffd43b" stroke="#a65a1a" stroke-width="2.5"/>
+            <circle cx="26" cy="48" r="7" fill="#ff922b"/>
+            <circle cx="46" cy="24" r="6" fill="#ff8787"/>
+            <circle cx="42" cy="72" r="6.5" fill="#69db7c"/>
+          </svg>
+        </div>
+
+        <div class="cream-shelf-well">
+          <div id="hotbar" class="hotbar"></div>
+          <div class="wood-shelf-ledge" aria-hidden="true"></div>
+        </div>
+
+        <!-- Decorative Clay Flowers & Stars on Right Wooden Wing -->
+        <div class="wood-wing wood-wing-right" aria-hidden="true">
+          <svg viewBox="0 0 60 90" class="wing-deco">
+            <circle cx="34" cy="44" r="13" fill="#ff8787" stroke="#a65a1a" stroke-width="2.5"/>
+            <circle cx="34" cy="44" r="6" fill="#ffd43b"/>
+            <circle cx="16" cy="24" r="6.5" fill="#74c0fc"/>
+            <circle cx="18" cy="72" r="6" fill="#ffe066"/>
+          </svg>
+        </div>
+      </div>
     </footer>
 
     <!-- Pure-Icon Stage Clear & Moon Restored Celebration Modal -->
@@ -107,7 +183,7 @@
           <img src="icons/catnap.jpg" alt="" class="modal-portrait" />
           <span class="modal-big-ico">🎉</span>
         </div>
-        <div id="modalStageBadge" class="modal-stage-badge">1️⃣ ➔ 2️⃣</div>
+        <div id="modalStageBadge" class="modal-stage-badge">1 ➔ 2</div>
         <div class="modal-btn-row">
           <button id="nextStageBtn" class="big-play-btn next-btn" aria-label="next">▶️➡️</button>
           <button id="continueBtn" class="big-play-btn continue-btn" aria-label="continue">🧱✨</button>

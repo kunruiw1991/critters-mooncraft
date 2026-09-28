@@ -23,6 +23,7 @@ import {
   buildVoxelZombie
 } from './voxel_models.js';
 import { sound } from './audio.js';
+import { UI_SVGS, miniResSVG } from './ui_icons.js';
 
 // Pure visual role & effect badges for 10 Critters + Upgrade Star Tool + Terraform/Reclaim Tools
 const ROLE_ICONS = {
@@ -49,7 +50,8 @@ export const CRITTER_UNITS = [
     id: 'upgrade_star',
     tier: 0,
     role: 'upgrade',
-    emoji: '⬆️',
+    toolSvg: UI_SVGS.tool_upgrade,
+    emoji: '⭐',
     roleIcon: '⭐',
     fxIcon: '🔼',
     color: '#ffd43b',
@@ -60,7 +62,8 @@ export const CRITTER_UNITS = [
     id: 'bridge',
     tier: 0,
     role: 'terraform',
-    emoji: '🌉',
+    toolSvg: UI_SVGS.tool_bridge,
+    emoji: '🌊',
     roleIcon: '🧰',
     fxIcon: '🌊',
     color: '#bc6c25',
@@ -71,7 +74,8 @@ export const CRITTER_UNITS = [
     id: 'spike_trap',
     tier: 0,
     role: 'terraform',
-    emoji: '⚙️',
+    toolSvg: UI_SVGS.tool_spike,
+    emoji: '💥',
     roleIcon: '🧰',
     fxIcon: '💥',
     color: '#ced4da',
@@ -84,7 +88,8 @@ export const CRITTER_UNITS = [
     id: 'shovel',
     tier: 0,
     role: 'tool',
-    emoji: '⛏️',
+    toolSvg: UI_SVGS.tool_shovel,
+    emoji: '♻️',
     roleIcon: '♻️',
     fxIcon: '☀️',
     color: '#ffd166',
@@ -94,30 +99,35 @@ export const CRITTER_UNITS = [
 ];
 
 // ============================================================================
-// BRIGHT TWILIGHT & SKY SCENE + RENDERER
+// SUNLIT PINTEREST 3D TOY DIORAMA SCENE + ALPHA RENDERER
 // ============================================================================
 const canvas = document.getElementById('gameCanvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true,
+  powerPreference: 'high-performance'
+});
+renderer.setClearColor(0x000000, 0);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.24;
+renderer.toneMappingExposure = 1.28;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x2b4c7e);
-scene.fog = new THREE.FogExp2(0x2b4c7e, 0.011);
+scene.background = null;
 
-const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 180);
-camera.position.set(0, 15.5, 16.5);
+const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 180);
+camera.position.set(0, 15.0, 16.0);
 camera.lookAt(0, 0, 0.5);
 
-const hemiLight = new THREE.HemisphereLight(0xd0ebff, 0x3b6998, 1.08);
+const hemiLight = new THREE.HemisphereLight(0xfff8e7, 0xd4a373, 1.26);
 scene.add(hemiLight);
 
-const dirLight = new THREE.DirectionalLight(0xfff3bf, 1.38);
-dirLight.position.set(10, 22, 12);
+const dirLight = new THREE.DirectionalLight(0xfff5d6, 1.46);
+dirLight.position.set(11, 24, 14);
 dirLight.castShadow = true;
 dirLight.shadow.mapSize.set(2048, 2048);
 dirLight.shadow.camera.left = -18;
@@ -320,6 +330,24 @@ export function buildStageWorld(stageIdx) {
   S.roadMarkers = [];
   S.spawnQueue = [];
 
+  // --------------------------------------------------------------------------
+  // CHUNKY 3D FLOATING TOY ISLAND DIORAMA PEDESTAL (Pinterest Reference Style!)
+  // --------------------------------------------------------------------------
+  const islandPedestal = new THREE.Group();
+  const islW = S.cols + 0.56;
+  const islD = S.rows + 0.56;
+  // Upper warm terracotta-peach clay rim
+  islandPedestal.add(vox(islW, 0.34, islD, 0xe8a56f, 0, -0.17, 0));
+  // Middle lavender-slate cliff slab (matching Pinterest floating island cliff!)
+  islandPedestal.add(vox(islW - 0.36, 0.68, islD - 0.36, 0x9b86d4, 0, -0.68, 0));
+  // Lower tapered deep-violet cliff base
+  islandPedestal.add(vox(islW - 1.15, 0.56, islD - 1.15, 0x7c66b8, 0, -1.30, 0));
+  // Cute protruding cliff rock studs on the front face
+  for (let rx = -Math.floor(S.cols / 3); rx <= Math.floor(S.cols / 3); rx += 2) {
+    islandPedestal.add(vox(0.45, 0.28, 0.22, 0xb5a2e8, rx * 1.3, -0.62, islD * 0.5 - 0.12));
+  }
+  tileGroup.add(islandPedestal);
+
   for (let gx = 0; gx < S.cols; gx++) {
     tiles[gx] = [];
     for (let gz = 0; gz < S.rows; gz++) {
@@ -352,45 +380,70 @@ export function buildStageWorld(stageIdx) {
       const tGroup = new THREE.Group();
       tGroup.position.set(wpos.x, 0, wpos.z);
 
-      const dirt = vox(0.98, 0.28, 0.98, 0x795548, 0, -0.14, 0);
+      const dirt = vox(0.99, 0.28, 0.99, 0xd48c5c, 0, -0.14, 0);
       tGroup.add(dirt);
 
-      let topColor = (gx + gz) % 2 === 0 ? 0x51cf66 : 0x40c057;
-      let topOpts = {};
+      // Warm Sage-Pistachio Meadow Greens & Pastel-Lilac Cobblestones (Pinterest Palette!)
+      let topColor = (gx + gz) % 2 === 0 ? 0xb7e486 : 0xa3d973;
+      let bevelColor = (gx + gz) % 2 === 0 ? 0xc5ed98 : 0xb2e284;
+      let topOpts = { roughness: 0.55 };
       if (type === 'sanctuary') {
-        topColor = (gx + gz) % 2 === 0 ? 0xffe066 : 0xffd43b;
-        topOpts = { emissive: 0xf59f00, emissiveIntensity: 0.32 };
+        topColor = (gx + gz) % 2 === 0 ? 0xffe899 : 0xffd966;
+        bevelColor = 0xfff3bf;
+        topOpts = { emissive: 0xf59f00, emissiveIntensity: 0.25 };
       } else if (type === 'corrupted') {
-        topColor = (gx + gz) % 2 === 0 ? 0x5f3dc4 : 0x4c2a85;
+        topColor = (gx + gz) % 2 === 0 ? 0x7950f2 : 0x6741d9;
+        bevelColor = 0x9775fa;
         topOpts = { emissive: 0x3b096c, emissiveIntensity: 0.35 };
       } else if (type === 'road') {
-        topColor = (gx + gz) % 2 === 0 ? 0xd0bfff : 0xb197fc;
-        topOpts = { emissive: 0x5f3dc4, emissiveIntensity: 0.15 };
+        topColor = (gx + gz) % 2 === 0 ? 0xd8c6ff : 0xcbb2ff;
+        bevelColor = (gx + gz) % 2 === 0 ? 0xe5dbff : 0xdac7ff;
+        topOpts = { emissive: 0x7950f2, emissiveIntensity: 0.10, roughness: 0.45 };
       } else if (type === 'water') {
-        topColor = 0x339af0;
-        topOpts = { emissive: 0x1c7ed6, emissiveIntensity: 0.35, roughness: 0.18 };
+        topColor = 0x56b8ff;
+        bevelColor = 0x82ccff;
+        topOpts = { emissive: 0x228be6, emissiveIntensity: 0.32, roughness: 0.16 };
       } else if (type === 'cliff') {
-        topColor = 0xadb5bd;
+        topColor = 0xb5e48c;
+        bevelColor = 0xc9f2a3;
       } else if (type === 'sun') {
-        topColor = 0x94d82d;
+        topColor = 0xc5ed98;
+        bevelColor = 0xd8f5b0;
       } else if (type === 'wood') {
-        topColor = 0x2f9e44;
+        topColor = 0x95d5b2;
+        bevelColor = 0xb7e4c7;
       } else if (type === 'stone') {
-        topColor = 0x868e96;
+        topColor = 0xadb5bd;
+        bevelColor = 0xced4da;
       } else if (type === 'crystal') {
-        topColor = 0x7950f2;
+        topColor = 0xcbb2ff;
+        bevelColor = 0xe5dbff;
       }
 
-      const topBlock = vox(0.96, height, 0.96, topColor, 0, height / 2, 0, topOpts);
+      const topBlock = vox(0.98, height, 0.98, topColor, 0, height / 2, 0, topOpts);
       topBlock.userData = { gx, gz };
       tGroup.add(topBlock);
       tilePickMeshes.push(topBlock);
 
-      // Glowing path dots on road tiles leading from Portals to the Moon Sanctuary
+      // Soft Molded Toy Bevel Cap on every tile
+      if (type !== 'water') {
+        const cap = vox(0.88, 0.035, 0.88, bevelColor, 0, height + 0.017, 0, topOpts);
+        tGroup.add(cap);
+      }
+
+      // Cute Tiny 3D Wildflowers & Grass Tufts on empty meadow tiles
+      if (type === 'grass' && ((gx * 7 + gz * 13) % 5 === 0)) {
+        const tuft = vox(0.08, 0.11, 0.08, 0x74c69d, -0.26, height + 0.07, -0.24);
+        const flCol = (gx + gz) % 3 === 0 ? 0xff8787 : ((gx + gz) % 3 === 1 ? 0xffe066 : 0xe599f7);
+        const blossom = vox(0.09, 0.07, 0.09, flCol, 0.26, height + 0.06, 0.24, { emissive: flCol, emissiveIntensity: 0.25 });
+        tGroup.add(tuft, blossom);
+      }
+
+      // Glowing starlight cobblestone inlays on road tiles leading to the Moon Sanctuary
       if (type === 'road' && (gx + gz) % 2 === 0) {
-        const marker = vox(0.24, 0.05, 0.24, 0xffe066, 0, height + 0.03, 0, {
-          emissive: 0xfcc419,
-          emissiveIntensity: 0.65
+        const marker = vox(0.22, 0.045, 0.22, 0xfff3bf, 0, height + 0.035, 0, {
+          emissive: 0xffd43b,
+          emissiveIntensity: 0.7
         });
         tGroup.add(marker);
         S.roadMarkers.push({ mesh: marker, gx, gz });
@@ -399,7 +452,7 @@ export function buildStageWorld(stageIdx) {
       let nodeMesh = null;
       if (type === 'sun' || type === 'wood' || type === 'stone' || type === 'crystal') {
         nodeMesh = buildResourceNodeMesh(type);
-        nodeMesh.position.y = height;
+        nodeMesh.position.y = height + 0.02;
         tGroup.add(nodeMesh);
       }
 
@@ -450,10 +503,10 @@ export function buildStageWorld(stageIdx) {
     const portal = new THREE.Group();
     portal.position.set(wp.x, 0.32, wp.z);
     portal.rotation.y = p.rotY;
-    portal.add(vox(0.22, 1.35, 0.22, 0x3b096c, 0, 0.68, -0.42));
-    portal.add(vox(0.22, 1.35, 0.22, 0x3b096c, 0, 0.68, 0.42));
-    portal.add(vox(0.26, 0.24, 1.12, 0x5f3dc4, 0, 1.38, 0, { emissive: 0x7950f2, emissiveIntensity: 0.6 }));
-    portal.add(vox(0.08, 1.12, 0.66, 0xb5179e, 0, 0.65, 0, { emissive: 0xf72585, emissiveIntensity: 0.9, opacity: 0.78 }));
+    portal.add(vox(0.24, 1.35, 0.24, 0x5f3dc4, 0, 0.68, -0.42));
+    portal.add(vox(0.24, 1.35, 0.24, 0x5f3dc4, 0, 0.68, 0.42));
+    portal.add(vox(0.30, 0.26, 1.14, 0x7950f2, 0, 1.38, 0, { emissive: 0x9775fa, emissiveIntensity: 0.6 }));
+    portal.add(vox(0.08, 1.12, 0.66, 0xda77f2, 0, 0.65, 0, { emissive: 0xf72585, emissiveIntensity: 0.9, opacity: 0.78 }));
     tileGroup.add(portal);
   }
 
@@ -462,7 +515,7 @@ export function buildStageWorld(stageIdx) {
     placeUnitOnTile(st.gx, st.gz, st.id, true);
   }
 
-  // Spawn 2 initial zombies along the portal road so the action and goal are immediately clear!
+  // Spawn initial zombie along the portal road so the action and goal are immediately clear!
   spawnZombie('walker');
 
   updateCameraFraming();
@@ -474,15 +527,15 @@ function updateCameraFraming() {
   if (S.phase === 'cutscene') return;
   const scaleFactor = Math.max(1, S.cols / 16.5);
   if (S.zoomOut) {
-    camera.position.set(0, 18.0 * scaleFactor, 17.0 * scaleFactor);
+    camera.position.set(0, 17.5 * scaleFactor, 16.5 * scaleFactor);
   } else {
-    camera.position.set(0, 14.2 * scaleFactor, 14.5 * scaleFactor);
+    camera.position.set(0, 13.8 * scaleFactor, 14.0 * scaleFactor);
   }
-  camera.lookAt(0, 0, 0.4);
+  camera.lookAt(0, -0.2, 0.5);
 }
 
 // ============================================================================
-// 100% ZERO-TEXT UI & HOTBAR RENDERING (WITH DYNAMIC COST SCALING)
+// PINTEREST 3D GLOSSY SVG HUD & COLLECTIBLE TOY SHELF RENDERING
 // ============================================================================
 const sunCountEl = document.getElementById('sunCount');
 const woodCountEl = document.getElementById('woodCount');
@@ -494,6 +547,29 @@ const moonShardTextEl = document.getElementById('moonShardText');
 const unitInfoEl = document.getElementById('unitInfo');
 const bubbleEl = document.getElementById('bubble');
 const hotbarEl = document.getElementById('hotbar');
+
+// Inject custom 3D-shaded SVG icons into the Top Claymorphic HUD slots
+function initTopHudSVGs() {
+  const setSlot = (id, svg) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = svg;
+  };
+  setSlot('sunSvgSlot', UI_SVGS.sun);
+  setSlot('woodSvgSlot', UI_SVGS.wood);
+  setSlot('stoneSvgSlot', UI_SVGS.stone);
+  setSlot('crystalSvgSlot', UI_SVGS.crystal);
+  setSlot('heartSvgSlot', UI_SVGS.heart);
+  setSlot('crescentSvgSlot', UI_SVGS.crescentShrine);
+  setSlot('forgeSvgSlot', UI_SVGS.forgeMoon);
+  setSlot('waveBtn', UI_SVGS.ctrl_wave);
+  setSlot('sandboxBtn', UI_SVGS.ctrl_sandbox);
+  setSlot('camZoomBtn', UI_SVGS.ctrl_zoom);
+  setSlot('replayCineBtn', UI_SVGS.ctrl_cutscene);
+  setSlot('pauseBtn', UI_SVGS.ctrl_pause);
+  setSlot('musicBtn', UI_SVGS.ctrl_music);
+  setSlot('sfxBtn', UI_SVGS.ctrl_sfx);
+}
+initTopHudSVGs();
 
 let bubbleTimer = 0;
 function showBubble(iconSequence, dur = 2.0) {
@@ -521,14 +597,29 @@ function spendCost(cost = {}) {
   deductCost(S.res, cost);
 }
 
-function formatCostPipsHTML(cost = {}) {
-  const parts = [];
-  if (cost.sun > 0) parts.push(`<span class="cost-pip">☀️${cost.sun}</span>`);
-  if (cost.wood > 0) parts.push(`<span class="cost-pip">🪵${cost.wood}</span>`);
-  if (cost.stone > 0) parts.push(`<span class="cost-pip">🪨${cost.stone}</span>`);
-  if (cost.crystal > 0) parts.push(`<span class="cost-pip">💎${cost.crystal}</span>`);
-  if (parts.length === 0) parts.push(`<span class="cost-pip">✨0</span>`);
-  return parts.join('');
+function formatCostPipsHTML(cost = {}, maxPips = 4) {
+  const entries = [
+    ['sun', cost.sun || 0],
+    ['wood', cost.wood || 0],
+    ['stone', cost.stone || 0],
+    ['crystal', cost.crystal || 0]
+  ].filter(([, val]) => val > 0);
+
+  if (entries.length === 0) {
+    return `<span class="cost-pip">✨0</span>`;
+  }
+  const shown = entries.slice(0, maxPips);
+  return shown
+    .map(([k, val]) => `<span class="cost-pip">${miniResSVG(k)}${val}</span>`)
+    .join('');
+}
+
+function getFxBadgeHTML(u) {
+  if (u.prod?.sun > 0) return miniResSVG('sun');
+  if (u.prod?.wood > 0) return miniResSVG('wood');
+  if (u.prod?.stone > 0) return miniResSVG('stone');
+  if (u.prod?.crystal > 0) return miniResSVG('crystal');
+  return u.fxIcon || '✨';
 }
 
 function updateRecipePill(def) {
@@ -536,49 +627,63 @@ function updateRecipePill(def) {
   const effCost = getEffectiveUnitCost(def);
   const thumbHTML = def.portrait
     ? `<img src="${def.portrait}" alt="" class="recipe-thumb" />`
-    : `<span class="recipe-chip">${def.emoji || '🧰'}</span>`;
+    : `<span class="recipe-chip">${def.toolSvg || UI_SVGS.tool_upgrade}</span>`;
 
-  let outputIcons = `${def.roleIcon || '✨'} ${def.fxIcon || '✨'}`;
+  let outputIcons = '';
   if (def.prod) {
     const out = [];
-    if (def.prod.sun > 0) out.push(`+☀️${def.prod.sun}`);
-    if (def.prod.wood > 0) out.push(`+🪵${def.prod.wood}`);
-    if (def.prod.stone > 0) out.push(`+🪨${def.prod.stone}`);
-    if (def.prod.crystal > 0) out.push(`+💎${def.prod.crystal}`);
-    outputIcons += ` <span class="recipe-chip">${out.join(' ')}</span>`;
+    if (def.prod.sun > 0) out.push(`+${miniResSVG('sun')}${def.prod.sun}`);
+    if (def.prod.wood > 0) out.push(`+${miniResSVG('wood')}${def.prod.wood}`);
+    if (def.prod.stone > 0) out.push(`+${miniResSVG('stone')}${def.prod.stone}`);
+    if (def.prod.crystal > 0) out.push(`+${miniResSVG('crystal')}${def.prod.crystal}`);
+    outputIcons = `<span class="recipe-chip">${out.join(' ')}</span>`;
   } else if (def.atk || def.dmg) {
-    outputIcons += ` <span class="recipe-chip">⚔️${def.atk || def.dmg}</span>`;
+    outputIcons = `<span class="recipe-chip">${def.fxIcon || '⚔️'} ${def.atk || def.dmg}</span>`;
   } else if (def.hp && def.role === 'defend') {
-    outputIcons += ` <span class="recipe-chip">🛡️${def.hp}</span>`;
+    outputIcons = `<span class="recipe-chip">🛡️ ${def.hp}</span>`;
   } else if (def.role === 'upgrade') {
-    outputIcons += ` <span class="recipe-chip">⭐➔⭐⭐➔⭐⭐⭐</span>`;
+    outputIcons = `<span class="recipe-chip">⭐ ➔ ⭐⭐ ➔ ⭐⭐⭐</span>`;
+  } else {
+    outputIcons = `<span class="recipe-chip">${def.fxIcon || '✨'}</span>`;
   }
 
   unitInfoEl.innerHTML = `
     ${thumbHTML}
     <span class="recipe-arrow">➔</span>
-    <span>${outputIcons}</span>
+    ${outputIcons}
     <span class="recipe-arrow">│</span>
-    <span class="cost-row">${formatCostPipsHTML(effCost)}</span>
+    <span class="cost-row">${formatCostPipsHTML(effCost, 4)}</span>
   `;
+}
+
+function getCardRoleClass(u) {
+  if (u.role === 'produce') return 'role-produce';
+  if (u.role === 'defend') return 'role-defend';
+  if (u.role === 'attack') return 'role-attack';
+  return 'role-utility';
 }
 
 function buildHotbar() {
   hotbarEl.innerHTML = '';
   for (const u of CRITTER_UNITS) {
     const card = document.createElement('button');
-    card.className = `ucard tier-${u.tier ?? 1}` + (S.selectedTool === u.id ? ' active' : '');
+    card.className = `ucard ${getCardRoleClass(u)} tier-${u.tier ?? 1}` + (S.selectedTool === u.id ? ' active' : '');
     card.dataset.id = u.id;
 
     const visual = u.portrait
       ? `<img src="${u.portrait}" alt="" />`
-      : `<div class="tool-emoji">${u.emoji || '🧰'}</div>`;
+      : `<div class="tool-svg-wrap">${u.toolSvg || UI_SVGS.tool_upgrade}</div>`;
+
+    const starCount = Math.max(1, Math.min(3, u.tier || 1));
+    const starsStr = '⭐'.repeat(starCount);
 
     card.innerHTML = `
-      <span class="role-badge">${u.roleIcon || '✨'}</span>
-      <span class="fx-badge">${u.fxIcon || '✨'}</span>
-      ${visual}
-      <div class="cost-row">${formatCostPipsHTML(getEffectiveUnitCost(u))}</div>
+      <div class="ucard-frame">
+        <span class="fx-badge">${getFxBadgeHTML(u)}</span>
+        ${visual}
+        <span class="ucard-stars">${starsStr}</span>
+      </div>
+      <div class="cost-row">${formatCostPipsHTML(getEffectiveUnitCost(u), 2)}</div>
     `;
 
     card.addEventListener('click', () => {
@@ -594,12 +699,11 @@ function buildHotbar() {
 buildHotbar();
 
 function updateStageButtons() {
-  const stageNumerals = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
   document.querySelectorAll('.stage-btn').forEach(btn => {
     const idx = Number(btn.dataset.stage);
     btn.classList.toggle('active', idx === S.stageIndex);
     btn.classList.toggle('cleared', S.clearedStages.has(idx));
-    btn.textContent = S.clearedStages.has(idx) ? `${stageNumerals[idx]}⭐` : stageNumerals[idx];
+    btn.textContent = S.clearedStages.has(idx) ? `${idx + 1}★` : `${idx + 1}`;
   });
 }
 
@@ -623,7 +727,7 @@ function updateTopHUD() {
     if (def) {
       const effCost = getEffectiveUnitCost(def);
       const costRow = el.querySelector('.cost-row');
-      if (costRow) costRow.innerHTML = formatCostPipsHTML(effCost);
+      if (costRow) costRow.innerHTML = formatCostPipsHTML(effCost, 2);
       el.classList.toggle('locked', !checkAfford(effCost));
     }
   });
@@ -644,6 +748,8 @@ export function startOpeningCutscene() {
   S.cineTime = 0;
   S.moonExploded = false;
   document.body.classList.add('inIntro');
+  scene.background = new THREE.Color(0x191038);
+  skyGroup.visible = true;
 
   tileGroup.visible = false;
   unitGroup.visible = false;
@@ -781,6 +887,8 @@ function updateOpeningCutscene(dt) {
 export function finishCutscene() {
   S.phase = 'playing';
   document.body.classList.remove('inIntro');
+  scene.background = null;
+  skyGroup.visible = false;
   cineGroup.visible = false;
   cineBannerEl.classList.add('hidden');
 
@@ -794,7 +902,7 @@ export function finishCutscene() {
   setMoonRestoreProgress(S.moonShards / Math.max(1, S.moonGoal));
   updateCameraFraming();
   sound.startMusic();
-  showBubble('🧟⛩️ ➔ 🛡️⚔️ ➔ 🏰🌕', 3.2);
+  showBubble('🧟⛩️ ➔ 🛡️⚔️ ➔ 🌕✨', 1.1);
 }
 
 // ============================================================================
@@ -1143,9 +1251,7 @@ function triggerNextWave() {
       : pool[(S.wave + i) % pool.length];
     S.spawnQueue.push(zType);
   }
-  const waveIcons = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
-  const wIco = waveIcons[(S.wave - 1) % waveIcons.length] || '🔥';
-  showBubble(`🧟⛩️ ${wIco} ➔ 🏰🌕`, 2.0);
+  showBubble(`🧟⛩️ ${S.wave} ➔ 🌕✨`, 1.4);
   S.wave++;
   S.waveTimer = (S.stageCfg?.baseSpawnInterval || 3.8) * 3.0 * (bal.spawnIntervalMult || 1.0);
 }
@@ -1186,10 +1292,6 @@ export function addMoonShards(n) {
   const progress = S.moonShards / Math.max(1, S.moonGoal);
   setMoonRestoreProgress(progress);
 
-  const bg = new THREE.Color(0x2b4c7e).lerp(new THREE.Color(0x5c9ce6), progress);
-  scene.background.copy(bg);
-  scene.fog.color.copy(bg);
-
   updateTopHUD();
 
   if (S.moonShards >= S.moonGoal) {
@@ -1197,9 +1299,8 @@ export function addMoonShards(n) {
     S.clearedStages.add(S.stageIndex);
     updateStageButtons();
     sound.victory();
-    const stageNums = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
-    const curIco = stageNums[S.stageIndex] || '1️⃣';
-    const nextIco = stageNums[Math.min(STAGES.length - 1, S.stageIndex + 1)] || '🏆';
+    const curIco = `${S.stageIndex + 1}`;
+    const nextIco = S.stageIndex < STAGES.length - 1 ? `${S.stageIndex + 2}` : '🏆';
     document.querySelector('.modal-stars').textContent = '⭐ ⭐ ⭐';
     document.getElementById('modalStageBadge').textContent =
       S.stageIndex < STAGES.length - 1 ? `${curIco} 🌕 ➔ ${nextIco}` : `${curIco} 🏆 🌕`;
@@ -1211,10 +1312,9 @@ function triggerDefeat() {
   if (S.phase === 'defeat' || S.phase === 'victory') return;
   S.phase = 'defeat';
   sound.explosion();
-  const stageNums = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'];
-  const curIco = stageNums[S.stageIndex] || '1️⃣';
+  const curIco = `${S.stageIndex + 1}`;
   document.querySelector('.modal-stars').textContent = '💔 🧟 💔';
-  document.getElementById('modalStageBadge').textContent = `${curIco} 🏰💔 ➔ 🔄`;
+  document.getElementById('modalStageBadge').textContent = `${curIco} 💔 ➔ 🔄`;
   document.getElementById('victoryModal').classList.remove('hidden');
 }
 
@@ -1731,7 +1831,7 @@ document.getElementById('replayCineBtn').addEventListener('click', () => {
 document.getElementById('pauseBtn').addEventListener('click', e => {
   sound.click();
   S.paused = !S.paused;
-  e.currentTarget.textContent = S.paused ? '▶️' : '⏸';
+  e.currentTarget.innerHTML = S.paused ? UI_SVGS.ctrl_play : UI_SVGS.ctrl_pause;
 });
 
 document.getElementById('camZoomBtn').addEventListener('click', e => {

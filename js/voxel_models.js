@@ -44,53 +44,93 @@ export function vox(w, h, d, color, x = 0, y = 0, z = 0, opts = {}) {
 export function buildResourceNodeMesh(kind) {
   const g = new THREE.Group();
   if (kind === 'sun' || kind === 'sun_vein') {
-    // Golden Solar Crystal Cluster
+    // Cozy Golden Sun Shrine Pedestal + Floating Sun Orb & Flower Petals
+    const ped1 = vox(0.64, 0.12, 0.64, 0xfff3bf, 0, 0.06, 0);
+    const ped2 = vox(0.48, 0.14, 0.48, 0xffe066, 0, 0.18, 0);
+    g.add(ped1, ped2);
     for (let i = 0; i < 4; i++) {
       const ang = (i / 4) * Math.PI * 2 + 0.35;
-      const h = 0.28 + (i % 2) * 0.12;
-      const shard = vox(0.16, h, 0.16, 0xffd43b, Math.cos(ang) * 0.16, h * 0.5, Math.sin(ang) * 0.16, {
+      const petal = vox(0.16, 0.24, 0.16, 0xffd43b, Math.cos(ang) * 0.18, 0.30, Math.sin(ang) * 0.18, {
         emissive: 0xf59f00,
         emissiveIntensity: 0.55
       });
-      shard.rotation.z = (i % 2 === 0 ? 1 : -1) * 0.18;
-      g.add(shard);
+      petal.rotation.z = (i % 2 === 0 ? 1 : -1) * 0.22;
+      g.add(petal);
     }
-    const core = vox(0.20, 0.42, 0.20, 0xfff3bf, 0, 0.21, 0, {
-      emissive: 0xffec99,
-      emissiveIntensity: 0.75
-    });
-    g.add(core);
+    const sunOrb = new THREE.Mesh(
+      new THREE.SphereGeometry(0.19, 20, 16),
+      new THREE.MeshStandardMaterial({
+        color: 0xfff9db,
+        emissive: 0xffd43b,
+        emissiveIntensity: 0.9,
+        roughness: 0.2
+      })
+    );
+    sunOrb.position.set(0, 0.46, 0);
+    g.add(sunOrb);
   } else if (kind === 'wood' || kind === 'wood_grove') {
-    // Minecraft Mini Oak Tree + Timber Log Pile
-    const log1 = vox(0.50, 0.15, 0.16, 0x8b5a2b, 0, 0.08, -0.10);
-    const log2 = vox(0.50, 0.15, 0.16, 0x8b5a2b, 0, 0.08, 0.10);
-    const trunk = vox(0.18, 0.42, 0.18, 0x795548, 0, 0.21, 0);
-    const crown1 = vox(0.52, 0.24, 0.52, 0x40c057, 0, 0.44, 0, { emissive: 0x2b8a3e, emissiveIntensity: 0.18 });
-    const crown2 = vox(0.34, 0.18, 0.34, 0x69db7c, 0, 0.60, 0);
-    g.add(log1, log2, trunk, crown1, crown2);
+    // Lush Multi-Puff Diorama Tree + Cozy Bush & Timber Logs (Pinterest Toy Style!)
+    const log1 = vox(0.44, 0.13, 0.15, 0xb5651d, -0.14, 0.07, 0.22);
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.11, 0.15, 0.48, 12),
+      new THREE.MeshStandardMaterial({ color: 0x9c5a25, roughness: 0.7 })
+    );
+    trunk.position.set(0, 0.24, 0);
+    trunk.castShadow = true;
+
+    const puffMat1 = new THREE.MeshStandardMaterial({ color: 0x74c69d, roughness: 0.55 });
+    const puffMat2 = new THREE.MeshStandardMaterial({ color: 0x95d5b2, roughness: 0.5 });
+    const puffMain = new THREE.Mesh(new THREE.SphereGeometry(0.34, 20, 16), puffMat1);
+    puffMain.position.set(0, 0.56, 0);
+    puffMain.scale.set(1.08, 0.92, 1.08);
+    puffMain.castShadow = true;
+
+    const puffTop = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 14), puffMat2);
+    puffTop.position.set(0.06, 0.78, -0.04);
+    puffTop.castShadow = true;
+
+    const bush = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), puffMat2);
+    bush.position.set(0.24, 0.14, 0.18);
+    const flower = vox(0.08, 0.08, 0.08, 0xff8787, 0.28, 0.26, 0.22, { emissive: 0xff8787, emissiveIntensity: 0.3 });
+    g.add(log1, trunk, puffMain, puffTop, bush, flower);
   } else if (kind === 'stone' || kind === 'stone_vein') {
-    // Silver-Grey Quarry Boulder with Iron Ore flecks
-    const b1 = vox(0.54, 0.24, 0.50, 0x868e96, 0, 0.12, 0, { metalness: 0.25, roughness: 0.45 });
-    const b2 = vox(0.38, 0.24, 0.38, 0xadb5bd, -0.05, 0.30, 0.04, { metalness: 0.35, roughness: 0.35 });
-    const ore1 = vox(0.14, 0.14, 0.14, 0x74c0fc, 0.16, 0.24, 0.15, { emissive: 0x339af0, emissiveIntensity: 0.35 });
-    const ore2 = vox(0.12, 0.12, 0.12, 0xdee2e6, -0.16, 0.20, -0.15, { metalness: 0.5 });
-    g.add(b1, b2, ore1, ore2);
+    // Sculpted Toy Quarry Boulders with Sky-Crystal Ore
+    const b1 = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(0.28, 0),
+      new THREE.MeshStandardMaterial({ color: 0x8d99ae, roughness: 0.45, metalness: 0.15 })
+    );
+    b1.position.set(-0.06, 0.20, 0);
+    b1.scale.set(1.15, 0.85, 1.05);
+    b1.castShadow = true;
+
+    const b2 = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(0.19, 0),
+      new THREE.MeshStandardMaterial({ color: 0xadb5bd, roughness: 0.4, metalness: 0.2 })
+    );
+    b2.position.set(0.18, 0.15, 0.14);
+    const ore1 = vox(0.13, 0.18, 0.13, 0x74c0fc, 0.08, 0.34, -0.06, { emissive: 0x339af0, emissiveIntensity: 0.45 });
+    ore1.rotation.z = -0.25;
+    g.add(b1, b2, ore1);
   } else {
-    // 'crystal' / 'crystal_vein' — Glowing Amethyst & Cyan Starlight Geode
-    const base = vox(0.52, 0.14, 0.52, 0x5f3dc4, 0, 0.07, 0);
-    g.add(base);
+    // 'crystal' / 'crystal_vein' — Cozy Stump Pedestal + Glowing Amethyst Gem Cluster
+    const stump = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.26, 0.30, 0.16, 14),
+      new THREE.MeshStandardMaterial({ color: 0xb07d62, roughness: 0.65 })
+    );
+    stump.position.set(0, 0.08, 0);
+    g.add(stump);
     for (let i = 0; i < 5; i++) {
       const ang = (i / 5) * Math.PI * 2;
-      const dist = i === 0 ? 0 : 0.15;
+      const dist = i === 0 ? 0 : 0.14;
       const h = i === 0 ? 0.48 : 0.32;
-      const col = i % 2 === 0 ? 0xda77f2 : 0x66d9e8;
-      const sp = vox(0.14, h, 0.14, col, Math.cos(ang) * dist, h * 0.5 + 0.08, Math.sin(ang) * dist, {
-        emissive: col,
-        emissiveIntensity: 0.68
+      const col = i % 2 === 0 ? 0xda77f2 : 0xe599f7;
+      const sp = vox(0.14, h, 0.14, col, Math.cos(ang) * dist, h * 0.5 + 0.12, Math.sin(ang) * dist, {
+        emissive: 0xae3ec9,
+        emissiveIntensity: 0.65
       });
       if (i > 0) {
-        sp.rotation.z = Math.cos(ang) * 0.24;
-        sp.rotation.x = Math.sin(ang) * 0.24;
+        sp.rotation.z = Math.cos(ang) * 0.26;
+        sp.rotation.x = Math.sin(ang) * 0.26;
       }
       g.add(sp);
     }
@@ -106,9 +146,21 @@ export function buildCritterUnitMesh(def, portraitTex) {
   const c = def.color;
   const acc = def.accent;
 
-  // Base pedestal block
-  const ped = vox(0.76, 0.14, 0.76, c, 0, 0.07, 0);
-  const rim = vox(0.82, 0.05, 0.82, acc, 0, 0.14, 0, { emissive: acc, emissiveIntensity: 0.25 });
+  // Sculpted cylindrical Toy Figurine Coin Base (Amiibo / Clash Mini style)
+  const pedMat = new THREE.MeshStandardMaterial({ color: c, roughness: 0.42, metalness: 0.08 });
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.41, 0.45, 0.14, 24), pedMat);
+  ped.position.set(0, 0.07, 0);
+  ped.castShadow = true;
+  ped.receiveShadow = true;
+  const rimMat = new THREE.MeshStandardMaterial({
+    color: acc,
+    emissive: acc,
+    emissiveIntensity: 0.28,
+    roughness: 0.32,
+    metalness: 0.25
+  });
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.045, 24), rimMat);
+  rim.position.set(0, 0.145, 0);
   g.add(ped, rim);
 
   // Voxel Critter Body & Head
@@ -235,67 +287,86 @@ export function buildCritterUnitMesh(def, portraitTex) {
 export function buildMoonSanctuaryMesh() {
   const g = new THREE.Group();
 
-  // Grand Golden-Ivory Starlight Base & 4 Corner Towers
-  const base1 = vox(1.85, 0.28, 1.85, 0xfff3bf, 0, 0.14, 0, { emissive: 0xf59f00, emissiveIntensity: 0.22 });
-  const base2 = vox(1.45, 0.34, 1.45, 0xffe066, 0, 0.45, 0, { emissive: 0xf59f00, emissiveIntensity: 0.35 });
-  g.add(base1, base2);
+  // Warm Creamy-Ivory Fairytale Castle Keep & Golden Trim (Pinterest Toy Diorama Style!)
+  const basePlinth = vox(1.92, 0.22, 1.92, 0xf3d5a5, 0, 0.11, 0);
+  const keepWall = vox(1.38, 0.72, 1.38, 0xfff3d6, 0, 0.56, 0);
+  const keepRoofRim = vox(1.48, 0.14, 1.48, 0xfcc419, 0, 0.96, 0, { emissive: 0xf59f00, emissiveIntensity: 0.25 });
+  const gateArch = vox(0.16, 0.46, 0.48, 0x845ef7, 0.66, 0.42, 0, { emissive: 0x5f3dc4, emissiveIntensity: 0.35 });
+  g.add(basePlinth, keepWall, keepRoofRim, gateArch);
 
-  for (const sx of [-0.72, 0.72]) {
-    for (const sz of [-0.72, 0.72]) {
-      const pillar = vox(0.32, 0.95, 0.32, 0x7950f2, sx, 0.48, sz, { emissive: 0x5f3dc4, emissiveIntensity: 0.35 });
-      const cap = vox(0.38, 0.18, 0.38, 0xffd43b, sx, 1.02, sz, { emissive: 0xfcc419, emissiveIntensity: 0.75 });
-      g.add(pillar, cap);
+  const turretWallMat = new THREE.MeshStandardMaterial({ color: 0xffe8b6, roughness: 0.45 });
+  const turretRoofMat = new THREE.MeshStandardMaterial({
+    color: 0xffc024,
+    emissive: 0xe67700,
+    emissiveIntensity: 0.3,
+    roughness: 0.35
+  });
+
+  // 4 Cylindrical Corner Turrets with Golden Conical Roofs
+  for (const sx of [-0.68, 0.68]) {
+    for (const sz of [-0.68, 0.68]) {
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.88, 18), turretWallMat);
+      cyl.position.set(sx, 0.56, sz);
+      cyl.castShadow = true;
+
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.46, 18), turretRoofMat);
+      cone.position.set(sx, 1.22, sz);
+      cone.castShadow = true;
+
+      const finial = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 10), turretRoofMat);
+      finial.position.set(sx, 1.48, sz);
+      g.add(cyl, cone, finial);
     }
   }
 
-  // Hollow Cradle Ring holding the Rebuilding 3D Moon
+  // Hollow Golden-Silver Cradle Ring holding the Rebuilding 3D Moon above the Castle
   const cradleRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.68, 0.07, 20, 48),
+    new THREE.TorusGeometry(0.66, 0.068, 20, 48),
     new THREE.MeshStandardMaterial({
-      color: 0xadb5bd,
-      emissive: 0x495057,
+      color: 0xffe066,
+      emissive: 0xd9480f,
       emissiveIntensity: 0.35,
-      metalness: 0.6,
-      roughness: 0.3
+      metalness: 0.55,
+      roughness: 0.28
     })
   );
-  cradleRing.position.set(0, 1.48, 0);
+  cradleRing.position.set(0, 1.78, 0);
   g.add(cradleRing);
 
-  // The Rebuilding 3D Golden Moon Sphere inside the Cradle (scales 0.2 -> 1.0 as Shards are collected!)
+  // The Rebuilding 3D Golden Moon Sphere inside the Cradle (scales 0.22 -> 1.04 as Shards are collected!)
   const moonMat = new THREE.MeshStandardMaterial({
     color: 0xfff9db,
     emissive: 0xffd43b,
     emissiveIntensity: 0.95,
-    roughness: 0.25
+    roughness: 0.22
   });
-  const moonCore = new THREE.Mesh(new THREE.SphereGeometry(0.62, 40, 32), moonMat);
-  moonCore.position.set(0, 1.48, 0);
+  const moonCore = new THREE.Mesh(new THREE.SphereGeometry(0.60, 40, 32), moonMat);
+  moonCore.position.set(0, 1.78, 0);
   moonCore.scale.setScalar(0.22);
   g.add(moonCore);
 
   // 5 Orbiting Star Progress Crystals (light up at 20%, 40%, 60%, 80%, 100%)
   const starRing = new THREE.Group();
-  starRing.position.set(0, 1.48, 0);
+  starRing.position.set(0, 1.78, 0);
   const progressStars = [];
   for (let i = 0; i < 5; i++) {
     const ang = (i / 5) * Math.PI * 2 - Math.PI / 2;
     const stMat = new THREE.MeshStandardMaterial({
-      color: 0x495057,
+      color: 0x845ef7,
       emissive: 0x000000,
       emissiveIntensity: 0,
       roughness: 0.3
     });
     const st = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), stMat);
-    st.position.set(Math.cos(ang) * 0.92, Math.sin(ang) * 0.92, 0.12);
+    st.position.set(Math.cos(ang) * 0.90, Math.sin(ang) * 0.90, 0.12);
     starRing.add(st);
     progressStars.push(st);
   }
   g.add(starRing);
 
-  // Overhead 3D Sanctuary Hearts (5 Big Red Hearts)
+  // Overhead 3D Sanctuary Hearts (5 Big Ruby Hearts)
   const heartRow = new THREE.Group();
-  heartRow.position.set(0, 2.55, 0);
+  heartRow.position.set(0, 2.82, 0);
   const hearts = [];
   for (let i = 0; i < 5; i++) {
     const hm = vox(0.20, 0.20, 0.08, 0xff4d6d, (i - 2) * 0.28, 0, 0, {
@@ -319,7 +390,7 @@ export function buildMoonSanctuaryMesh() {
       const litStars = Math.floor(r * 5 + 0.001);
       for (let i = 0; i < 5; i++) {
         const active = i < litStars;
-        progressStars[i].material.color.setHex(active ? 0xffd43b : 0x495057);
+        progressStars[i].material.color.setHex(active ? 0xffd43b : 0x845ef7);
         progressStars[i].material.emissive.setHex(active ? 0xfcc419 : 0x000000);
         progressStars[i].material.emissiveIntensity = active ? 0.95 : 0;
         progressStars[i].scale.setScalar(active ? 1.2 : 0.8);
