@@ -28,10 +28,13 @@ export const MOON_FORGE_RECIPE = {
 };
 
 // ==================== 10 CRITTERS IN 3-TIER TACTICAL HIERARCHY ====================
-// Orthogonal Resource Roles:
-// - Sun-based units: SunnyFox (☀️30), PoppyDash (☀️30), Bubba (☀️35 🪵25 🧱25), DogDay (☀️50 🧱55 💎12), Kickin (☀️45 🪵45 💎12)
-// - SUN-FREE units (☀️0! Spend Wood & Brick directly without needing Sun!):
-//   Picky (🪵30), Bobby (🪵25 🧱30), Mikey (🪵35 🧱25), LunaBat (🪵40 🧱15), CraftyCorn (🪵55 🧱45 💎14), Upgrade (🪵30 🧱35)
+// 3-Arm Consensus Orthogonal 4-Resource Cost Matrix:
+// - 8 Buttons Use ☀️ Sun (61.5%):
+//   SunnyFox (☀️25 🪵15), PoppyDash (☀️30 pure Sun!), Picky (☀️25 🪵20),
+//   Bubba (☀️35 🧱30, 🪵0!), LunaBat (☀️35 🪵25, 🧱0!),
+//   DogDay (☀️55 🧱55 💎12, 🪵0!), Kickin (☀️50 🪵45 💎12, 🧱0!), Upgrade (☀️20 🪵25 🧱30)
+// - 5 Buttons Are SUN-FREE (☀️0, 38.5% — spend Wood & Brick even when ☀️ == 0!):
+//   Bobby (🪵25 🧱30), Mikey (🪵30 🧱30), CraftyCorn (🪵50 🧱45 💎14), Bridge (🪵25), SpikeTrap (🪵15 🧱20)
 export const UNITS = [
   // -------------------- TIER 1: GATHERERS & SUPPORT --------------------
   {
@@ -43,8 +46,8 @@ export const UNITS = [
     fxIcon: '☀️',
     color: '#f59f00',
     accent: '#fff3bf',
-    // SUN-FREE! Costs Wood (🪵25) to build a Sun Shrine Fox so you can always expand Sun production using Wood!
-    cost: { sun: 0, wood: 25, stone: 0, crystal: 0 },
+    // Uses Sun + Wood (☀️25 🪵15, 🧱0) to expand Sun Shrine production
+    cost: { sun: 25, wood: 15, stone: 0, crystal: 0 },
     hp: 220,
     prod: { sun: 5, wood: 0, stone: 0, crystal: 0 },
     prodInterval: 5.2,
@@ -65,8 +68,8 @@ export const UNITS = [
     fxIcon: '🪵',
     color: '#495057',
     accent: '#74c0fc',
-    // Costs Sun (☀️25) to build a Wood Gatherer Skunk!
-    cost: { sun: 25, wood: 0, stone: 0, crystal: 0 },
+    // Pure Sun sink (☀️30, 🪵0 🧱0) to expand Wood Gatherer Skunk!
+    cost: { sun: 30, wood: 0, stone: 0, crystal: 0 },
     hp: 230,
     prod: { sun: 0, wood: 4, stone: 0, crystal: 0 },
     prodInterval: 5.2,
@@ -89,8 +92,8 @@ export const UNITS = [
     fxIcon: '🧱',
     color: '#f783ac',
     accent: '#ffdeeb',
-    // SUN-FREE! Built 100% with Wood (🪵25) so you never need Sun to start Brick production!
-    cost: { sun: 0, wood: 25, stone: 0, crystal: 0 },
+    // Uses Sun + Wood (☀️25 🪵20, 🧱0) to start Brick Quarry production + AoE Healing!
+    cost: { sun: 25, wood: 20, stone: 0, crystal: 0 },
     hp: 260,
     prod: { sun: 0, wood: 0, stone: 4, crystal: 0 },
     prodInterval: 5.2,
@@ -115,7 +118,8 @@ export const UNITS = [
     fxIcon: '💎',
     color: '#339af0',
     accent: '#d0ebff',
-    cost: { sun: 30, wood: 25, stone: 25, crystal: 0 },
+    // WOOD-FREE! Uses Sun + Brick (☀️35 🧱30, 🪵0) to mine Diamonds & slow zombies!
+    cost: { sun: 35, wood: 0, stone: 30, crystal: 0 },
     hp: 360,
     amphibious: true,
     prod: { sun: 0, wood: 0, stone: 0, crystal: 2 },
@@ -138,8 +142,8 @@ export const UNITS = [
     fxIcon: '🛡️',
     color: '#e03131',
     accent: '#ffc9c9',
-    // SUN-FREE! Pure Wood + Brick (🪵20 🧱25) frontline shield wall!
-    cost: { sun: 0, wood: 20, stone: 25, crystal: 0 },
+    // SUN-FREE! Pure Wood + Brick (🪵25 🧱30, ☀️0) frontline shield wall!
+    cost: { sun: 0, wood: 25, stone: 30, crystal: 0 },
     hp: 860,
     thornsDmg: 26,
     blastResist: 0.65,
@@ -158,8 +162,8 @@ export const UNITS = [
     fxIcon: '🗼',
     color: '#37b24d',
     accent: '#b2f2bb',
-    // SUN-FREE! Pure Wood + Brick (🪵30 🧱25) stackable watchtower!
-    cost: { sun: 0, wood: 30, stone: 25, crystal: 0 },
+    // SUN-FREE! Pure Wood + Brick (🪵30 🧱30, ☀️0) stackable watchtower!
+    cost: { sun: 0, wood: 30, stone: 30, crystal: 0 },
     hp: 500,
     stackable: true,
     towerRangeBonus: 1.40,
@@ -180,8 +184,8 @@ export const UNITS = [
     fxIcon: '🏹',
     color: '#7950f2',
     accent: '#e5dbff',
-    // SUN-FREE! Heavy Wood + Brick (🪵35 🧱15) fast crossbow ballista!
-    cost: { sun: 0, wood: 35, stone: 15, crystal: 0 },
+    // BRICK-FREE! Uses Sun + Wood (☀️35 🪵25, 🧱0) fast crossbow ballista!
+    cost: { sun: 35, wood: 25, stone: 0, crystal: 0 },
     hp: 250,
     atk: 36,
     fireInterval: 0.82,
@@ -191,7 +195,7 @@ export const UNITS = [
     bonusVsFlyerCreeper: 1.80
   },
 
-  // -------------------- TIER 3: HIGH-TIER TIMBER, MASONRY & ARCANE TOWERS --------------------
+  // -------------------- TIER 3: HIGH-TIER SYMMETRIC TRIANGLE TOWERS --------------------
   {
     id: 'dogday',
     tier: 3,
@@ -201,8 +205,8 @@ export const UNITS = [
     fxIcon: '💥',
     color: '#fd7e14',
     accent: '#ffe8cc',
-    // Heavy Masonry & Solar Mortar (☀️45 🧱55 💎12)
-    cost: { sun: 45, wood: 0, stone: 55, crystal: 12 },
+    // WOOD-FREE! Heavy Sun + Heavy Brick + Diamond Mortar (☀️55 🧱55 💎12, 🪵0)
+    cost: { sun: 55, wood: 0, stone: 55, crystal: 12 },
     hp: 330,
     atk: 74,
     fireInterval: 1.3,
@@ -220,7 +224,7 @@ export const UNITS = [
     fxIcon: '🌈',
     color: '#22b8cf',
     accent: '#c5f6fa',
-    // SUN-FREE Tier-3 Tower! Uses Heavy Wood + Heavy Brick + Diamond (🪵50 🧱45 💎14)!
+    // SUN-FREE Tier-3 Tower! Heavy Wood + Heavy Brick + Diamond (🪵50 🧱45 💎14, ☀️0)!
     cost: { sun: 0, wood: 50, stone: 45, crystal: 14 },
     hp: 300,
     atk: 54,
@@ -241,8 +245,8 @@ export const UNITS = [
     fxIcon: '⚡',
     color: '#fcc419',
     accent: '#fff9db',
-    // Solar + Heavy Wood + Diamond Tesla Coil (☀️45 🪵45 💎12)
-    cost: { sun: 45, wood: 45, stone: 0, crystal: 12 },
+    // BRICK-FREE! Heavy Sun + Heavy Wood + Diamond Tesla Coil (☀️50 🪵45 💎12, 🧱0)
+    cost: { sun: 50, wood: 45, stone: 0, crystal: 12 },
     hp: 320,
     atk: 46,
     fireInterval: 0.88,
@@ -620,11 +624,11 @@ export function computeDynamicResourceCosts(def, existingCount = 0) {
   };
 }
 
-// Universal SUN-FREE Upgrade Cost (Lv.1 -> Lv.2 -> Lv.3): Pure Wood + Brick (🪵30 🧱35, ☀️0)!
+// Universal Balanced 3-Resource Upgrade Cost (Lv.1 -> Lv.2 -> Lv.3): Sun + Wood + Brick (☀️20 🪵25 🧱30, 1-to-1 flat parity)!
 export const UPGRADE_COST = {
-  sun: 0,
-  wood: 30,
-  stone: 35,
+  sun: 20,
+  wood: 25,
+  stone: 30,
   crystal: 0
 };
 

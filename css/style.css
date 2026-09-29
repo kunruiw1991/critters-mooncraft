@@ -876,10 +876,10 @@ body.inIntro #bottomDock {
   margin-top: 4px;
   min-height: 22px;
   max-width: 100%;
-  padding: 2px 2.5px;
+  padding: 2px 2px;
   border-radius: 999px;
   background: linear-gradient(180deg, #fff9e6 0%, #edd3a8 100%);
-  border: 2px solid #fffdf7;
+  border: 1.5px solid #fffdf7;
   box-shadow: 0 3px 0 #a36c37, 0 4px 6px rgba(60, 30, 5, 0.2);
   display: flex;
   align-items: center;
@@ -889,8 +889,8 @@ body.inIntro #bottomDock {
 }
 
 .ucard .cost-pip .svg-ico {
-  width: 9px;
-  height: 9px;
+  width: 8.5px;
+  height: 8.5px;
 }
 
 .cost-pip {
@@ -898,7 +898,7 @@ body.inIntro #bottomDock {
   align-items: center;
   gap: 0.5px;
   font-family: var(--font-round);
-  font-size: 9px;
+  font-size: 8.5px;
   line-height: 1;
   font-weight: 900;
   color: #ffffff;

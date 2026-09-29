@@ -82,7 +82,7 @@ export const CRITTER_UNITS = [
     fxIcon: '💥',
     color: '#ced4da',
     accent: '#ff6b6b',
-    cost: { sun: 0, wood: 20, stone: 20, crystal: 0 },
+    cost: { sun: 0, wood: 15, stone: 20, crystal: 0 },
     hp: 260,
     dmg: 32
   },
@@ -633,6 +633,9 @@ function getEffectiveUnitCost(def) {
   // Anti-softlock safeguard: if the player has 0 SunnyFox or 0 PoppyDash (Skunk) on the board,
   // cap its resource cost at current bank so the player can NEVER get resource-deadlocked!
   if (existingCount === 0 && def.id === 'sunnyfox') {
+    if ((S.res.sun || 0) < cost.sun) {
+      cost.sun = Math.max(0, Math.floor(S.res.sun || 0));
+    }
     if ((S.res.wood || 0) < cost.wood) {
       cost.wood = Math.max(0, Math.floor(S.res.wood || 0));
     }
