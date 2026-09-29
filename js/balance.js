@@ -235,8 +235,8 @@ export const UNITS = [
     antiAir: true,
     vulnBonus: 0.35,
     shardWeaver: true,
-    shardInterval: 7.2,
-    shardYield: 2
+    shardInterval: 14.0,
+    shardYield: 1
   },
   {
     id: 'kickin',
@@ -302,8 +302,8 @@ export const UNITS = [
     hasteRadius: 4.0,
     hasteMult: 1.35,
     shardWeaver: true,
-    shardInterval: 4.8,
-    shardYield: 3
+    shardInterval: 11.0,
+    shardYield: 1
   }
 ];
 
@@ -484,8 +484,107 @@ export const ZOMBIE_TYPES = {
     scale: 1.56,
     shirtColor: '#240046',
     skinColor: '#fcc419'
+  },
+
+  // -------------------- 5 STAGE-FINAL NIGHTMARE CRITTER BOSSES (WAVE 5/5 FINALE BOSS PER STAGE!) --------------------
+  nightmare_dogday: {
+    id: 'nightmare_dogday',
+    nameEn: 'Nightmare DogDay',
+    nameZh: '噩梦日冕狗 (第1关终局首领)',
+    isElite: true,
+    isStageBoss: true,
+    hp: 1550,
+    speed: 0.28,
+    dps: 38,
+    armor: 0.28,
+    breachDmg: 4,
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 8, core: 3, shard: 8 },
+    scale: 1.68,
+    shirtColor: '#d9480f',
+    skinColor: '#fd7e14'
+  },
+  nightmare_bobby: {
+    id: 'nightmare_bobby',
+    nameEn: 'Nightmare BobbyBear',
+    nameZh: '噩梦荆棘熊 (第2关终局首领)',
+    isElite: true,
+    isStageBoss: true,
+    hp: 2100,
+    speed: 0.26,
+    dps: 42,
+    armor: 0.34,
+    healRadius: 3.0,
+    healPerSec: 15,
+    breachDmg: 4,
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 10, core: 3, shard: 10 },
+    scale: 1.74,
+    shirtColor: '#a61e4d',
+    skinColor: '#e03131'
+  },
+  nightmare_picky: {
+    id: 'nightmare_picky',
+    nameEn: 'Nightmare PickyPiggy',
+    nameZh: '噩梦暴食猪 (第3关终局首领)',
+    isElite: true,
+    isStageBoss: true,
+    hp: 2650,
+    speed: 0.27,
+    dps: 46,
+    armor: 0.35,
+    wallBreaker: true,
+    breachDmg: 5,
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 12, core: 4, shard: 12 },
+    scale: 1.80,
+    shirtColor: '#c2255c',
+    skinColor: '#f783ac'
+  },
+  nightmare_crafty: {
+    id: 'nightmare_crafty',
+    nameEn: 'Nightmare CraftyCorn',
+    nameZh: '噩梦暗虹独角兽 (第4关终局首领)',
+    isElite: true,
+    isStageBoss: true,
+    hp: 3200,
+    speed: 0.29,
+    dps: 50,
+    armor: 0.38,
+    healRadius: 3.0,
+    healPerSec: 16,
+    summonInterval: 9.0,
+    breachDmg: 5,
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 15, core: 4, shard: 15 },
+    scale: 1.86,
+    shirtColor: '#0b7285',
+    skinColor: '#22b8cf'
+  },
+  nightmare_catnap: {
+    id: 'nightmare_catnap',
+    nameEn: 'Nightmare CatNap Overlord',
+    nameZh: '终焉噩梦紫猫王 (第5关终局首领)',
+    isElite: true,
+    isStageBoss: true,
+    hp: 4200,
+    speed: 0.28,
+    dps: 56,
+    armor: 0.40,
+    healRadius: 3.2,
+    healPerSec: 18,
+    summonInterval: 8.5,
+    breachDmg: 6,
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 20, core: 5, shard: 20 },
+    scale: 1.96,
+    shirtColor: '#3b096c',
+    skinColor: '#845ef7'
   }
 };
+
+export const STAGE_FINAL_BOSSES = [
+  'nightmare_dogday',
+  'nightmare_bobby',
+  'nightmare_picky',
+  'nightmare_crafty',
+  'nightmare_catnap'
+];
 
 // Helper to rasterize a sequence of (gx, gz) waypoints into a set of road tile keys
 function buildRoadTilesFromRoutes(routes = []) {

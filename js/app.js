@@ -3,6 +3,7 @@ import {
   INITIAL_RESOURCES,
   UNITS,
   ZOMBIE_TYPES,
+  STAGE_FINAL_BOSSES,
   STAGES,
   UPGRADE_COST,
   getStageConfig,
@@ -295,6 +296,10 @@ const S = {
   maxHp: 12,
   moonShards: 0,
   moonGoal: 30,
+  totalWaves: 5,
+  carryoverStars: 0,
+  starBonusMult: 1.0,
+  endlessMode: false,
   wave: 0,
   waveTimer: 18.0,
   spawnQueue: [],
@@ -324,17 +329,38 @@ function clearGroup(grp) {
   }
 }
 
-export function buildStageWorld(stageIdx) {
+export function buildStageWorld(stageIdx, applyStarCarryover = false) {
   S.stageIndex = Math.max(0, Math.min(STAGES.length - 1, stageIdx));
   const cfg = getStageConfig(S.stageIndex);
   S.stageCfg = cfg;
   S.cols = cfg.gridW;
   S.rows = cfg.gridH;
   S.moonGoal = cfg.moonTarget;
+  S.totalWaves = 5;
+  S.endlessMode = false;
   S.sanctuaryGx = cfg.altarGx;
   S.sanctuaryGz = cfg.altarGz;
   S.sanctuaryWorld = gridToWorld(cfg.altarGx, cfg.altarGz);
-  S.hp = S.maxHp;
+
+  // Apply Star/Moon Carryover Bonus from previous stage clear!
+  if (applyStarCarryover && (S.carryoverStars || 0) > 0) {
+    const stars = Math.max(0, Math.floor(S.carryoverStars || 0));
+    S.starBonusMult = 1 + Math.round(stars * 0.5) / 100; // +1% Critter ATK & Gatherer Yield per 2 Stars!
+    S.res.sun = (S.res.sun || 0) + stars * 2;
+    S.res.wood = (S.res.wood || 0) + stars * 1;
+    S.res.stone = (S.res.stone || 0) + stars * 1;
+    const bonusHp = Math.floor(stars / 10);
+    S.maxHp = 12 + bonusHp;
+    S.hp = S.maxHp;
+  } else {
+    if (!applyStarCarryover) {
+      S.carryoverStars = 0;
+      S.starBonusMult = 1.0;
+    }
+    S.maxHp = 12 + Math.floor((S.carryoverStars || 0) / 10);
+    S.hp = S.maxHp;
+  }
+
   S.wave = 0;
   S.waveTimer = 18.0; // Generous 18s opening prep before Wave 1!
   S.spawnCooldown = 0;
@@ -814,10 +840,11 @@ function updateTopHUD() {
 
   const pct = Math.min(100, (S.moonShards / Math.max(1, S.moonGoal)) * 100);
   moonBarFillEl.style.width = `${pct.toFixed(1)}%`;
-  moonShardTextEl.textContent = `${S.moonShards}/${S.moonGoal}`;
+  const liveBonusPct = Math.round(((S.starBonusMult || 1) * (1 + (S.moonShards || 0) * 0.005) - 1) * 100);
+  moonShardTextEl.textContent = `${S.moonShards}/${S.moonGoal}${liveBonusPct > 0 ? ` (+${liveBonusPct}%)` : ''}`;
 
   if (S.sanctuaryMesh) {
-    S.sanctuaryMesh.userData.updateSanctuary(S.hp, S.maxHp, S.moonShards / Math.max(1, S.moonGoal));
+    S.sanctuaryMesh.userData.updateSanctuary(S.hp, S.maxHp, Math.min(1, S.moonShards / Math.max(1, S.moonGoal)));
   }
 
   document.querySelectorAll('.ucard').forEach(el => {
@@ -933,7 +960,7 @@ export function finishCutscene() {
   fxGroup.visible = true;
 
   moonGroup.position.set(0, 9.2, -11.5);
-  setMoonRestoreProgress(S.moonShards / Math.max(1, S.moonGoal));
+  setMoonRestoreProgress(Math.min(1, S.moonShards / Math.max(1, S.moonGoal)));
   updateCameraFraming();
   sound.startMusic();
   showBubble('🧟⛩️ ➔ 🛡️⚔️ ➔ 🌕✨', 1.1);
@@ -944,6 +971,7 @@ export function startVictoryCutscene(forceGrandFinale = false) {
   S.phase = 'victory_cutscene';
   S.victoryTime = 0;
   S.isGrandFinale = Boolean(forceGrandFinale || S.stageIndex >= STAGES.length - 1);
+  S.carryoverStars = Math.max(S.carryoverStars || 0, S.moonShards || 0);
   S.clearedStages.add(S.stageIndex);
   updateStageButtons();
   sound.victory();
@@ -1023,6 +1051,12 @@ export function finishVictoryCutscene() {
   const curIco = `${S.stageIndex + 1}`;
   const isFinalStage = Boolean(S.isGrandFinale || S.stageIndex >= STAGES.length - 1);
   const nextIco = !isFinalStage ? `${S.stageIndex + 2}` : '🏆';
+  const stars = Math.max(0, Math.floor(S.carryoverStars || S.moonShards || 0));
+  const nextBonusPct = Math.round(stars * 0.5);
+  const nextSun = stars * 2;
+  const nextWood = stars * 1;
+  const nextStone = stars * 1;
+  const nextHp = Math.floor(stars / 10);
 
   const starsEl = document.querySelector('.modal-stars');
   if (starsEl) {
@@ -1037,7 +1071,7 @@ export function finishVictoryCutscene() {
   const stageBadgeEl = document.getElementById('modalStageBadge');
   if (stageBadgeEl) {
     stageBadgeEl.textContent = !isFinalStage
-      ? `STAGE ${curIco} ➔ ${nextIco} · 第 ${curIco} 关通关`
+      ? `STAGE ${curIco} ➔ ${nextIco} · 🌟${stars}星继承: +${nextBonusPct}%攻/产 +☀️${nextSun} +🪵${nextWood} +🧱${nextStone}${nextHp > 0 ? ` +❤️${nextHp}` : ''}`
       : `STAGE ${curIco} 🏆 ALL 5 STAGES CLEAR · 五关全通圆满中秋！`;
   }
 
@@ -1482,6 +1516,12 @@ export function spawnZombie(typeId, customPos = null) {
 }
 
 function triggerNextWave() {
+  const totalW = S.totalWaves || 5;
+  if (!S.endlessMode && S.wave >= totalW) {
+    showBubble(`👑 Final Wave ${totalW}/${totalW} Active! · 决战第${totalW}波进行中！`, 1.4);
+    return;
+  }
+
   // Increment wave FIRST so S.wave (1, 2, 3...) is the exact current wave on the field!
   S.wave++;
   const w = S.wave;
@@ -1495,12 +1535,12 @@ function triggerNextWave() {
   });
   const stagePool = S.stageCfg?.zombiePool || ['walker', 'runner', 'digger', 'bucket', 'creeper', 'iron_golem', 'crystal_behemoth'];
 
-  // PvZ-Style Progressive Wave Gating + Late-Wave Tough Elite Monsters Dropping Rare 🔮 Star Cores:
+  // PvZ-Style Progressive 5-Wave Gating + Stage-Final Tough Nightmare Critter Boss:
   // Wave 1: ONLY slow walkers (3 zombies) so player can build economy & first towers calmly!
   // Wave 2: Walkers + 1 Runner (4 zombies)
   // Wave 3: Walkers + Runners + Digger + 1 Iron Golem Elite (铁甲巨像 — drops +2 🔮 Star Cores!)
   // Wave 4: Walkers + Buckethead + Iron Golem + Crystal Behemoth (晶簇巨兽 — drops +3 🔮 Star Cores!)
-  // Wave 5+: Full stage pool + Tough Elites (Iron Golem, Crystal Behemoth, Nightmare Boss, Abyss Dragon — drops +2..+4 🔮!)
+  // Wave 5: Full stage vanguard + Elites + STAGE-FINAL TOUGH NIGHTMARE CRITTER BOSS (Nightmare DogDay / Bobby / Picky / Crafty / CatNap)!
   let count = Math.min(9, 2 + w + Math.floor(S.stageIndex * 0.8));
   if (w === 1) count = 3;
   else if (w === 2) count = 4;
@@ -1532,9 +1572,19 @@ function triggerNextWave() {
     }
     S.spawnQueue.push(zType);
   }
-  const eliteAlert = w >= 3 ? ' ⚠️🔮 ELITE!' : '';
-  showBubble(`🧟⛩️ Wave ${w}${eliteAlert} ➔ 🌕✨`, 1.5);
+
+  if (w === totalW) {
+    const stageBossId = STAGE_FINAL_BOSSES[S.stageIndex] || 'nightmare_catnap';
+    S.spawnQueue.push(stageBossId);
+    const bossDef = ZOMBIE_TYPES[stageBossId];
+    sound.roar();
+    showBubble(`👑 FINAL WAVE ${w}/${totalW}: ${bossDef?.name || 'Nightmare Boss'} · ${bossDef?.cn || '终局梦魇领主'} 降临！`, 2.6);
+  } else {
+    const eliteAlert = w >= 3 ? ' ⚠️🔮 ELITE!' : '';
+    showBubble(`🧟⛩️ Wave ${w}/${totalW}${eliteAlert} ➔ 🌕✨`, 1.5);
+  }
   S.waveTimer = 18.0 * (bal.spawnIntervalMult || 1.0);
+  updateTopHUD();
   saveGameState(true);
 }
 
@@ -1575,19 +1625,14 @@ function collectOrb(orb) {
   }
 }
 
+// Accumulates Star/Moon energy without ending the stage early!
+// Extra stars boost current Critter ATK (+0.5% per star) and carry over as Next-Stage Bonus Effects!
 export function addMoonShards(n) {
   if (S.phase === 'victory' || S.phase === 'victory_cutscene' || S.phase === 'defeat') return;
-  S.moonShards = Math.min(S.moonGoal, S.moonShards + n);
-  const progress = S.moonShards / Math.max(1, S.moonGoal);
+  S.moonShards = Math.max(0, (S.moonShards || 0) + n);
+  const progress = Math.min(1, S.moonShards / Math.max(1, S.moonGoal));
   setMoonRestoreProgress(progress);
-
   updateTopHUD();
-
-  if (S.moonShards >= S.moonGoal) {
-    S.clearedStages.add(S.stageIndex);
-    saveGameState(true);
-    startVictoryCutscene();
-  }
 }
 
 function triggerDefeat() {
@@ -1690,19 +1735,31 @@ function updateGameplay(dt) {
     }
   }
 
-  // Wave Pacing:
-  // - Before Wave 1 (S.wave === 0): preserve the full 18.0s opening preparation time!
-  // - After Wave 1+ is cleared: give a comfortable 7.5s breathing room before the next wave!
+  // Wave Pacing & Stage Victory Check:
+  // - Stage ONLY ends in Victory after all 5 fixed waves + the Stage-Final Nightmare Critter Boss are spawned & defeated!
+  const totalW = S.totalWaves || 5;
   if (S.spawnQueue.length === 0) {
     if (S.zombies.length === 0) {
+      if (!S.endlessMode && S.wave >= totalW) {
+        S.carryoverStars = Math.max(S.carryoverStars || 0, S.moonShards || 0);
+        S.clearedStages.add(S.stageIndex);
+        saveGameState(true);
+        startVictoryCutscene();
+        return;
+      }
       if (S.wave > 0) {
         S.waveTimer = Math.min(S.waveTimer, 7.5);
       }
       S.waveTimer -= dt;
-    } else if (S.zombies.length <= 1) {
+      if (S.waveTimer <= 0 && (S.endlessMode || S.wave < totalW)) {
+        triggerNextWave();
+      }
+    } else if (S.zombies.length <= 1 && (S.endlessMode || S.wave < totalW)) {
       S.waveTimer -= dt * 0.22;
+      if (S.waveTimer <= 0) {
+        triggerNextWave();
+      }
     }
-    if (S.waveTimer <= 0) triggerNextWave();
   }
 
   const maxActiveZombies = 10 + S.stageIndex * 2;
@@ -1713,6 +1770,9 @@ function updateGameplay(dt) {
       S.spawnCooldown = 1.65;
     }
   }
+
+  // Live Star/Moon Empowerment: Next-Stage Carryover Multiplier * (1 + 0.5% per current Star)!
+  const starPowerMult = (S.starBonusMult || 1.0) * (1 + (S.moonShards || 0) * 0.005);
 
   // Update All Placed Critter Units
   for (let i = S.units.length - 1; i >= 0; i--) {
@@ -1760,7 +1820,7 @@ function updateGameplay(dt) {
       continue;
     }
 
-    // 2. Depletable 4-Resource Production (10 full harvests per Vein tile before Vein depletes!)
+    // 2. Depletable 4-Resource Production (10 full harvests per Vein tile before Vein depletes, boosted by Star Carryover!)
     if (u.def.prod && u.prodTimer >= (u.def.prodInterval || 5.5)) {
       u.prodTimer = 0;
       const p = u.def.prod;
@@ -1780,7 +1840,7 @@ function updateGameplay(dt) {
           }
         }
       }
-      const veinBoost = veinActive ? (u.def.veinMult || 2.5) : 1.0;
+      const veinBoost = (veinActive ? (u.def.veinMult || 2.5) : 1.0) * (S.starBonusMult || 1.0);
 
       if (p.sun > 0) {
         S.res.sun += Math.round(p.sun * veinBoost * lvMult);
@@ -1819,20 +1879,20 @@ function updateGameplay(dt) {
       }
     }
 
-    // 5. CraftyCorn / Lunar Obelisk Moon Shard Weaving
-    if (u.def.shardWeaver) {
+    // 5. CraftyCorn / Lunar Obelisk Moon Shard Weaving (only weaves while wave combat is active!)
+    if (u.def.shardWeaver && (S.zombies.length > 0 || S.spawnQueue.length > 0)) {
       u.moonTimer = (u.moonTimer || 0) + dt;
-      if (u.moonTimer >= (u.def.shardInterval || 8.5)) {
+      if (u.moonTimer >= (u.def.shardInterval || 12.0)) {
         u.moonTimer = 0;
         addMoonShards(Math.round((u.def.shardYield || 1) * lvMult));
         spawnSoftSparkle(wpos.x, 1.15, wpos.z, 0xfff3bf);
       }
     }
 
-    // 6. 360° Turret Combat (Strict Range & Anti-Air Enforcement!)
+    // 6. 360° Turret Combat (Strict Range & Anti-Air Enforcement + Star Empowerment!)
     if (u.def.atk > 0 && u.atkTimer >= (u.def.fireInterval || 1.2)) {
       const rangeBonus = u.stacked ? 1.40 : (u.onHighGround ? 1.28 : 1.0);
-      const dmgBonus = (u.stacked ? 1.28 : (u.onHighGround ? 1.18 : 1.0)) * lvMult;
+      const dmgBonus = (u.stacked ? 1.28 : (u.onHighGround ? 1.18 : 1.0)) * lvMult * starPowerMult;
       const effRange = (u.def.range || 3.5) * rangeBonus;
       const canHitAir = Boolean(u.def.antiAir || u.stacked || u.onHighGround);
 
@@ -1906,6 +1966,15 @@ function updateGameplay(dt) {
     }
   }
 
+  // Helper: Off-road gatherers & towers on grass/vein/cliff tiles are IMMUNE to road zombie collision/splash/aura!
+  // Only Bobby BearHug (Frontline Taunt Shield Tank) or units explicitly placed on road/bridge tiles engage in frontline melee/counter-fire.
+  const isFrontlineTargetable = u => {
+    if (!u || u.isTrap) return false;
+    if (u.id === 'bobby') return true;
+    const ut = tiles[u.gx]?.[u.gz];
+    return Boolean(ut && (ut.type === 'road' || ut.hasBridge));
+  };
+
   // Update Zombies — Follow Winding Cobblestone Road + Execute Ranged & Aura Counter-Attacks!
   for (let i = S.zombies.length - 1; i >= 0; i--) {
     const z = S.zombies[i];
@@ -1913,12 +1982,15 @@ function updateGameplay(dt) {
     if (z.hp <= 0) {
       spawnBurst(z.x, z.y + 0.4, z.z, z.def.skinColor || '#69db7c', 5);
       const rw = z.def.reward || {};
-      // Guaranteed Rare 🔮 Star Core drop from Late-Wave Tough Elite Monsters!
+      // Guaranteed Rare 🔮 Star Core drop from Late-Wave Tough Elite Monsters & Final Bosses!
       if ((rw.core || 0) > 0) {
         spawnCollectibleOrb(z.x, z.z, 'core', rw.core);
       }
       if (rw.shard > 0) {
         addMoonShards(rw.shard);
+      }
+      if (z.def.isStageBoss) {
+        showBubble(`🏆 Defeated ${z.def.name} · 击败${z.def.cn}! +${rw.shard || 8}🌕 +${rw.core || 5}🔮`, 2.2);
       }
       // Regular zombies have a 20% chance to drop a +4 salvage orb
       if (Math.random() < 0.20) {
@@ -1965,7 +2037,7 @@ function updateGameplay(dt) {
       z.mesh.userData.dragonWings.scale.y = 0.85 + Math.sin(z.walkPhase * 1.8) * 0.22;
     }
 
-    // Necromancer / Shaman Special: Heal nearby zombies & summon runners
+    // Necromancer / Shaman / Nightmare Boss Special: Heal nearby zombies & summon runners
     if (z.def.healPerSec) {
       for (const other of S.zombies) {
         if (other.hp < other.maxHp && Math.hypot(other.gx - z.gx, other.gz - z.gz) <= (z.def.healRadius || 3.0)) {
@@ -1980,19 +2052,19 @@ function updateGameplay(dt) {
       }
     }
 
-    // Nightmare Boss Special: Crimson Poppy-Gas Aura damages nearby Critter units (+20% per Heat)!
+    // Nightmare Boss Special: Crimson Poppy-Gas Aura damages frontline blockers only (never deletes off-road buildings!)
     const effPoppyDps = z.poppyAuraDps ?? z.def.poppyAuraDps ?? 0;
     if (z.def.poppyAuraRadius && effPoppyDps > 0) {
       for (let ui = S.units.length - 1; ui >= 0; ui--) {
         const u = S.units[ui];
-        if (!u.isTrap && Math.hypot(u.gx - z.gx, u.gz - z.gz) <= z.def.poppyAuraRadius) {
+        if (isFrontlineTargetable(u) && Math.hypot(u.gx - z.gx, u.gz - z.gz) <= z.def.poppyAuraRadius) {
           u.hp -= effPoppyDps * dt;
           if (u.hp <= 0) removeUnit(u);
         }
       }
     }
 
-    // Zombie Ranged Counter-Attack (Digger pickaxe toss, Balloon bomb, Necromancer dark bolt — +20% per Heat!)
+    // Zombie Ranged Counter-Attack (targets Bobby BearHug or frontline road/bridge units — never snipes off-road gatherers!)
     const effRangedAtk = z.rangedAtk ?? z.def.rangedAtk ?? 0;
     if (effRangedAtk > 0 && z.def.rangedRange) {
       z.rangedTimer = (z.rangedTimer || 0) + dt;
@@ -2000,10 +2072,9 @@ function updateGameplay(dt) {
         let bestTarget = null;
         let bestScore = Infinity;
         for (const u of S.units) {
-          if (u.isTrap) continue;
+          if (!isFrontlineTargetable(u)) continue;
           const distU = Math.hypot(u.gx - z.gx, u.gz - z.gz);
           if (distU <= z.def.rangedRange) {
-            // Prioritize Bobby BearHug (taunt tank!) if in range, otherwise closest unit
             const score = (u.id === 'bobby' ? -10 : 0) + distU;
             if (score < bestScore) {
               bestScore = score;
@@ -2041,14 +2112,14 @@ function updateGameplay(dt) {
       continue;
     }
 
-    // 2. Check if a blocking Critter or Wall is in front of the zombie
+    // 2. Check if a frontline blocking Critter (Bobby BearHug or road/bridge unit) is in front of the zombie
     let blocker = null;
     if (!z.def.flying) {
       let bestBlockDist = 0.78;
       for (const u of S.units) {
-        if (u.isTrap) continue;
+        if (!isFrontlineTargetable(u)) continue;
         // Bobby BearHug has a wider taunt/intercept radius (1.15 tiles) so he can guard the road from adjacent tiles!
-        const interceptRadius = u.id === 'bobby' ? 1.15 : 0.75;
+        const interceptRadius = u.id === 'bobby' ? 1.15 : 0.68;
         const dUnit = Math.hypot(u.gx - z.gx, u.gz - z.gz);
         if (dUnit <= interceptRadius && dUnit < bestBlockDist + (u.id === 'bobby' ? 0.45 : 0)) {
           bestBlockDist = dUnit;
@@ -2058,7 +2129,7 @@ function updateGameplay(dt) {
     }
 
     if (blocker) {
-      // Creeper detonates on frontline contact (Bobby's 60% blastResist counters it; fragile units get wiped!)
+      // Creeper detonates on frontline contact (Bobby's 60% blastResist counters it; never splashes off-road buildings!)
       const effFrontBurst = z.frontBurstDmg ?? z.def.frontBurstDmg ?? 0;
       const effSplashBurst = z.splashBurstDmg ?? z.def.splashBurstDmg ?? 0;
       if (effFrontBurst > 0) {
@@ -2068,7 +2139,7 @@ function updateGameplay(dt) {
         if (effSplashBurst > 0) {
           for (let ui = S.units.length - 1; ui >= 0; ui--) {
             const otherU = S.units[ui];
-            if (otherU !== blocker && !otherU.isTrap && Math.hypot(otherU.gx - z.gx, otherU.gz - z.gz) <= 1.25) {
+            if (otherU !== blocker && isFrontlineTargetable(otherU) && Math.hypot(otherU.gx - z.gx, otherU.gz - z.gz) <= 1.25) {
               otherU.hp -= effSplashBurst * (1 - (otherU.def.blastResist || 0));
               if (otherU.hp <= 0) removeUnit(otherU);
             }
@@ -2179,16 +2250,25 @@ function applyProjectileHit(p, target) {
       finalDmg *= p.flyerBonus;
     }
     z.hp -= finalDmg;
-    if (p.knockback > 0) {
-      const dx = z.x - S.sanctuaryWorld.x;
-      const dz = z.z - S.sanctuaryWorld.z;
-      const d = Math.hypot(dx, dz) || 1;
-      z.x += (dx / d) * p.knockback * 0.32;
-      z.z += (dz / d) * p.knockback * 0.32;
-      z.gx = (z.x / 1.0) + (S.cols - 1) / 2;
-      z.gz = (z.z / 1.0) + (S.rows - 1) / 2;
-      z.mesh.position.x = z.x;
-      z.mesh.position.z = z.z;
+    // Strict Road-Aligned Knockback: push zombies strictly backward toward their previous road waypoint!
+    // NEVER push zombies sideways off the road into player gatherers or towers!
+    if (p.knockback > 0 && !z.def.flying && z.route && z.route.length >= 2) {
+      const prevIdx = Math.max(0, Math.min(z.route.length - 1, (z.wpIndex || 1) - 1));
+      const [prevGx, prevGz] = z.route[prevIdx];
+      const prevWorld = gridToWorld(prevGx, prevGz);
+      const bdx = prevWorld.x - z.x;
+      const bdz = prevWorld.z - z.z;
+      const bd = Math.hypot(bdx, bdz);
+      if (bd > 0.04) {
+        const kbResist = z.def.isStageBoss ? 0.25 : 1.0;
+        const pushDist = Math.min(bd, p.knockback * 0.28 * kbResist);
+        z.x += (bdx / bd) * pushDist;
+        z.z += (bdz / bd) * pushDist;
+        z.gx = (z.x / 1.0) + (S.cols - 1) / 2;
+        z.gz = (z.z / 1.0) + (S.rows - 1) / 2;
+        z.mesh.position.x = z.x;
+        z.mesh.position.z = z.z;
+      }
     }
     z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
   };
@@ -2577,6 +2657,8 @@ export function saveGameState(silent = false) {
       heat: S.heat || 0,
       moonShards: S.moonShards,
       moonGoal: S.moonGoal,
+      carryoverStars: S.carryoverStars || 0,
+      starBonusMult: S.starBonusMult || 1.0,
       hp: S.hp,
       maxHp: S.maxHp,
       forgeCount: S.forgeCount || 0,
@@ -2616,7 +2698,11 @@ export function loadSavedGame() {
 
     S.clearedStages = new Set(Array.isArray(data.clearedStages) ? data.clearedStages : []);
     S.heat = Math.max(0, Math.min(10, Math.round(Number(data.heat) || 0)));
-    buildStageWorld(data.stageIndex ?? 0);
+    S.carryoverStars = Math.max(0, Number(data.carryoverStars) || 0);
+    S.starBonusMult = Math.max(1.0, Number(data.starBonusMult) || (1 + Math.round(S.carryoverStars * 0.5) / 100));
+    buildStageWorld(data.stageIndex ?? 0, false);
+    S.carryoverStars = Math.max(0, Number(data.carryoverStars) || 0);
+    S.starBonusMult = Math.max(1.0, Number(data.starBonusMult) || (1 + Math.round(S.carryoverStars * 0.5) / 100));
 
     // Clear default starter units so we can restore the exact saved board units
     for (const u of [...S.units]) {
@@ -2649,14 +2735,15 @@ export function loadSavedGame() {
     }
 
     S.res = { ...INITIAL_RESOURCES, ...(data.res || {}) };
-    S.moonShards = Math.min(S.moonGoal, data.moonShards ?? 0);
+    S.moonShards = Math.max(0, data.moonShards ?? 0);
     S.wave = data.wave ?? 0;
+    S.maxHp = Math.max(12, data.maxHp ?? 12);
     S.hp = Math.max(1, Math.min(S.maxHp, data.hp ?? S.maxHp));
     S.forgeCount = data.forgeCount ?? 0;
     S.phase = 'playing';
 
     setHeatLevel(S.heat, true);
-    setMoonRestoreProgress(S.moonShards / Math.max(1, S.moonGoal));
+    setMoonRestoreProgress(Math.min(1, S.moonShards / Math.max(1, S.moonGoal)));
     updateStageButtons();
     updateTopHUD();
     sound.shard();
@@ -2678,16 +2765,18 @@ export function startNewGame(stageIdx = 0) {
   const pauseBtn = document.getElementById('pauseBtn');
   if (pauseBtn) pauseBtn.innerHTML = UI_SVGS.ctrl_pause;
 
+  S.carryoverStars = 0;
+  S.starBonusMult = 1.0;
   S.res = { ...INITIAL_RESOURCES };
   S.moonShards = 0;
   S.wave = 0;
   S.phase = 'playing';
-  buildStageWorld(stageIdx);
+  buildStageWorld(stageIdx, false);
   setHeatLevel(S.heat, true);
   if (!hasSavedGame()) {
     saveGameState(true);
   }
-  const pct = (S.heat || 0) * 20;
+  const pct = Math.round((getEnemyHeatMultiplier(S.heat) - 1) * 100);
   showBubble(
     S.heat > 0
       ? `🌟 New Game (🔥Heat ${S.heat}: +${pct}%) · 新游戏开始！`
@@ -2832,23 +2921,41 @@ document.querySelectorAll('.stage-btn').forEach(btn => {
     const idx = Number(btn.dataset.stage);
     S.res = { ...INITIAL_RESOURCES };
     S.moonShards = 0;
-    S.wave = 1;
+    S.wave = 0;
     S.phase = 'playing';
-    buildStageWorld(idx);
+    buildStageWorld(idx, false);
     showBubble(`${btn.textContent} 🏰🌕 ✨`, 1.4);
   });
 });
 
-// Victory / Defeat Modal Buttons
+// Victory / Defeat Modal Buttons (Next Stage converts accumulated Stars into Next-Stage Bonus Effect!)
 document.getElementById('nextStageBtn').addEventListener('click', () => {
   sound.click();
   document.getElementById('victoryModal').classList.add('hidden');
-  const nextIdx = S.phase === 'defeat' ? S.stageIndex : (S.stageIndex + 1) % STAGES.length;
+  const isRetry = S.phase === 'defeat';
+  const isAllClearRestart = !isRetry && Boolean(S.isGrandFinale || S.stageIndex >= STAGES.length - 1);
+  const nextIdx = isRetry ? S.stageIndex : (S.stageIndex + 1) % STAGES.length;
+  const applyCarryover = !isRetry && !isAllClearRestart;
+  if (applyCarryover) {
+    S.carryoverStars = Math.max(S.carryoverStars || 0, S.moonShards || 0);
+  } else {
+    S.carryoverStars = 0;
+    S.starBonusMult = 1.0;
+  }
   S.res = { ...INITIAL_RESOURCES };
   S.moonShards = 0;
   S.wave = 0;
   S.phase = 'playing';
-  buildStageWorld(nextIdx);
+  buildStageWorld(nextIdx, applyCarryover);
+  if (applyCarryover && (S.carryoverStars || 0) > 0) {
+    const stars = Math.floor(S.carryoverStars);
+    const atkPct = Math.round((S.starBonusMult - 1) * 100);
+    const bonusHp = Math.floor(stars / 10);
+    showBubble(
+      `🌟 Star Bonus (${stars}🌕): +${atkPct}% ATK/Yield · +☀️${stars * 2} +🪵${stars} +🧱${stars}${bonusHp > 0 ? ` +❤️${bonusHp}` : ''} | 星辉继承加成！`,
+      2.6
+    );
+  }
   saveGameState(true);
 });
 
@@ -2868,6 +2975,9 @@ document.getElementById('continueBtn').addEventListener('click', () => {
   sound.click();
   document.getElementById('victoryModal').classList.add('hidden');
   if (S.hp <= 0) S.hp = S.maxHp;
+  if (S.wave >= (S.totalWaves || 5)) {
+    S.endlessMode = true;
+  }
   S.phase = 'playing';
   updateTopHUD();
 });
@@ -2918,6 +3028,7 @@ requestAnimationFrame(animate);
 window.__MOONCRAFT__ = {
   S,
   STAGES,
+  STAGE_FINAL_BOSSES,
   CRITTER_UNITS,
   ZOMBIE_TYPES,
   cineGroup,
@@ -2926,6 +3037,7 @@ window.__MOONCRAFT__ = {
   tryUpgradeUnit,
   forgeMoonAtSanctuary,
   spawnZombie,
+  triggerNextWave,
   finishCutscene,
   startOpeningCutscene,
   startVictoryCutscene,

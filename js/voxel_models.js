@@ -463,19 +463,20 @@ export function buildMoonSanctuaryMesh() {
 // ============================================================================
 function createOverheadStatusRow(def) {
   const row = new THREE.Group();
-  const isBoss = def.id === 'nightmare_boss' || def.id === 'abyss_dragon' || def.isElite;
+  const isStageBoss = Boolean(def.isStageBoss);
+  const isBoss = isStageBoss || def.id === 'nightmare_boss' || def.id === 'abyss_dragon' || def.isElite;
   const isHealer = def.id === 'necromancer' || def.id === 'healer_shaman';
   const isTank = def.id === 'bucket' || def.id === 'shield_knight';
-  const heartCount = isBoss ? 5 : (isTank || isHealer ? 4 : (def.id === 'runner' ? 1 : (def.id === 'walker' ? 2 : 3)));
+  const heartCount = isStageBoss ? 7 : (isBoss ? 5 : (isTank || isHealer ? 4 : (def.id === 'runner' ? 1 : (def.id === 'walker' ? 2 : 3))));
 
   const hearts = [];
-  const spacing = 0.15;
+  const spacing = isStageBoss ? 0.13 : 0.15;
   const startX = -((heartCount - 1) * spacing) * 0.5;
 
   for (let i = 0; i < heartCount; i++) {
-    const h = vox(0.11, 0.11, 0.05, 0xff4d6d, startX + i * spacing, 0, 0, {
-      emissive: 0xff2a55,
-      emissiveIntensity: 0.55
+    const h = vox(0.11, 0.11, 0.05, isStageBoss ? 0xffbe0b : 0xff4d6d, startX + i * spacing, 0, 0, {
+      emissive: isStageBoss ? 0xff0055 : 0xff2a55,
+      emissiveIntensity: 0.65
     });
     row.add(h);
     hearts.push(h);
@@ -486,7 +487,7 @@ function createOverheadStatusRow(def) {
   if (def.reward?.core > 0 || def.isElite) {
     // Glowing Purple-Gold Rare Star Core Octahedron Badge above Tough Elite Monsters!
     abilityIcon = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.14, 0),
+      new THREE.OctahedronGeometry(isStageBoss ? 0.18 : 0.14, 0),
       new THREE.MeshStandardMaterial({
         color: 0xffd43b,
         emissive: 0xae3ec9,
@@ -494,7 +495,7 @@ function createOverheadStatusRow(def) {
         roughness: 0.15
       })
     );
-    abilityIcon.position.set(0, 0.21, 0);
+    abilityIcon.position.set(0, 0.22, 0);
     row.add(abilityIcon);
   } else if (def.armor > 0) {
     abilityIcon = vox(0.16, 0.16, 0.06, 0x74c0fc, 0, 0.17, 0, {
@@ -527,7 +528,7 @@ function createOverheadStatusRow(def) {
 }
 
 // ============================================================================
-// 11 VISUALLY & FUNCTIONALLY DISTINCT 3D VOXEL ZOMBIES & TOUGH ELITES
+// 16 VISUALLY & FUNCTIONALLY DISTINCT 3D VOXEL ZOMBIES, ELITES & NIGHTMARE CRITTER BOSSES
 // ============================================================================
 export function buildVoxelZombie(def) {
   const g = new THREE.Group();
@@ -543,7 +544,11 @@ export function buildVoxelZombie(def) {
   const head = vox(0.34, 0.34, 0.34, skinCol, 0, 0.78, 0);
 
   // Glowing zombie eyes facing toward the Critter base (-X)
-  const eyeColor = (def.id === 'nightmare_boss' || def.id === 'abyss_dragon') ? 0xffbe0b : (def.isElite ? 0xda77f2 : 0xff2a55);
+  const eyeColor = def.id === 'nightmare_catnap'
+    ? 0xffffff
+    : (def.isStageBoss || def.id === 'nightmare_boss' || def.id === 'abyss_dragon')
+    ? 0xffbe0b
+    : (def.isElite ? 0xda77f2 : 0xff2a55);
   const eyeL = vox(0.05, 0.06, 0.07, eyeColor, -0.18, 0.80, -0.08, { emissive: eyeColor, emissiveIntensity: 0.95 });
   const eyeR = vox(0.05, 0.06, 0.07, eyeColor, -0.18, 0.80, 0.08, { emissive: eyeColor, emissiveIntensity: 0.95 });
 
@@ -724,9 +729,71 @@ export function buildVoxelZombie(def) {
     g.add(balloonRig, bossOrbs);
   }
 
+  // 11. STAGE 1–5 FINAL NIGHTMARE CRITTER BOSSES (DogDay, BobbyBear, PickyPiggy, CraftyCorn, CatNap!)
+  if (def.isStageBoss) {
+    // Dark Nightmare Aura & Orbiting Boss Orbs for all 5 Stage Final Bosses
+    const orbColor =
+      def.id === 'nightmare_dogday' ? 0xff922b :
+      def.id === 'nightmare_bobby' ? 0xff4d6d :
+      def.id === 'nightmare_picky' ? 0xf783ac :
+      def.id === 'nightmare_crafty' ? 0x22b8cf : 0xae3ec9;
+
+    bossOrbs = new THREE.Group();
+    bossOrbs.position.set(0, 0.68, 0);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      bossOrbs.add(vox(0.15, 0.15, 0.15, orbColor, Math.cos(a) * 0.52, Math.sin(a * 2) * 0.09, Math.sin(a) * 0.52, {
+        emissive: orbColor,
+        emissiveIntensity: 0.95
+      }));
+    }
+    g.add(bossOrbs);
+
+    if (def.id === 'nightmare_dogday') {
+      // Floppy Dog Ears + Dark Solar Eclipse Chest Emblem
+      const earL = vox(0.14, 0.30, 0.12, 0x8d3b08, 0, 0.78, -0.24);
+      const earR = vox(0.14, 0.30, 0.12, 0x8d3b08, 0, 0.78, 0.24);
+      const snout = vox(0.16, 0.14, 0.18, 0xffd8a8, -0.22, 0.72, 0);
+      const sunCore = vox(0.14, 0.22, 0.22, 0xffd43b, -0.18, 0.46, 0, { emissive: 0xff922b, emissiveIntensity: 1.0 });
+      g.add(earL, earR, snout, sunCore);
+    } else if (def.id === 'nightmare_bobby') {
+      // Round Bear Ears + Glowing Rose-Heart Chest Core
+      const earL = vox(0.14, 0.16, 0.16, 0xc92a2a, 0, 0.98, -0.16);
+      const earR = vox(0.14, 0.16, 0.16, 0xc92a2a, 0, 0.98, 0.16);
+      const heartCore = vox(0.14, 0.22, 0.22, 0xff4d6d, -0.18, 0.46, 0, { emissive: 0xff0044, emissiveIntensity: 1.0 });
+      g.add(earL, earR, heartCore);
+    } else if (def.id === 'nightmare_picky') {
+      // Pig Snout + Ears + Heavy Cleaver Hammer
+      const snout = vox(0.16, 0.14, 0.20, 0xffdeeb, -0.22, 0.74, 0);
+      const earL = vox(0.12, 0.18, 0.14, 0xd6336c, -0.04, 0.98, -0.15);
+      const earR = vox(0.12, 0.18, 0.14, 0xd6336c, -0.04, 0.98, 0.15);
+      pickaxeGroup = new THREE.Group();
+      pickaxeGroup.position.set(-0.32, 0.54, -0.26);
+      const shaft = vox(0.08, 0.52, 0.08, 0x8d5524, 0, 0.18, 0);
+      const blade = vox(0.36, 0.22, 0.20, 0xffd43b, 0, 0.44, 0, { emissive: 0xf59f00, emissiveIntensity: 0.75 });
+      pickaxeGroup.add(shaft, blade);
+      g.add(snout, earL, earR, pickaxeGroup);
+    } else if (def.id === 'nightmare_crafty') {
+      // Tall Spiral Dark-Rainbow Unicorn Horn + Flowing Mane
+      const horn = vox(0.12, 0.44, 0.12, 0xffd43b, -0.14, 1.14, 0, { emissive: 0xda77f2, emissiveIntensity: 0.95 });
+      horn.rotation.z = 0.28;
+      const mane1 = vox(0.14, 0.34, 0.12, 0xf783ac, 0.14, 0.88, 0, { emissive: 0xae3ec9, emissiveIntensity: 0.7 });
+      const mane2 = vox(0.14, 0.28, 0.12, 0x22b8cf, 0.18, 0.62, 0, { emissive: 0x15aabf, emissiveIntensity: 0.7 });
+      g.add(horn, mane1, mane2);
+    } else if (def.id === 'nightmare_catnap') {
+      // Towering Pointed Cat Ears + Golden Crescent Moon Pendant + Long Cat Tail
+      const earL = vox(0.14, 0.36, 0.14, 0x5f3dc4, -0.02, 1.08, -0.15, { emissive: 0x3b096c, emissiveIntensity: 0.7 });
+      const earR = vox(0.14, 0.36, 0.14, 0x5f3dc4, -0.02, 1.08, 0.15, { emissive: 0x3b096c, emissiveIntensity: 0.7 });
+      const moonCharm = vox(0.14, 0.22, 0.22, 0xffd43b, -0.19, 0.48, 0, { emissive: 0xfcc419, emissiveIntensity: 1.0 });
+      const tail = vox(0.38, 0.10, 0.10, 0x7950f2, 0.30, 0.48, 0, { emissive: 0x5f3dc4, emissiveIntensity: 0.65 });
+      tail.rotation.z = 0.55;
+      g.add(earL, earR, moonCharm, tail);
+    }
+  }
+
   // Overhead 3D Heart & Ability Status Bar
   const status = createOverheadStatusRow(def);
-  status.row.position.set(0, def.id === 'balloon' ? 2.30 : (def.isElite ? 1.42 : 1.26), 0);
+  status.row.position.set(0, def.id === 'balloon' ? 2.30 : (def.isStageBoss ? 1.56 : (def.isElite ? 1.42 : 1.26)), 0);
   g.add(status.row);
 
   g.userData = {
