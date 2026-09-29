@@ -203,6 +203,23 @@ body.inIntro .sun-glow-orb {
   border-color: #fff2f5;
 }
 
+.heat-capsule {
+  background: linear-gradient(180deg, #fff0d6 0%, #ff922b 55%, #e8590c 100%);
+  border-color: #fff4e6;
+  cursor: pointer;
+  padding: 5px 11px 5px 8px;
+}
+
+.heat-capsule:hover {
+  transform: translateY(-2px) scale(1.06);
+}
+
+.heat-Hud-ico {
+  font-size: 20px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(90, 20, 0, 0.35));
+}
+
 .clay-pair {
   display: flex;
   align-items: center;
@@ -995,32 +1012,181 @@ body.inIntro #bottomDock {
 
 .menu-save-badge {
   width: 100%;
-  padding: 8px 14px;
+  padding: 7px 12px;
   border-radius: 16px;
   background: linear-gradient(180deg, #fff9db 0%, #ffec99 100%);
   border: 2.5px solid #fcc419;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
   color: var(--stroke-choco);
   text-align: center;
   box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.9);
 }
 
+/* Bilingual Heat Difficulty Slider Panel inside Main Menu */
+.heat-control-box {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fff4e6 0%, #ffd8a8 100%);
+  border: 3px solid #ffffff;
+  box-shadow:
+    inset 0 2px 5px rgba(255, 255, 255, 0.9),
+    0 4px 0 #d9480f,
+    0 8px 16px rgba(90, 25, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.heat-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.heat-title-label {
+  font-family: var(--font-round);
+  font-size: 14.5px;
+  font-weight: 900;
+  color: #ffffff;
+  -webkit-text-stroke: 2.6px var(--stroke-choco);
+  paint-order: stroke fill;
+}
+
+.heat-value-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff922b 0%, #d9480f 100%);
+  border: 2px solid #ffffff;
+  font-family: var(--font-round);
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+  -webkit-text-stroke: 2.2px var(--stroke-choco);
+  paint-order: stroke fill;
+  box-shadow: 0 2px 0 #9c3608;
+}
+
+.heat-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.heat-step-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid #ffffff;
+  background: linear-gradient(180deg, #ffa94d 0%, #e8590c 100%);
+  color: #ffffff;
+  font-family: var(--font-round);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+  -webkit-text-stroke: 2.2px var(--stroke-choco);
+  paint-order: stroke fill;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #9c3608;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.heat-step-btn:hover {
+  transform: scale(1.08);
+}
+
+.heat-step-btn:active {
+  transform: translateY(2px);
+}
+
+#heatSlider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffd43b 0%, #ff922b 50%, #e03131 100%);
+  border: 2.5px solid #ffffff;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.22), 0 2px 0 #a64b17;
+  cursor: pointer;
+  outline: none;
+}
+
+#heatSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff9db 0%, #ff922b 65%, #d9480f 100%);
+  border: 3px solid #ffffff;
+  box-shadow: 0 3px 0 #7f2704, 0 4px 8px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+}
+
+#heatSlider::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff9db 0%, #ff922b 65%, #d9480f 100%);
+  border: 3px solid #ffffff;
+  box-shadow: 0 3px 0 #7f2704, 0 4px 8px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+}
+
+.heat-modifier-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.heat-mod-pill {
+  flex: 1 1 46%;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid #ffa94d;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--stroke-choco);
+  text-align: center;
+}
+
+.heat-mod-pill b {
+  color: #d9480f;
+  font-weight: 900;
+}
+
+.heat-rule-caption {
+  font-size: 11px;
+  font-weight: 800;
+  color: #5c3214;
+  text-align: center;
+  line-height: 1.25;
+}
+
 .menu-btn-stack {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .menu-action-btn {
   width: 100%;
-  padding: 10px 18px;
-  border-radius: 20px;
+  padding: 8px 16px;
+  border-radius: 18px;
   border: 3px solid #ffffff;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   cursor: pointer;
   font-family: var(--font-round);
   text-align: left;

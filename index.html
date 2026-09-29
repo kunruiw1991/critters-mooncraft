@@ -108,8 +108,13 @@
         </div>
       </div>
 
-      <!-- Right Floating Cluster: Heart Clay Pill + Tactile Toy Controls -->
+      <!-- Right Floating Cluster: Heart Clay Pill + Heat Badge + Tactile Toy Controls -->
       <div class="hud-right">
+        <div class="clay-capsule heat-capsule" id="heatHudBadge" title="Heat Difficulty Level (Click to adjust in Main Menu) · 热度挑战等级（点击打开主菜单调节）">
+          <span class="heat-Hud-ico">🔥</span>
+          <span id="heatHudCount" class="clay-num">0</span>
+        </div>
+
         <div class="clay-capsule heart-capsule" id="hpChip">
           <div class="res-svg-wrap" id="heartSvgSlot"></div>
           <span id="hpCount" class="clay-num">12</span>
@@ -181,7 +186,7 @@
       </div>
     </footer>
 
-    <!-- Bilingual Main Menu Modal (New Game / Load Save / Resume / Intro Story · 中英双语主菜单) -->
+    <!-- Bilingual Main Menu Modal (New Game / Load Save / Heat Slider / Resume / Intro Story · 中英双语主菜单) -->
     <div id="mainMenuModal" class="modal-backdrop hidden">
       <div class="modal-card menu-modal-card">
         <div class="menu-header-emblem">
@@ -191,6 +196,27 @@
         </div>
         <h1 class="menu-bilingual-title">CRITTERCRAFT: MOONLESS NIGHT<br/><span>萌宠守月传 · 星辉圣殿</span></h1>
         <div id="menuSaveStatus" class="menu-save-badge">📂 Checking Save Data... · 正在检查存档...</div>
+
+        <!-- Bilingual Heat Difficulty Slider (每 +1 Heat: 怪物血量/攻击力 +20%, 建筑材料 +20%) -->
+        <div id="heatControlBox" class="heat-control-box">
+          <div class="heat-header-row">
+            <span class="heat-title-label">🔥 HEAT LEVEL · 热度等级</span>
+            <span id="heatValueBadge" class="heat-value-badge">🔥 HEAT 0 · 标准难度</span>
+          </div>
+          <div class="heat-slider-row">
+            <button id="heatMinusBtn" type="button" class="heat-step-btn" aria-label="Decrease Heat">−</button>
+            <input id="heatSlider" type="range" min="0" max="10" step="1" value="0" aria-label="Heat Level Slider" />
+            <button id="heatPlusBtn" type="button" class="heat-step-btn" aria-label="Increase Heat">+</button>
+          </div>
+          <div id="heatModifierSummary" class="heat-modifier-summary">
+            <span class="heat-mod-pill monster-mod" id="heatMonsterModPill">🧟 Monster HP &amp; ATK: <b>+0%</b> (1.0x)</span>
+            <span class="heat-mod-pill build-mod" id="heatBuildModPill">🧱 Building Cost: <b>+0%</b> (1.0x)</span>
+          </div>
+          <div class="heat-rule-caption">
+            Each +1 Heat ➔ Monster HP &amp; ATK +20%, Building Materials +20% · 每 +1 热度：怪物血量与攻击力 +20%，建筑材料 +20%
+          </div>
+        </div>
+
         <div class="menu-btn-stack">
           <button id="menuNewGameBtn" class="menu-action-btn new-game-btn">
             <span class="btn-ico">🌟</span>

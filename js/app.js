@@ -282,6 +282,7 @@ const S = {
   sanctuaryShake: 0,
   sanctuaryFireTimer: 0,
   forgeCount: 0,
+  heat: 0, // Heat level (0..10): each +1 Heat increases Monster HP & ATK by +20% and Building Material Costs by +20%
   res: { ...INITIAL_RESOURCES },
   hp: 12,
   maxHp: 12,
@@ -630,25 +631,33 @@ function showBubble(iconSequence, dur = 2.0) {
   bubbleTimer = dur;
 }
 
-function getEffectiveUnitCost(def) {
+const heatHudCountEl = document.getElementById('heatHudCount');
+
+export function getHeatMultiplier() {
+  return 1 + Math.max(0, Number(S.heat) || 0) * 0.20;
+}
+
+export function getEffectiveUnitCost(def) {
   if (!def) return { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0 };
-  if (def.role === 'tool' || def.role === 'terraform' || def.role === 'upgrade') {
-    return def.cost || { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0 };
+  const heat = Math.max(0, Number(S.heat) || 0);
+  if (def.role === 'tool') {
+    return { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0 };
+  }
+  if (def.role === 'upgrade') {
+    return computeUpgradeCost(def, 1, heat);
+  }
+  if (def.role === 'terraform') {
+    return computeDynamicResourceCosts(def, 0, heat);
   }
   const existingCount = S.units.filter(u => u.id === def.id).length;
-  const cost = computeDynamicResourceCosts(def, existingCount);
-  // Anti-softlock safeguard: if the player has 0 SunnyFox or 0 PoppyDash (Skunk) on the board,
-  // cap its resource cost at current bank so the player can NEVER get resource-deadlocked!
-  if (existingCount === 0 && def.id === 'sunnyfox') {
-    if ((S.res.sun || 0) < cost.sun) {
-      cost.sun = Math.max(0, Math.floor(S.res.sun || 0));
-    }
-    if ((S.res.wood || 0) < cost.wood) {
-      cost.wood = Math.max(0, Math.floor(S.res.wood || 0));
-    }
-  } else if (existingCount === 0 && def.id === 'poppydash') {
-    if ((S.res.sun || 0) < cost.sun) {
-      cost.sun = Math.max(0, Math.floor(S.res.sun || 0));
+  const cost = computeDynamicResourceCosts(def, existingCount, heat);
+  // Anti-softlock safeguard only when the board has 0 units AND bank is critically depleted (< 15 Sun & < 15 Wood)
+  if (S.units.length === 0 && (S.res.sun || 0) < 15 && (S.res.wood || 0) < 15) {
+    if (existingCount === 0 && def.id === 'sunnyfox') {
+      cost.sun = Math.min(cost.sun, Math.max(0, Math.floor(S.res.sun || 0)));
+      cost.wood = Math.min(cost.wood, Math.max(0, Math.floor(S.res.wood || 0)));
+    } else if (existingCount === 0 && def.id === 'poppydash') {
+      cost.sun = Math.min(cost.sun, Math.max(0, Math.floor(S.res.sun || 0)));
     }
   }
   return cost;
@@ -784,6 +793,9 @@ function updateTopHUD() {
   crystalCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.crystal || 0);
   if (coreCountEl) {
     coreCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.core || 0);
+  }
+  if (heatHudCountEl) {
+    heatHudCountEl.textContent = Math.max(0, Math.floor(S.heat || 0));
   }
   hpCountEl.textContent = S.hp;
 
@@ -1011,13 +1023,13 @@ function spawnSoftSparkle(x, y, z, color) {
   });
 }
 
-// Upgrade an existing placed Critter (Lv.1 -> Lv.2 -> Lv.3) — major sink for all 4 resources!
+// Upgrade an existing placed Critter (Lv.1 -> Lv.2 -> Lv.3) — major sink for all 4 resources (+20% per Heat level)!
 export function tryUpgradeUnit(u) {
   if (!u || u.isTrap || (u.level || 1) >= 3) {
     showBubble('⭐⭐⭐ ✨', 1.2);
     return false;
   }
-  const upCost = computeUpgradeCost(u.def, u.level || 1);
+  const upCost = computeUpgradeCost(u.def, u.level || 1, S.heat || 0);
   if (!checkAfford(upCost)) {
     showBubble('⬆️⭐ ☀️🪵🧱💎 ❌', 1.5);
     return false;
@@ -1037,7 +1049,7 @@ export function tryUpgradeUnit(u) {
   return true;
 }
 
-// Moon Sanctuary Forge: Escalates by +15% per forge so gathered resources always have a high-value sink!
+// Moon Sanctuary Forge: Escalates by +15% per forge (+20% per Heat level) so gathered resources always have a high-value sink!
 export function forgeMoonAtSanctuary() {
   if (S.sandbox) {
     addMoonShards(6);
@@ -1047,8 +1059,8 @@ export function forgeMoonAtSanctuary() {
     return true;
   }
 
-  const forgeMult = Math.pow(1.15, S.forgeCount || 0);
-  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 30 + 🪵 25 + 🧱 25 + 💎 8 * 1.15^N -> +6 🌕)
+  const forgeMult = Math.pow(1.15, S.forgeCount || 0) * getHeatMultiplier();
+  // Mode 1: Balanced 4-resource Moon Forge bundle (☀️ 30 + 🪵 25 + 🧱 25 + 💎 8 * 1.15^N * heatMult -> +6 🌕)
   const bundleCost = {
     sun: Math.round(30 * forgeMult),
     wood: Math.round(25 * forgeMult),
@@ -1072,8 +1084,8 @@ export function forgeMoonAtSanctuary() {
     return true;
   }
 
-  // Mode 2: Surplus-Resource Converter! Spend 45 (* 1.15^N) of any single resource -> +4 🌕
-  const singleCost = Math.round(45 * Math.pow(1.15, S.forgeCount || 0));
+  // Mode 2: Surplus-Resource Converter! Spend 45 (* 1.15^N * heatMult) of any single resource -> +4 🌕
+  const singleCost = Math.round(45 * Math.pow(1.15, S.forgeCount || 0) * getHeatMultiplier());
   const entries = [
     ['crystal', '💎'],
     ['stone', '🧱'],
@@ -1358,10 +1370,11 @@ export function spawnZombie(typeId, customPos = null) {
   mesh.position.set(wpos.x, yPos, wpos.z);
   zombieGroup.add(mesh);
 
-  // Gentle +10% HP per wave and +10% per stage so waves escalate smoothly!
+  // Gentle +10% HP per wave and +10% per stage, multiplied by +20% per Heat level (1 + 0.20 * S.heat)!
   const waveIdx = Math.max(1, S.wave);
-  const hpScale = 1 + (waveIdx - 1) * 0.10 + S.stageIndex * 0.10;
-  const maxHp = Math.round(def.hp * hpScale);
+  const baseWaveStageMult = 1 + (waveIdx - 1) * 0.10 + S.stageIndex * 0.10;
+  const heatMult = getHeatMultiplier();
+  const maxHp = Math.round(def.hp * baseWaveStageMult * heatMult);
 
   const zObj = {
     def,
@@ -1373,8 +1386,15 @@ export function spawnZombie(typeId, customPos = null) {
     z: wpos.z,
     route: chosenRoute,
     wpIndex,
+    baseWaveStageMult,
+    heatMult,
     hp: maxHp,
     maxHp,
+    dps: Math.round((def.dps || 22) * heatMult),
+    rangedAtk: def.rangedAtk ? Math.round(def.rangedAtk * heatMult) : 0,
+    frontBurstDmg: def.frontBurstDmg ? Math.round(def.frontBurstDmg * heatMult) : 0,
+    splashBurstDmg: def.splashBurstDmg ? Math.round(def.splashBurstDmg * heatMult) : 0,
+    poppyAuraDps: def.poppyAuraDps ? Number((def.poppyAuraDps * heatMult).toFixed(2)) : 0,
     armor: def.armor || 0,
     speed: def.speed * (1 + Math.min(0.12, (waveIdx - 1) * 0.015)),
     atkTimer: 0,
@@ -1869,19 +1889,21 @@ function updateGameplay(dt) {
       }
     }
 
-    // Nightmare Boss Special: Crimson Poppy-Gas Aura damages nearby Critter units!
-    if (z.def.poppyAuraRadius && z.def.poppyAuraDps) {
+    // Nightmare Boss Special: Crimson Poppy-Gas Aura damages nearby Critter units (+20% per Heat)!
+    const effPoppyDps = z.poppyAuraDps ?? z.def.poppyAuraDps ?? 0;
+    if (z.def.poppyAuraRadius && effPoppyDps > 0) {
       for (let ui = S.units.length - 1; ui >= 0; ui--) {
         const u = S.units[ui];
         if (!u.isTrap && Math.hypot(u.gx - z.gx, u.gz - z.gz) <= z.def.poppyAuraRadius) {
-          u.hp -= z.def.poppyAuraDps * dt;
+          u.hp -= effPoppyDps * dt;
           if (u.hp <= 0) removeUnit(u);
         }
       }
     }
 
-    // Zombie Ranged Counter-Attack (Digger pickaxe toss, Balloon bomb, Necromancer dark bolt)
-    if (z.def.rangedAtk && z.def.rangedRange) {
+    // Zombie Ranged Counter-Attack (Digger pickaxe toss, Balloon bomb, Necromancer dark bolt — +20% per Heat!)
+    const effRangedAtk = z.rangedAtk ?? z.def.rangedAtk ?? 0;
+    if (effRangedAtk > 0 && z.def.rangedRange) {
       z.rangedTimer = (z.rangedTimer || 0) + dt;
       if (z.rangedTimer >= 1.65) {
         let bestTarget = null;
@@ -1902,7 +1924,7 @@ function updateGameplay(dt) {
           z.rangedTimer = 0;
           const uw = gridToWorld(bestTarget.gx, bestTarget.gz);
           spawnSoftSparkle(uw.x, 0.75, uw.z, 0xff4d6d);
-          bestTarget.hp -= z.def.rangedAtk;
+          bestTarget.hp -= effRangedAtk;
           if (bestTarget.hp <= 0) removeUnit(bestTarget);
         }
       }
@@ -1946,15 +1968,17 @@ function updateGameplay(dt) {
 
     if (blocker) {
       // Creeper detonates on frontline contact (Bobby's 60% blastResist counters it; fragile units get wiped!)
-      if (z.def.frontBurstDmg) {
+      const effFrontBurst = z.frontBurstDmg ?? z.def.frontBurstDmg ?? 0;
+      const effSplashBurst = z.splashBurstDmg ?? z.def.splashBurstDmg ?? 0;
+      if (effFrontBurst > 0) {
         const resist = blocker.def.blastResist || 0;
-        blocker.hp -= z.def.frontBurstDmg * (1 - resist);
+        blocker.hp -= effFrontBurst * (1 - resist);
         if (blocker.hp <= 0) removeUnit(blocker);
-        if (z.def.splashBurstDmg) {
+        if (effSplashBurst > 0) {
           for (let ui = S.units.length - 1; ui >= 0; ui--) {
             const otherU = S.units[ui];
             if (otherU !== blocker && !otherU.isTrap && Math.hypot(otherU.gx - z.gx, otherU.gz - z.gz) <= 1.25) {
-              otherU.hp -= z.def.splashBurstDmg * (1 - (otherU.def.blastResist || 0));
+              otherU.hp -= effSplashBurst * (1 - (otherU.def.blastResist || 0));
               if (otherU.hp <= 0) removeUnit(otherU);
             }
           }
@@ -1973,7 +1997,8 @@ function updateGameplay(dt) {
       if (z.atkTimer >= 0.75) {
         z.atkTimer = 0;
         const wallMult = z.def.wallBreaker ? 2.2 : 1.0;
-        blocker.hp -= (z.def.dps || 22) * wallMult;
+        const effDps = z.dps ?? z.def.dps ?? 22;
+        blocker.hp -= effDps * wallMult;
 
         if (blocker.def.thornsDmg) {
           z.hp -= blocker.def.thornsDmg;
@@ -2313,9 +2338,79 @@ window.addEventListener('keydown', e => {
 });
 
 // ============================================================================
-// BILINGUAL MAIN MENU (NEW GAME / LOAD SAVE) & LOCALSTORAGE SAVE SYSTEM (中英双语存档系统)
+// BILINGUAL MAIN MENU (NEW GAME / LOAD SAVE / HEAT SLIDER) & SAVE SYSTEM (中英双语存档与热度系统)
 // ============================================================================
 const SAVE_STORAGE_KEY = 'mooncraft_save_v1';
+
+export function refreshHeatSliderUI() {
+  const h = Math.max(0, Math.min(10, Math.round(Number(S.heat) || 0)));
+  const bonusPct = h * 20;
+  const multStr = (1 + h * 0.2).toFixed(1);
+
+  const sliderEl = document.getElementById('heatSlider');
+  if (sliderEl && Number(sliderEl.value) !== h) {
+    sliderEl.value = String(h);
+  }
+
+  const badgeEl = document.getElementById('heatValueBadge');
+  if (badgeEl) {
+    const tierLabel =
+      h === 0
+        ? '标准难度'
+        : h <= 3
+        ? '升温挑战'
+        : h <= 6
+        ? '高热炼狱'
+        : '暗月绝境';
+    badgeEl.textContent = `🔥 HEAT ${h} (+${bonusPct}%) · ${tierLabel}`;
+  }
+
+  const monsterPill = document.getElementById('heatMonsterModPill');
+  if (monsterPill) {
+    monsterPill.innerHTML = `🧟 Monster HP &amp; ATK: <b>+${bonusPct}%</b> (${multStr}x)`;
+  }
+
+  const buildPill = document.getElementById('heatBuildModPill');
+  if (buildPill) {
+    buildPill.innerHTML = `🧱 Building Cost: <b>+${bonusPct}%</b> (${multStr}x)`;
+  }
+
+  if (heatHudCountEl) {
+    heatHudCountEl.textContent = String(h);
+  }
+}
+
+export function setHeatLevel(newHeat, silent = true) {
+  const h = Math.max(0, Math.min(10, Math.round(Number(newHeat) || 0)));
+  S.heat = h;
+  const newHeatMult = getHeatMultiplier();
+
+  // Immediately rescale any active monsters on the board so changing Heat in the Main Menu applies right away!
+  for (const z of S.zombies) {
+    const hpRatio = z.maxHp > 0 ? Math.max(0, Math.min(1, z.hp / z.maxHp)) : 1;
+    const baseWaveStageMult = z.baseWaveStageMult || (1 + Math.max(0, S.wave - 1) * 0.10 + S.stageIndex * 0.10);
+    z.heatMult = newHeatMult;
+    z.maxHp = Math.round(z.def.hp * baseWaveStageMult * newHeatMult);
+    z.hp = Math.max(1, Math.round(z.maxHp * hpRatio));
+    z.dps = Math.round((z.def.dps || 22) * newHeatMult);
+    z.rangedAtk = z.def.rangedAtk ? Math.round(z.def.rangedAtk * newHeatMult) : 0;
+    z.frontBurstDmg = z.def.frontBurstDmg ? Math.round(z.def.frontBurstDmg * newHeatMult) : 0;
+    z.splashBurstDmg = z.def.splashBurstDmg ? Math.round(z.def.splashBurstDmg * newHeatMult) : 0;
+    z.poppyAuraDps = z.def.poppyAuraDps ? Number((z.def.poppyAuraDps * newHeatMult).toFixed(2)) : 0;
+    if (z.mesh?.userData?.updateHearts) {
+      z.mesh.userData.updateHearts(z.hp, z.maxHp, z.armor);
+    }
+  }
+
+  refreshHeatSliderUI();
+  updateTopHUD();
+
+  if (!silent) {
+    const pct = h * 20;
+    showBubble(`🔥 Heat ${h}: 🧟 HP/ATK +${pct}% · 🧱 Cost +${pct}%`, 1.5);
+  }
+  return h;
+}
 
 export function hasSavedGame() {
   try {
@@ -2326,6 +2421,7 @@ export function hasSavedGame() {
 }
 
 export function refreshMainMenuUI() {
+  refreshHeatSliderUI();
   const statusEl = document.getElementById('menuSaveStatus');
   const loadBtn = document.getElementById('menuLoadGameBtn');
   try {
@@ -2338,12 +2434,13 @@ export function refreshMainMenuUI() {
     const data = JSON.parse(raw);
     const stg = (data.stageIndex ?? 0) + 1;
     const wv = data.wave ?? 0;
+    const ht = data.heat ?? 0;
     const sh = data.moonShards ?? 0;
     const goal = data.moonGoal ?? 30;
     const r = data.res || {};
     if (statusEl) {
       statusEl.textContent =
-        `📂 Saved: Stage ${stg} (Wave ${wv}) · 🌕${sh}/${goal} · ☀️${Math.floor(r.sun || 0)} 🪵${Math.floor(r.wood || 0)} 🧱${Math.floor(r.stone || 0)} 💎${Math.floor(r.crystal || 0)} 🔮${Math.floor(r.core || 0)} | 已存进度：第${stg}关 第${wv}波`;
+        `📂 Saved: Stage ${stg} (Wave ${wv} · 🔥Heat ${ht}) · 🌕${sh}/${goal} · ☀️${Math.floor(r.sun || 0)} 🪵${Math.floor(r.wood || 0)} 🧱${Math.floor(r.stone || 0)} 💎${Math.floor(r.crystal || 0)} 🔮${Math.floor(r.core || 0)} | 已存：第${stg}关 第${wv}波 (🔥热度${ht})`;
     }
     if (loadBtn) loadBtn.disabled = false;
   } catch {
@@ -2376,6 +2473,7 @@ export function saveGameState(silent = false) {
       timestamp: Date.now(),
       stageIndex: S.stageIndex,
       wave: S.wave,
+      heat: S.heat || 0,
       moonShards: S.moonShards,
       moonGoal: S.moonGoal,
       hp: S.hp,
@@ -2416,6 +2514,7 @@ export function loadSavedGame() {
     if (pauseBtn) pauseBtn.innerHTML = UI_SVGS.ctrl_pause;
 
     S.clearedStages = new Set(Array.isArray(data.clearedStages) ? data.clearedStages : []);
+    S.heat = Math.max(0, Math.min(10, Math.round(Number(data.heat) || 0)));
     buildStageWorld(data.stageIndex ?? 0);
 
     // Clear default starter units so we can restore the exact saved board units
@@ -2455,11 +2554,12 @@ export function loadSavedGame() {
     S.forgeCount = data.forgeCount ?? 0;
     S.phase = 'playing';
 
+    setHeatLevel(S.heat, true);
     setMoonRestoreProgress(S.moonShards / Math.max(1, S.moonGoal));
     updateStageButtons();
     updateTopHUD();
     sound.shard();
-    showBubble(`📂 Loaded Stage ${S.stageIndex + 1} · 已读取第 ${S.stageIndex + 1} 关存档！`, 1.8);
+    showBubble(`📂 Loaded Stage ${S.stageIndex + 1} (🔥Heat ${S.heat}) · 已读取第 ${S.stageIndex + 1} 关存档！`, 1.8);
     return true;
   } catch {
     showBubble('📂 Load Failed · 读取存档失败', 1.5);
@@ -2482,10 +2582,17 @@ export function startNewGame(stageIdx = 0) {
   S.wave = 0;
   S.phase = 'playing';
   buildStageWorld(stageIdx);
+  setHeatLevel(S.heat, true);
   if (!hasSavedGame()) {
     saveGameState(true);
   }
-  showBubble('🌟 New Game Started! · 新游戏开始！', 1.6);
+  const pct = (S.heat || 0) * 20;
+  showBubble(
+    S.heat > 0
+      ? `🌟 New Game (🔥Heat ${S.heat}: +${pct}%) · 新游戏开始！`
+      : '🌟 New Game Started! · 新游戏开始！',
+    1.6
+  );
 }
 
 export function openMainMenu() {
@@ -2525,6 +2632,26 @@ document.getElementById('saveGameBtn')?.addEventListener('click', () => {
 document.getElementById('openMenuBtn')?.addEventListener('click', () => {
   sound.click();
   openMainMenu();
+});
+
+document.getElementById('heatHudBadge')?.addEventListener('click', () => {
+  sound.click();
+  openMainMenu();
+});
+
+document.getElementById('heatSlider')?.addEventListener('input', e => {
+  sound.click();
+  setHeatLevel(Number(e.target.value), false);
+});
+
+document.getElementById('heatMinusBtn')?.addEventListener('click', () => {
+  sound.click();
+  setHeatLevel((S.heat || 0) - 1, false);
+});
+
+document.getElementById('heatPlusBtn')?.addEventListener('click', () => {
+  sound.click();
+  setHeatLevel((S.heat || 0) + 1, false);
 });
 
 document.getElementById('menuNewGameBtn')?.addEventListener('click', () => {
@@ -2700,6 +2827,9 @@ window.__MOONCRAFT__ = {
   startNewGame,
   saveGameState,
   loadSavedGame,
+  setHeatLevel,
+  getHeatMultiplier,
+  getEffectiveUnitCost,
   buildStageWorld,
   addMoonShards,
   advanceCutscene(sec) {

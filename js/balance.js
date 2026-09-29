@@ -739,10 +739,12 @@ export function getStageConfig(stageIndex = 0) {
   };
 }
 
-// +18% cost scaling per existing copy of the same unit so players diversify & upgrade rather than spamming!
-export function computeDynamicResourceCosts(def, existingCount = 0) {
+// +18% cost scaling per existing copy of the same unit + +20% per Heat level (1 + 0.20 * heat)!
+export function computeDynamicResourceCosts(def, existingCount = 0, heat = 0) {
   if (!def || !def.cost) return { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0 };
-  const mult = existingCount <= 0 ? 1.0 : Math.pow(1.18, existingCount);
+  const copyMult = existingCount <= 0 ? 1.0 : Math.pow(1.18, existingCount);
+  const heatMult = 1 + Math.max(0, Number(heat) || 0) * 0.20;
+  const mult = copyMult * heatMult;
   const c = def.cost;
   return {
     sun: c.sun > 0 ? Math.round(c.sun * mult) : 0,
@@ -753,7 +755,7 @@ export function computeDynamicResourceCosts(def, existingCount = 0) {
   };
 }
 
-// Universal Balanced 3-Resource Upgrade Cost (Lv.1 -> Lv.2 -> Lv.3): Sun + Wood + Brick (☀️20 🪵25 🧱30, 1-to-1 flat parity)!
+// Universal Balanced 3-Resource Upgrade Cost (Lv.1 -> Lv.2 -> Lv.3): Sun + Wood + Brick (☀️20 🪵25 🧱30, +20% per Heat level)!
 export const UPGRADE_COST = {
   sun: 20,
   wood: 25,
@@ -762,8 +764,15 @@ export const UPGRADE_COST = {
   core: 0
 };
 
-export function computeUpgradeCost() {
-  return { ...UPGRADE_COST };
+export function computeUpgradeCost(def = null, currentLevel = 1, heat = 0) {
+  const heatMult = 1 + Math.max(0, Number(heat) || 0) * 0.20;
+  return {
+    sun: UPGRADE_COST.sun > 0 ? Math.round(UPGRADE_COST.sun * heatMult) : 0,
+    wood: UPGRADE_COST.wood > 0 ? Math.round(UPGRADE_COST.wood * heatMult) : 0,
+    stone: UPGRADE_COST.stone > 0 ? Math.round(UPGRADE_COST.stone * heatMult) : 0,
+    crystal: (UPGRADE_COST.crystal || 0) > 0 ? Math.round(UPGRADE_COST.crystal * heatMult) : 0,
+    core: (UPGRADE_COST.core || 0) > 0 ? Math.round(UPGRADE_COST.core * heatMult) : 0
+  };
 }
 
 export function canAffordCost(resources, costObj) {
