@@ -6,6 +6,8 @@ import {
   STAGES,
   UPGRADE_COST,
   getStageConfig,
+  getEnemyHeatMultiplier,
+  getBuildHeatMultiplier,
   computeDynamicResourceCosts,
   computeUpgradeCost,
   canAffordCost,
@@ -639,7 +641,11 @@ function showBubble(iconSequence, dur = 2.0) {
 const heatHudCountEl = document.getElementById('heatHudCount');
 
 export function getHeatMultiplier() {
-  return 1 + Math.max(0, Number(S.heat) || 0) * 0.20;
+  return getEnemyHeatMultiplier(S.heat);
+}
+
+export function getBuildCostHeatMultiplier() {
+  return getBuildHeatMultiplier(S.heat);
 }
 
 export function getEffectiveUnitCost(def) {
@@ -2429,8 +2435,12 @@ const SAVE_STORAGE_KEY = 'mooncraft_save_v1';
 
 export function refreshHeatSliderUI() {
   const h = Math.max(0, Math.min(10, Math.round(Number(S.heat) || 0)));
-  const bonusPct = h * 20;
-  const multStr = (1 + h * 0.2).toFixed(1);
+  const enemyMult = getEnemyHeatMultiplier(h);
+  const buildMult = getBuildHeatMultiplier(h);
+  const enemyBonusPct = Math.round((enemyMult - 1) * 100);
+  const buildBonusPct = Math.round((buildMult - 1) * 100);
+  const enemyMultStr = enemyMult.toFixed(1);
+  const buildMultStr = buildMult.toFixed(1);
 
   const sliderEl = document.getElementById('heatSlider');
   if (sliderEl && Number(sliderEl.value) !== h) {
@@ -2446,18 +2456,22 @@ export function refreshHeatSliderUI() {
         ? '升温挑战'
         : h <= 6
         ? '高热炼狱'
-        : '暗月绝境';
-    badgeEl.textContent = `🔥 HEAT ${h} (+${bonusPct}%) · ${tierLabel}`;
+        : '暗月绝境 (建筑已封顶)';
+    badgeEl.textContent =
+      h <= 6
+        ? `🔥 HEAT ${h} (+${enemyBonusPct}%) · ${tierLabel}`
+        : `🔥 HEAT ${h} (🧟+${enemyBonusPct}% / 🧱+${buildBonusPct}% CAP) · ${tierLabel}`;
   }
 
   const monsterPill = document.getElementById('heatMonsterModPill');
   if (monsterPill) {
-    monsterPill.innerHTML = `🧟 Monster HP &amp; ATK: <b>+${bonusPct}%</b> (${multStr}x)`;
+    monsterPill.innerHTML = `🧟 Enemy HP &amp; ATK: <b>+${enemyBonusPct}%</b> (${enemyMultStr}x)`;
   }
 
   const buildPill = document.getElementById('heatBuildModPill');
   if (buildPill) {
-    buildPill.innerHTML = `🧱 Building Cost: <b>+${bonusPct}%</b> (${multStr}x)`;
+    const capTag = h >= 6 ? ' <small>· CAPPED 已封顶</small>' : '';
+    buildPill.innerHTML = `🧱 Building Cost: <b>+${buildBonusPct}%</b> (${buildMultStr}x)${capTag}`;
   }
 
   if (heatHudCountEl) {
@@ -2491,8 +2505,10 @@ export function setHeatLevel(newHeat, silent = true) {
   updateTopHUD();
 
   if (!silent) {
-    const pct = h * 20;
-    showBubble(`🔥 Heat ${h}: 🧟 HP/ATK +${pct}% · 🧱 Cost +${pct}%`, 1.5);
+    const enemyBonusPct = Math.round((getEnemyHeatMultiplier(h) - 1) * 100);
+    const buildBonusPct = Math.round((getBuildHeatMultiplier(h) - 1) * 100);
+    const capNote = h > 6 ? ' (CAP)' : '';
+    showBubble(`🔥 Heat ${h}: 🧟 HP/ATK +${enemyBonusPct}% · 🧱 Cost +${buildBonusPct}%${capNote}`, 1.5);
   }
   return h;
 }
@@ -2923,6 +2939,9 @@ window.__MOONCRAFT__ = {
   loadSavedGame,
   setHeatLevel,
   getHeatMultiplier,
+  getEnemyHeatMultiplier,
+  getBuildHeatMultiplier,
+  getBuildCostHeatMultiplier,
   getEffectiveUnitCost,
   buildStageWorld,
   addMoonShards,

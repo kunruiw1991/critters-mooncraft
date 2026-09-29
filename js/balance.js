@@ -739,11 +739,28 @@ export function getStageConfig(stageIndex = 0) {
   };
 }
 
-// +18% cost scaling per existing copy of the same unit + +20% per Heat level (1 + 0.20 * heat)!
+// Piecewise Heat Scaling:
+// - Heat 0..6: Enemy HP & ATK +20% per Heat, Building Material Cost +20% per Heat (up to +120% / 2.2x at Heat 6).
+// - Heat 7..10 (after Heat 6): Building Material Cost is CAPPED at Heat 6 (+120% / 2.2x, no further increase);
+//   each additional Heat above 6 increases Enemy HP by +10% and Enemy ATK by +10% (Heat 7: +130%, Heat 8: +140%, Heat 9: +150%, Heat 10: +160%).
+export function getEnemyHeatMultiplier(heat = 0) {
+  const h = Math.max(0, Number(heat) || 0);
+  if (h <= 6) {
+    return Number((1 + h * 0.20).toFixed(2));
+  }
+  return Number((1 + 6 * 0.20 + (h - 6) * 0.10).toFixed(2));
+}
+
+export function getBuildHeatMultiplier(heat = 0) {
+  const h = Math.max(0, Math.min(6, Number(heat) || 0));
+  return Number((1 + h * 0.20).toFixed(2));
+}
+
+// +18% cost scaling per existing copy of the same unit + +20% per Heat level up to Heat 6 (capped at Heat 6)!
 export function computeDynamicResourceCosts(def, existingCount = 0, heat = 0) {
   if (!def || !def.cost) return { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0 };
   const copyMult = existingCount <= 0 ? 1.0 : Math.pow(1.18, existingCount);
-  const heatMult = 1 + Math.max(0, Number(heat) || 0) * 0.20;
+  const heatMult = getBuildHeatMultiplier(heat);
   const mult = copyMult * heatMult;
   const c = def.cost;
   return {
@@ -755,7 +772,7 @@ export function computeDynamicResourceCosts(def, existingCount = 0, heat = 0) {
   };
 }
 
-// Universal Balanced 3-Resource Upgrade Cost (Lv.1 -> Lv.2 -> Lv.3): Sun + Wood + Brick (☀️20 🪵25 🧱30, +20% per Heat level)!
+// Universal Balanced 3-Resource Upgrade Cost (Lv.1 -> Lv.2 -> Lv.3): Sun + Wood + Brick (☀️20 🪵25 🧱30, +20% per Heat up to Heat 6 cap)!
 export const UPGRADE_COST = {
   sun: 20,
   wood: 25,
@@ -765,7 +782,7 @@ export const UPGRADE_COST = {
 };
 
 export function computeUpgradeCost(def = null, currentLevel = 1, heat = 0) {
-  const heatMult = 1 + Math.max(0, Number(heat) || 0) * 0.20;
+  const heatMult = getBuildHeatMultiplier(heat);
   return {
     sun: UPGRADE_COST.sun > 0 ? Math.round(UPGRADE_COST.sun * heatMult) : 0,
     wood: UPGRADE_COST.wood > 0 ? Math.round(UPGRADE_COST.wood * heatMult) : 0,
