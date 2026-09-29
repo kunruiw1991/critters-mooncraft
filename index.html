@@ -72,6 +72,11 @@
           <div class="res-svg-wrap" id="crystalSvgSlot"></div>
           <span id="crystalCount" class="clay-num">0</span>
         </div>
+
+        <div class="clay-capsule core-capsule" id="coreChip" title="Rare Star Core (Dropped by Late-Wave Elite Bosses!) · 稀有星核（后期精英怪掉落，用于建造高级建筑）">
+          <div class="res-svg-wrap" id="coreSvgSlot"></div>
+          <span id="coreCount" class="clay-num">0</span>
+        </div>
       </div>
 
       <!-- Center Floating Hero: Sculpted 3D Golden Crescent Moon Shrine Gauge + Stage Medallions -->
@@ -111,21 +116,23 @@
         </div>
 
         <div class="control-pebbles">
-          <button id="waveBtn" class="icon-btn wave-pill" aria-label="wave"></button>
-          <button id="sandboxBtn" class="icon-btn" aria-label="sandbox"></button>
-          <button id="camZoomBtn" class="icon-btn" aria-label="zoom"></button>
-          <button id="replayCineBtn" class="icon-btn" aria-label="cutscene"></button>
-          <button id="pauseBtn" class="icon-btn" aria-label="pause"></button>
-          <button id="musicBtn" class="icon-btn" aria-label="music"></button>
-          <button id="sfxBtn" class="icon-btn" aria-label="sound"></button>
+          <button id="waveBtn" class="icon-btn wave-pill" aria-label="wave" title="Next Wave · 下一波"></button>
+          <button id="saveGameBtn" class="icon-btn save-pill" aria-label="save" title="Save Game · 保存进度"></button>
+          <button id="openMenuBtn" class="icon-btn menu-pill" aria-label="menu" title="Main Menu · 主菜单"></button>
+          <button id="sandboxBtn" class="icon-btn" aria-label="sandbox" title="Sandbox Mode · 无限资源沙盒"></button>
+          <button id="camZoomBtn" class="icon-btn" aria-label="zoom" title="Camera View · 切换视角"></button>
+          <button id="replayCineBtn" class="icon-btn" aria-label="cutscene" title="Replay Story · 重播动画"></button>
+          <button id="pauseBtn" class="icon-btn" aria-label="pause" title="Pause · 暂停"></button>
+          <button id="musicBtn" class="icon-btn" aria-label="music" title="Music · 音乐"></button>
+          <button id="sfxBtn" class="icon-btn" aria-label="sound" title="SFX · 音效"></button>
         </div>
       </div>
     </header>
 
-    <!-- Full-Screen High-Resolution 2.5D Animated Opening Movie Canvas -->
+    <!-- Full-Screen High-Resolution 2.5D Animated Opening & Victory Movie Canvas -->
     <canvas id="introMovieCanvas"></canvas>
 
-    <!-- 10-Second Opening Cutscene 3-Step Visual Story Pill (Zero Text) -->
+    <!-- Opening / Victory Cutscene 3-Step Visual Story Pill -->
     <div id="cineBanner" class="cine-banner hidden">
       <div class="cine-steps">
         <div id="cineStep1" class="cine-step active">🐱🌙</div>
@@ -137,13 +144,13 @@
       <div class="cine-progress-track">
         <div id="cineProgressFill" class="cine-progress-fill"></div>
       </div>
-      <button id="skipCineBtn" class="skip-btn" aria-label="skip">⏭️</button>
+      <button id="skipCineBtn" class="skip-btn" aria-label="skip" title="Skip · 跳过">⏭️</button>
     </div>
 
-    <!-- Pure-Icon Floating Feedback Toast Pill (Zero Text) -->
+    <!-- Floating Feedback Toast Pill -->
     <div id="bubble" class="bubble hidden"></div>
 
-    <!-- Cozy Sculpted Honey-Wood & Cream Toy-Box Card Shelf (Zero Text) -->
+    <!-- Cozy Sculpted Honey-Wood & Cream Toy-Box Card Shelf -->
     <footer id="bottomDock">
       <div id="unitInfo" class="recipe-pill"></div>
       <div class="wood-toybox-frame">
@@ -174,7 +181,38 @@
       </div>
     </footer>
 
-    <!-- Pure-Icon Stage Clear & Moon Restored Celebration Modal -->
+    <!-- Bilingual Main Menu Modal (New Game / Load Save / Resume / Intro Story · 中英双语主菜单) -->
+    <div id="mainMenuModal" class="modal-backdrop hidden">
+      <div class="modal-card menu-modal-card">
+        <div class="menu-header-emblem">
+          <span class="modal-big-ico">🌙</span>
+          <img src="icons/catnap.jpg" alt="" class="modal-portrait" />
+          <span class="modal-big-ico">🌕</span>
+        </div>
+        <h1 class="menu-bilingual-title">CRITTERCRAFT: MOONLESS NIGHT<br/><span>萌宠守月传 · 星辉圣殿</span></h1>
+        <div id="menuSaveStatus" class="menu-save-badge">📂 Checking Save Data... · 正在检查存档...</div>
+        <div class="menu-btn-stack">
+          <button id="menuNewGameBtn" class="menu-action-btn new-game-btn">
+            <span class="btn-ico">🌟</span>
+            <span class="btn-txt"><b>NEW GAME</b><small>新游戏 · 从头开始</small></span>
+          </button>
+          <button id="menuLoadGameBtn" class="menu-action-btn load-game-btn">
+            <span class="btn-ico">📂</span>
+            <span class="btn-txt"><b>LOAD SAVE</b><small>读取存档 · 继续上次进度</small></span>
+          </button>
+          <button id="menuResumeBtn" class="menu-action-btn resume-game-btn">
+            <span class="btn-ico">▶️</span>
+            <span class="btn-txt"><b>RESUME GAME</b><small>返回当前战局</small></span>
+          </button>
+          <button id="menuIntroBtn" class="menu-action-btn intro-game-btn">
+            <span class="btn-ico">🎬</span>
+            <span class="btn-txt"><b>INTRO STORY</b><small>重播开场动画</small></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bilingual Stage Clear & Critters Repaired the Moon Celebration Modal -->
     <div id="victoryModal" class="modal-backdrop hidden">
       <div class="modal-card">
         <div class="modal-stars">⭐ ⭐ ⭐</div>
@@ -183,11 +221,13 @@
           <img src="icons/catnap.jpg" alt="" class="modal-portrait" />
           <span class="modal-big-ico">🎉</span>
         </div>
-        <div id="modalStageBadge" class="modal-stage-badge">1 ➔ 2</div>
+        <div id="modalTitleBadge" class="modal-title-bilingual">🌕 CRITTERS REPAIRED THE MOON! · 萌宠补月成功！</div>
+        <div id="modalStageBadge" class="modal-stage-badge">STAGE 1 ➔ 2 · 第 1 关通关</div>
         <div class="modal-btn-row">
-          <button id="nextStageBtn" class="big-play-btn next-btn" aria-label="next">▶️➡️</button>
-          <button id="continueBtn" class="big-play-btn continue-btn" aria-label="continue">🧱✨</button>
-          <button id="restartBtn" class="big-play-btn replay-btn" aria-label="replay">🔄🎬</button>
+          <button id="nextStageBtn" class="big-play-btn next-btn" aria-label="next">▶️ Next · 下一关</button>
+          <button id="replayVictoryAnimBtn" class="big-play-btn replay-btn" aria-label="replay-moon">🎬 Moon Anim · 补月动画</button>
+          <button id="continueBtn" class="big-play-btn continue-btn" aria-label="continue">🧱 Endless · 继续玩</button>
+          <button id="openMenuFromModalBtn" class="big-play-btn menu-btn" aria-label="menu">🏠 Menu · 主菜单</button>
         </div>
       </div>
     </div>

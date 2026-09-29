@@ -23,28 +23,31 @@ import {
   buildMoonSanctuaryMesh,
   buildVoxelZombie
 } from './voxel_models.js';
-import { initIntroMovieCanvas, renderIntroMovieFrame } from './cutscene_hd.js';
+import { initIntroMovieCanvas, renderIntroMovieFrame, renderVictoryMovieFrame } from './cutscene_hd.js';
 import { sound } from './audio.js';
 import { UI_SVGS, miniResSVG } from './ui_icons.js';
 
-// Pure visual role & effect badges for 10 Critters + Upgrade Star Tool + Terraform/Reclaim Tools
+// Pure visual role & effect badges for 10 Critters + 2 Tier-4 Apex Buildings + Upgrade Star Tool + Terraform/Reclaim Tools
 const ROLE_ICONS = {
-  sunnyfox:   { roleIcon: '⛏️', fxIcon: '☀️' },
-  poppydash:  { roleIcon: '⛏️', fxIcon: '🪵' },
-  picky:      { roleIcon: '⛏️', fxIcon: '🧱' },
-  bubba:      { roleIcon: '⛏️', fxIcon: '💎' },
-  bobby:      { roleIcon: '🛡️', fxIcon: '🛡️' },
-  mikey:      { roleIcon: '🛡️', fxIcon: '🗼' },
-  lunabat:    { roleIcon: '⚔️', fxIcon: '🏹' },
-  dogday:     { roleIcon: '⚔️', fxIcon: '💥' },
-  craftycorn: { roleIcon: '⚔️', fxIcon: '🌈' },
-  kickin:     { roleIcon: '⚔️', fxIcon: '⚡' }
+  sunnyfox:         { roleIcon: '⛏️', fxIcon: '☀️' },
+  poppydash:        { roleIcon: '⛏️', fxIcon: '🪵' },
+  picky:            { roleIcon: '⛏️', fxIcon: '🧱' },
+  bubba:            { roleIcon: '⛏️', fxIcon: '💎' },
+  bobby:            { roleIcon: '🛡️', fxIcon: '🛡️' },
+  mikey:            { roleIcon: '🛡️', fxIcon: '🗼' },
+  lunabat:          { roleIcon: '⚔️', fxIcon: '🏹' },
+  dogday:           { roleIcon: '⚔️', fxIcon: '💥' },
+  craftycorn:       { roleIcon: '⚔️', fxIcon: '🌈' },
+  kickin:           { roleIcon: '⚔️', fxIcon: '⚡' },
+  starlight_cannon: { roleIcon: '🛸', fxIcon: '🛸', toolSvg: UI_SVGS.bld_cannon },
+  moon_obelisk:     { roleIcon: '🏛️', fxIcon: '🌕', toolSvg: UI_SVGS.bld_obelisk }
 };
 
 export const CRITTER_UNITS = [
   ...UNITS.map(u => ({
     ...u,
-    portrait: u.icon,
+    portrait: u.icon || null,
+    toolSvg: ROLE_ICONS[u.id]?.toolSvg || null,
     roleIcon: ROLE_ICONS[u.id]?.roleIcon || '✨',
     fxIcon: ROLE_ICONS[u.id]?.fxIcon || '✨'
   })),
@@ -70,7 +73,7 @@ export const CRITTER_UNITS = [
     fxIcon: '🌊',
     color: '#bc6c25',
     accent: '#dda15e',
-    cost: { sun: 0, wood: 25, stone: 0, crystal: 0 }
+    cost: { sun: 0, wood: 25, stone: 0, crystal: 0, core: 0 }
   },
   {
     id: 'spike_trap',
@@ -82,7 +85,7 @@ export const CRITTER_UNITS = [
     fxIcon: '💥',
     color: '#ced4da',
     accent: '#ff6b6b',
-    cost: { sun: 0, wood: 15, stone: 20, crystal: 0 },
+    cost: { sun: 0, wood: 15, stone: 20, crystal: 0, core: 0 },
     hp: 260,
     dmg: 32
   },
@@ -96,7 +99,7 @@ export const CRITTER_UNITS = [
     fxIcon: '☀️',
     color: '#ffd166',
     accent: '#ffffff',
-    cost: { sun: 0, wood: 0, stone: 0, crystal: 0 }
+    cost: { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0 }
   }
 ];
 
@@ -586,6 +589,7 @@ const sunCountEl = document.getElementById('sunCount');
 const woodCountEl = document.getElementById('woodCount');
 const stoneCountEl = document.getElementById('stoneCount');
 const crystalCountEl = document.getElementById('crystalCount');
+const coreCountEl = document.getElementById('coreCount');
 const hpCountEl = document.getElementById('hpCount');
 const moonBarFillEl = document.getElementById('moonBarFill');
 const moonShardTextEl = document.getElementById('moonShardText');
@@ -603,10 +607,13 @@ function initTopHudSVGs() {
   setSlot('woodSvgSlot', UI_SVGS.wood);
   setSlot('stoneSvgSlot', UI_SVGS.stone);
   setSlot('crystalSvgSlot', UI_SVGS.crystal);
+  setSlot('coreSvgSlot', UI_SVGS.core);
   setSlot('heartSvgSlot', UI_SVGS.heart);
   setSlot('crescentSvgSlot', UI_SVGS.crescentShrine);
   setSlot('forgeSvgSlot', UI_SVGS.forgeMoon);
   setSlot('waveBtn', UI_SVGS.ctrl_wave);
+  setSlot('saveGameBtn', UI_SVGS.ctrl_save);
+  setSlot('openMenuBtn', UI_SVGS.ctrl_menu);
   setSlot('sandboxBtn', UI_SVGS.ctrl_sandbox);
   setSlot('camZoomBtn', UI_SVGS.ctrl_zoom);
   setSlot('replayCineBtn', UI_SVGS.ctrl_cutscene);
@@ -624,9 +631,9 @@ function showBubble(iconSequence, dur = 2.0) {
 }
 
 function getEffectiveUnitCost(def) {
-  if (!def) return { sun: 0, wood: 0, stone: 0, crystal: 0 };
+  if (!def) return { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0 };
   if (def.role === 'tool' || def.role === 'terraform' || def.role === 'upgrade') {
-    return def.cost || { sun: 0, wood: 0, stone: 0, crystal: 0 };
+    return def.cost || { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0 };
   }
   const existingCount = S.units.filter(u => u.id === def.id).length;
   const cost = computeDynamicResourceCosts(def, existingCount);
@@ -662,7 +669,8 @@ function formatCostPipsHTML(cost = {}, maxPips = 4) {
     ['sun', cost.sun || 0],
     ['wood', cost.wood || 0],
     ['stone', cost.stone || 0],
-    ['crystal', cost.crystal || 0]
+    ['crystal', cost.crystal || 0],
+    ['core', cost.core || 0]
   ].filter(([, val]) => val > 0);
 
   if (entries.length === 0) {
@@ -679,6 +687,7 @@ function getFxBadgeHTML(u) {
   if (u.prod?.wood > 0) return miniResSVG('wood');
   if (u.prod?.stone > 0) return miniResSVG('stone');
   if (u.prod?.crystal > 0) return miniResSVG('crystal');
+  if ((u.cost?.core || 0) > 0) return miniResSVG('core');
   return u.fxIcon || '✨';
 }
 
@@ -698,7 +707,8 @@ function updateRecipePill(def) {
     if (def.prod.crystal > 0) out.push(`+${miniResSVG('crystal')}${def.prod.crystal}`);
     outputIcons = `<span class="recipe-chip">${out.join(' ')}</span>`;
   } else if (def.atk || def.dmg) {
-    outputIcons = `<span class="recipe-chip">${def.fxIcon || '⚔️'} ${def.atk || def.dmg}</span>`;
+    const extra = def.shardWeaver ? ` +${def.shardYield || 1}🌕` : '';
+    outputIcons = `<span class="recipe-chip">${def.fxIcon || '⚔️'} ${def.atk || def.dmg}${extra}</span>`;
   } else if (def.hp && def.role === 'defend') {
     outputIcons = `<span class="recipe-chip">🛡️ ${def.hp}</span>`;
   } else if (def.role === 'upgrade') {
@@ -734,7 +744,7 @@ function buildHotbar() {
       ? `<img src="${u.portrait}" alt="" />`
       : `<div class="tool-svg-wrap">${u.toolSvg || UI_SVGS.tool_upgrade}</div>`;
 
-    const starCount = Math.max(1, Math.min(3, u.tier || 1));
+    const starCount = Math.max(1, Math.min(4, u.tier || 1));
     const starsStr = '⭐'.repeat(starCount);
 
     card.innerHTML = `
@@ -768,10 +778,13 @@ function updateStageButtons() {
 }
 
 function updateTopHUD() {
-  sunCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.sun);
-  woodCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.wood);
-  stoneCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.stone);
-  crystalCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.crystal);
+  sunCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.sun || 0);
+  woodCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.wood || 0);
+  stoneCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.stone || 0);
+  crystalCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.crystal || 0);
+  if (coreCountEl) {
+    coreCountEl.textContent = S.sandbox ? '∞' : Math.floor(S.res.core || 0);
+  }
   hpCountEl.textContent = S.hp;
 
   const pct = Math.min(100, (S.moonShards / Math.max(1, S.moonGoal)) * 100);
@@ -799,7 +812,7 @@ function updateTopHUD() {
 }
 
 // ============================================================================
-// 10-SECOND OPENING CUTSCENE DIRECTOR (NON-BLOCKY 3D -> MINECRAFT VOXELS)
+// 10-SECOND OPENING CUTSCENE & 6-SECOND STAGE-CLEAR MOON REPAIR ANIMATION
 // ============================================================================
 const cineBannerEl = document.getElementById('cineBanner');
 const cineProgressFillEl = document.getElementById('cineProgressFill');
@@ -814,6 +827,8 @@ export function startOpeningCutscene() {
   S.cineTime = 0;
   S.moonExploded = false;
   document.body.classList.add('inIntro');
+  document.getElementById('mainMenuModal')?.classList.add('hidden');
+  document.getElementById('victoryModal')?.classList.add('hidden');
   scene.background = new THREE.Color(0x0d0822);
   skyGroup.visible = true;
 
@@ -834,6 +849,9 @@ export function startOpeningCutscene() {
   cineData.flame.visible = false;
   cineData.shardGroup.visible = false;
 
+  cineStep1El.textContent = '🐱🌙';
+  cineStep2El.textContent = '😈🚀🌕';
+  cineStep3El.textContent = '💥🧟🐾';
   cineBannerEl.classList.remove('hidden');
   renderIntroMovieFrame(0);
 }
@@ -871,8 +889,13 @@ function updateOpeningCutscene(dt) {
 }
 
 export function finishCutscene() {
+  if (S.phase === 'victory_cutscene') {
+    finishVictoryCutscene();
+    return;
+  }
   S.phase = 'playing';
   document.body.classList.remove('inIntro');
+  document.getElementById('mainMenuModal')?.classList.add('hidden');
   scene.background = null;
   skyGroup.visible = false;
   cineGroup.visible = false;
@@ -889,6 +912,70 @@ export function finishCutscene() {
   updateCameraFraming();
   sound.startMusic();
   showBubble('🧟⛩️ ➔ 🛡️⚔️ ➔ 🌕✨', 1.1);
+}
+
+// 6.0-Second Stage-Clear Victory Animation: Critters Repairing the Moon (萌宠同心补月动画)
+export function startVictoryCutscene() {
+  S.phase = 'victory_cutscene';
+  S.victoryTime = 0;
+  S.clearedStages.add(S.stageIndex);
+  updateStageButtons();
+  sound.victory();
+
+  document.getElementById('victoryModal')?.classList.add('hidden');
+  document.getElementById('mainMenuModal')?.classList.add('hidden');
+  document.body.classList.add('inIntro');
+
+  cineStep1El.textContent = '🛠️🌕';
+  cineStep2El.textContent = '✨🦊🦨🐷';
+  cineStep3El.textContent = '🎉🌕';
+  cineProgressFillEl.style.width = '0%';
+  cineBannerEl.classList.remove('hidden');
+
+  renderVictoryMovieFrame(0, S.stageIndex);
+}
+
+function updateVictoryCutscene(dt) {
+  S.victoryTime = (S.victoryTime || 0) + dt;
+  const t = S.victoryTime;
+  const pct = Math.min(100, (t / 6.0) * 100);
+  cineProgressFillEl.style.width = `${pct}%`;
+
+  cineStep1El.classList.toggle('active', t < 1.8);
+  cineStep2El.classList.toggle('active', t >= 1.8 && t < 4.1);
+  cineStep3El.classList.toggle('active', t >= 4.1);
+
+  renderVictoryMovieFrame(t, S.stageIndex);
+
+  if (t >= 6.0) {
+    finishVictoryCutscene();
+  }
+}
+
+export function finishVictoryCutscene() {
+  S.phase = 'victory';
+  document.body.classList.remove('inIntro');
+  cineBannerEl.classList.add('hidden');
+
+  tileGroup.visible = true;
+  unitGroup.visible = true;
+  zombieGroup.visible = true;
+  projGroup.visible = true;
+  fxGroup.visible = true;
+  setMoonRestoreProgress(1.0);
+
+  const curIco = `${S.stageIndex + 1}`;
+  const nextIco = S.stageIndex < STAGES.length - 1 ? `${S.stageIndex + 2}` : '🏆';
+  document.querySelector('.modal-stars').textContent = '⭐ ⭐ ⭐';
+  const titleEl = document.getElementById('modalTitleBadge');
+  if (titleEl) {
+    titleEl.textContent = '🌕 CRITTERS REPAIRED THE MOON! · 萌宠补月大成功！';
+  }
+  document.getElementById('modalStageBadge').textContent =
+    S.stageIndex < STAGES.length - 1
+      ? `STAGE ${curIco} ➔ ${nextIco} · 第 ${curIco} 关通关`
+      : `STAGE ${curIco} 🏆 ALL CLEAR · 全关卡通关！`;
+  document.getElementById('victoryModal').classList.remove('hidden');
 }
 
 // ============================================================================
@@ -1058,6 +1145,7 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
       S.res.wood += Math.round((target.def.cost?.wood || 0) * refundMult);
       S.res.stone += Math.round((target.def.cost?.stone || 0) * refundMult);
       S.res.crystal += Math.round((target.def.cost?.crystal || 0) * refundMult);
+      S.res.core = (S.res.core || 0) + Math.round((target.def.cost?.core || 0) * refundMult);
     }
     removeUnit(target);
     sound.place();
@@ -1155,7 +1243,7 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
 
   const effCost = getEffectiveUnitCost(def);
   if (!free && !checkAfford(effCost)) {
-    showBubble('☀️🪵🧱💎 ❌', 1.3);
+    showBubble((effCost.core || 0) > 0 ? '🔮☀️🪵🧱💎 ❌' : '☀️🪵🧱💎 ❌', 1.3);
     return false;
   }
   if (!free) spendCost(effCost);
@@ -1312,14 +1400,14 @@ function triggerNextWave() {
     moonShards: S.moonShards,
     wave: w
   });
-  const stagePool = S.stageCfg?.zombiePool || ['walker', 'runner', 'digger', 'bucket', 'creeper'];
+  const stagePool = S.stageCfg?.zombiePool || ['walker', 'runner', 'digger', 'bucket', 'creeper', 'iron_golem', 'crystal_behemoth'];
 
-  // PvZ-Style Progressive Wave Gating:
+  // PvZ-Style Progressive Wave Gating + Late-Wave Tough Elite Monsters Dropping Rare 🔮 Star Cores:
   // Wave 1: ONLY slow walkers (3 zombies) so player can build economy & first towers calmly!
   // Wave 2: Walkers + 1 Runner (4 zombies)
-  // Wave 3: Walkers + Runners + 1 Digger (5 zombies)
-  // Wave 4: Walkers + Runners + Digger + 1 Buckethead (6 zombies)
-  // Wave 5+: Full stage pool (6-8 zombies)
+  // Wave 3: Walkers + Runners + Digger + 1 Iron Golem Elite (铁甲巨像 — drops +2 🔮 Star Cores!)
+  // Wave 4: Walkers + Buckethead + Iron Golem + Crystal Behemoth (晶簇巨兽 — drops +3 🔮 Star Cores!)
+  // Wave 5+: Full stage pool + Tough Elites (Iron Golem, Crystal Behemoth, Nightmare Boss, Abyss Dragon — drops +2..+4 🔮!)
   let count = Math.min(9, 2 + w + Math.floor(S.stageIndex * 0.8));
   if (w === 1) count = 3;
   else if (w === 2) count = 4;
@@ -1331,24 +1419,30 @@ function triggerNextWave() {
     } else if (w === 2) {
       zType = i === count - 1 ? 'runner' : 'walker';
     } else if (w === 3) {
-      if (i === count - 1 && stagePool.includes('digger')) zType = 'digger';
+      if (i === count - 1) zType = 'iron_golem';
+      else if (i === count - 2 && stagePool.includes('digger')) zType = 'digger';
       else if (i % 2 === 1) zType = 'runner';
       else zType = 'walker';
     } else if (w === 4) {
-      if (i === count - 1 && stagePool.includes('bucket')) zType = 'bucket';
-      else if (i === count - 2 && stagePool.includes('digger')) zType = 'digger';
+      if (i === count - 1) zType = 'crystal_behemoth';
+      else if (i === count - 2) zType = 'iron_golem';
+      else if (i === count - 3 && stagePool.includes('bucket')) zType = 'bucket';
       else if (i % 2 === 1) zType = 'runner';
       else zType = 'walker';
     } else {
       zType = stagePool[(w + i) % stagePool.length];
-      if (i === count - 1 && w >= 5 && stagePool.includes('nightmare_boss')) {
-        zType = 'nightmare_boss';
+      if (i === count - 1) {
+        zType = (w >= 6 || S.stageIndex >= 2) ? 'abyss_dragon' : 'nightmare_boss';
+      } else if (i === count - 2) {
+        zType = w % 2 === 0 ? 'crystal_behemoth' : 'iron_golem';
       }
     }
     S.spawnQueue.push(zType);
   }
-  showBubble(`🧟⛩️ ${w} ➔ 🌕✨`, 1.3);
+  const eliteAlert = w >= 3 ? ' ⚠️🔮 ELITE!' : '';
+  showBubble(`🧟⛩️ Wave ${w}${eliteAlert} ➔ 🌕✨`, 1.5);
   S.waveTimer = 18.0 * (bal.spawnIntervalMult || 1.0);
+  saveGameState(true);
 }
 
 // ============================================================================
@@ -1360,10 +1454,12 @@ function spawnCollectibleOrb(x, z, kind = 'sun', amount = 8) {
     wood: 0x51cf66,
     stone: 0x74c0fc,
     crystal: 0xda77f2,
+    core: 0xf783ac,
     moon: 0xfff3bf
   };
   const col = colorMap[kind] || 0xffe066;
-  const mesh = vox(0.26, 0.26, 0.26, col, x, 0.72, z, { emissive: col, emissiveIntensity: 0.9 });
+  const sz = kind === 'core' ? 0.34 : 0.26;
+  const mesh = vox(sz, sz, sz, col, x, 0.76, z, { emissive: col, emissiveIntensity: 0.95 });
   fxGroup.add(mesh);
   S.orbs.push({ mesh, x, z, kind, amount, age: 0 });
 }
@@ -1376,13 +1472,18 @@ function collectOrb(orb) {
     sound.shard();
   } else {
     S.res[orb.kind] = (S.res[orb.kind] || 0) + orb.amount;
-    sound.sun();
+    if (orb.kind === 'core') {
+      sound.shard();
+      showBubble(`🔮 +${orb.amount} Star Core · 星核!`, 1.5);
+    } else {
+      sound.sun();
+    }
     updateTopHUD();
   }
 }
 
 export function addMoonShards(n) {
-  if (S.phase === 'victory' || S.phase === 'defeat') return;
+  if (S.phase === 'victory' || S.phase === 'victory_cutscene' || S.phase === 'defeat') return;
   S.moonShards = Math.min(S.moonGoal, S.moonShards + n);
   const progress = S.moonShards / Math.max(1, S.moonGoal);
   setMoonRestoreProgress(progress);
@@ -1390,26 +1491,23 @@ export function addMoonShards(n) {
   updateTopHUD();
 
   if (S.moonShards >= S.moonGoal) {
-    S.phase = 'victory';
     S.clearedStages.add(S.stageIndex);
-    updateStageButtons();
-    sound.victory();
-    const curIco = `${S.stageIndex + 1}`;
-    const nextIco = S.stageIndex < STAGES.length - 1 ? `${S.stageIndex + 2}` : '🏆';
-    document.querySelector('.modal-stars').textContent = '⭐ ⭐ ⭐';
-    document.getElementById('modalStageBadge').textContent =
-      S.stageIndex < STAGES.length - 1 ? `${curIco} 🌕 ➔ ${nextIco}` : `${curIco} 🏆 🌕`;
-    document.getElementById('victoryModal').classList.remove('hidden');
+    saveGameState(true);
+    startVictoryCutscene();
   }
 }
 
 function triggerDefeat() {
-  if (S.phase === 'defeat' || S.phase === 'victory') return;
+  if (S.phase === 'defeat' || S.phase === 'victory' || S.phase === 'victory_cutscene') return;
   S.phase = 'defeat';
   sound.explosion();
   const curIco = `${S.stageIndex + 1}`;
   document.querySelector('.modal-stars').textContent = '💔 🧟 💔';
-  document.getElementById('modalStageBadge').textContent = `${curIco} 💔 ➔ 🔄`;
+  const titleEl = document.getElementById('modalTitleBadge');
+  if (titleEl) {
+    titleEl.textContent = '💔 SANCTUARY BREACHED! · 圣殿失守，请再试一次！';
+  }
+  document.getElementById('modalStageBadge').textContent = `STAGE ${curIco} 💔 ➔ 🔄 · 第 ${curIco} 关重试`;
   document.getElementById('victoryModal').classList.remove('hidden');
 }
 
@@ -1592,7 +1690,7 @@ function updateGameplay(dt) {
       updateTopHUD();
     }
 
-    // 3. PickyPiggy Healing Aura (+18 HP/s to nearby allies)
+    // 3. PickyPiggy / Lunar Obelisk Healing Aura
     if (u.def.healRadius) {
       for (const ally of S.units) {
         if (ally.hp < ally.maxHp && Math.hypot(ally.gx - u.gx, ally.gz - u.gz) <= u.def.healRadius) {
@@ -1610,7 +1708,7 @@ function updateGameplay(dt) {
       }
     }
 
-    // 5. CraftyCorn Moon Shard Weaving (+1 🌕 every 8.5s)
+    // 5. CraftyCorn / Lunar Obelisk Moon Shard Weaving
     if (u.def.shardWeaver) {
       u.moonTimer = (u.moonTimer || 0) + dt;
       if (u.moonTimer >= (u.def.shardInterval || 8.5)) {
@@ -1704,10 +1802,14 @@ function updateGameplay(dt) {
     if (z.hp <= 0) {
       spawnBurst(z.x, z.y + 0.4, z.z, z.def.skinColor || '#69db7c', 5);
       const rw = z.def.reward || {};
+      // Guaranteed Rare 🔮 Star Core drop from Late-Wave Tough Elite Monsters!
+      if ((rw.core || 0) > 0) {
+        spawnCollectibleOrb(z.x, z.z, 'core', rw.core);
+      }
       if (rw.shard > 0) {
         addMoonShards(rw.shard);
       }
-      // Zombies do NOT grant automatic free resources — only a 20% chance to drop a +4 salvage orb!
+      // Regular zombies have a 20% chance to drop a +4 salvage orb
       if (Math.random() < 0.20) {
         const kinds = ['sun', 'wood', 'stone', 'crystal'];
         const k = kinds[Math.floor(Math.random() * kinds.length)];
@@ -1739,6 +1841,17 @@ function updateGameplay(dt) {
     }
     if (z.mesh.userData.bossOrbs) {
       z.mesh.userData.bossOrbs.rotation.y -= dt * 2.8;
+    }
+    if (z.mesh.userData.golemCore) {
+      z.mesh.userData.golemCore.rotation.y += dt * 3.2;
+      z.mesh.userData.golemCore.rotation.x += dt * 2.1;
+    }
+    if (z.mesh.userData.behemothSpire) {
+      z.mesh.userData.behemothSpire.rotation.y -= dt * 2.2;
+    }
+    if (z.mesh.userData.dragonWings) {
+      z.mesh.position.y = 1.18 + Math.sin(z.walkPhase * 0.8) * 0.16;
+      z.mesh.userData.dragonWings.scale.y = 0.85 + Math.sin(z.walkPhase * 1.8) * 0.22;
     }
 
     // Necromancer / Shaman Special: Heal nearby zombies & summon runners
@@ -2199,6 +2312,200 @@ window.addEventListener('keydown', e => {
   }
 });
 
+// ============================================================================
+// BILINGUAL MAIN MENU (NEW GAME / LOAD SAVE) & LOCALSTORAGE SAVE SYSTEM (中英双语存档系统)
+// ============================================================================
+const SAVE_STORAGE_KEY = 'mooncraft_save_v1';
+
+export function hasSavedGame() {
+  try {
+    return Boolean(localStorage.getItem(SAVE_STORAGE_KEY));
+  } catch {
+    return false;
+  }
+}
+
+export function refreshMainMenuUI() {
+  const statusEl = document.getElementById('menuSaveStatus');
+  const loadBtn = document.getElementById('menuLoadGameBtn');
+  try {
+    const raw = localStorage.getItem(SAVE_STORAGE_KEY);
+    if (!raw) {
+      if (statusEl) statusEl.textContent = '📂 No Save Data Found · 暂无存档记录（点击新游戏开始）';
+      if (loadBtn) loadBtn.disabled = true;
+      return;
+    }
+    const data = JSON.parse(raw);
+    const stg = (data.stageIndex ?? 0) + 1;
+    const wv = data.wave ?? 0;
+    const sh = data.moonShards ?? 0;
+    const goal = data.moonGoal ?? 30;
+    const r = data.res || {};
+    if (statusEl) {
+      statusEl.textContent =
+        `📂 Saved: Stage ${stg} (Wave ${wv}) · 🌕${sh}/${goal} · ☀️${Math.floor(r.sun || 0)} 🪵${Math.floor(r.wood || 0)} 🧱${Math.floor(r.stone || 0)} 💎${Math.floor(r.crystal || 0)} 🔮${Math.floor(r.core || 0)} | 已存进度：第${stg}关 第${wv}波`;
+    }
+    if (loadBtn) loadBtn.disabled = false;
+  } catch {
+    if (statusEl) statusEl.textContent = '📂 Save Slot Ready · 存档槽位就绪';
+  }
+}
+
+export function saveGameState(silent = false) {
+  try {
+    const bridges = [];
+    for (let gx = 0; gx < S.cols; gx++) {
+      for (let gz = 0; gz < S.rows; gz++) {
+        if (tiles[gx]?.[gz]?.hasBridge) {
+          bridges.push([gx, gz]);
+        }
+      }
+    }
+    const unitsData = S.units.map(u => ({
+      id: u.id,
+      gx: u.gx,
+      gz: u.gz,
+      level: u.level || 1,
+      hp: Math.round(u.hp || u.maxHp || 100),
+      maxHp: Math.round(u.maxHp || 100),
+      stacked: Boolean(u.stacked),
+      isTrap: Boolean(u.isTrap)
+    }));
+    const payload = {
+      version: 1,
+      timestamp: Date.now(),
+      stageIndex: S.stageIndex,
+      wave: S.wave,
+      moonShards: S.moonShards,
+      moonGoal: S.moonGoal,
+      hp: S.hp,
+      maxHp: S.maxHp,
+      forgeCount: S.forgeCount || 0,
+      res: { ...S.res },
+      clearedStages: Array.from(S.clearedStages),
+      bridges,
+      units: unitsData
+    };
+    localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(payload));
+    refreshMainMenuUI();
+    if (!silent) {
+      sound.shard();
+      showBubble('💾 Game Saved! · 进度已保存！', 1.6);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function loadSavedGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_STORAGE_KEY);
+    if (!raw) {
+      showBubble('📂 No Save Found · 暂无存档！', 1.5);
+      return false;
+    }
+    const data = JSON.parse(raw);
+    if (S.phase === 'cutscene' || S.phase === 'victory_cutscene') {
+      finishCutscene();
+    }
+    document.getElementById('mainMenuModal')?.classList.add('hidden');
+    document.getElementById('victoryModal')?.classList.add('hidden');
+    S.paused = false;
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) pauseBtn.innerHTML = UI_SVGS.ctrl_pause;
+
+    S.clearedStages = new Set(Array.isArray(data.clearedStages) ? data.clearedStages : []);
+    buildStageWorld(data.stageIndex ?? 0);
+
+    // Clear default starter units so we can restore the exact saved board units
+    for (const u of [...S.units]) {
+      removeUnit(u);
+    }
+
+    // Restore bridges first
+    for (const [bgx, bgz] of (data.bridges || [])) {
+      placeUnitOnTile(bgx, bgz, 'bridge', true);
+    }
+
+    // Restore base units first, then stacked units on top of Mikey watchtowers
+    const savedUnits = Array.isArray(data.units) ? data.units : [];
+    const baseUnits = savedUnits.filter(u => !u.stacked);
+    const stackedUnits = savedUnits.filter(u => u.stacked);
+    for (const item of [...baseUnits, ...stackedUnits]) {
+      const ok = placeUnitOnTile(item.gx, item.gz, item.id, true);
+      if (ok) {
+        const tile = tiles[item.gx]?.[item.gz];
+        const placed = item.stacked ? tile?.stackedUnit : tile?.unit;
+        if (placed) {
+          placed.level = item.level || 1;
+          placed.maxHp = item.maxHp || placed.maxHp;
+          placed.hp = Math.min(placed.maxHp, Math.max(1, item.hp || placed.maxHp));
+          if (placed.mesh?.userData?.setStarLevel) {
+            placed.mesh.userData.setStarLevel(placed.level);
+          }
+        }
+      }
+    }
+
+    S.res = { ...INITIAL_RESOURCES, ...(data.res || {}) };
+    S.moonShards = Math.min(S.moonGoal, data.moonShards ?? 0);
+    S.wave = data.wave ?? 0;
+    S.hp = Math.max(1, Math.min(S.maxHp, data.hp ?? S.maxHp));
+    S.forgeCount = data.forgeCount ?? 0;
+    S.phase = 'playing';
+
+    setMoonRestoreProgress(S.moonShards / Math.max(1, S.moonGoal));
+    updateStageButtons();
+    updateTopHUD();
+    sound.shard();
+    showBubble(`📂 Loaded Stage ${S.stageIndex + 1} · 已读取第 ${S.stageIndex + 1} 关存档！`, 1.8);
+    return true;
+  } catch {
+    showBubble('📂 Load Failed · 读取存档失败', 1.5);
+    return false;
+  }
+}
+
+export function startNewGame(stageIdx = 0) {
+  if (S.phase === 'cutscene' || S.phase === 'victory_cutscene') {
+    finishCutscene();
+  }
+  document.getElementById('mainMenuModal')?.classList.add('hidden');
+  document.getElementById('victoryModal')?.classList.add('hidden');
+  S.paused = false;
+  const pauseBtn = document.getElementById('pauseBtn');
+  if (pauseBtn) pauseBtn.innerHTML = UI_SVGS.ctrl_pause;
+
+  S.res = { ...INITIAL_RESOURCES };
+  S.moonShards = 0;
+  S.wave = 0;
+  S.phase = 'playing';
+  buildStageWorld(stageIdx);
+  if (!hasSavedGame()) {
+    saveGameState(true);
+  }
+  showBubble('🌟 New Game Started! · 新游戏开始！', 1.6);
+}
+
+export function openMainMenu() {
+  refreshMainMenuUI();
+  S.paused = true;
+  const pauseBtn = document.getElementById('pauseBtn');
+  if (pauseBtn) pauseBtn.innerHTML = UI_SVGS.ctrl_play;
+  document.getElementById('mainMenuModal')?.classList.remove('hidden');
+}
+
+export function closeMainMenu() {
+  document.getElementById('mainMenuModal')?.classList.add('hidden');
+  S.paused = false;
+  const pauseBtn = document.getElementById('pauseBtn');
+  if (pauseBtn) pauseBtn.innerHTML = UI_SVGS.ctrl_pause;
+  if (S.phase === 'cutscene') {
+    finishCutscene();
+  }
+}
+
 // Top HUD & Modal Buttons
 document.getElementById('skipCineBtn').addEventListener('click', () => {
   sound.click();
@@ -2207,6 +2514,38 @@ document.getElementById('skipCineBtn').addEventListener('click', () => {
 
 document.getElementById('replayCineBtn').addEventListener('click', () => {
   sound.click();
+  startOpeningCutscene();
+});
+
+document.getElementById('saveGameBtn')?.addEventListener('click', () => {
+  sound.click();
+  saveGameState(false);
+});
+
+document.getElementById('openMenuBtn')?.addEventListener('click', () => {
+  sound.click();
+  openMainMenu();
+});
+
+document.getElementById('menuNewGameBtn')?.addEventListener('click', () => {
+  sound.click();
+  startNewGame(0);
+});
+
+document.getElementById('menuLoadGameBtn')?.addEventListener('click', () => {
+  sound.click();
+  loadSavedGame();
+});
+
+document.getElementById('menuResumeBtn')?.addEventListener('click', () => {
+  sound.click();
+  closeMainMenu();
+});
+
+document.getElementById('menuIntroBtn')?.addEventListener('click', () => {
+  sound.click();
+  document.getElementById('mainMenuModal')?.classList.add('hidden');
+  S.paused = false;
   startOpeningCutscene();
 });
 
@@ -2231,7 +2570,7 @@ document.getElementById('camZoomBtn').addEventListener('click', e => {
 
 document.getElementById('waveBtn').addEventListener('click', () => {
   sound.click();
-  if (S.phase === 'cutscene') finishCutscene();
+  if (S.phase === 'cutscene' || S.phase === 'victory_cutscene') finishCutscene();
   triggerNextWave();
 });
 
@@ -2279,9 +2618,15 @@ document.getElementById('nextStageBtn').addEventListener('click', () => {
   const nextIdx = S.phase === 'defeat' ? S.stageIndex : (S.stageIndex + 1) % STAGES.length;
   S.res = { ...INITIAL_RESOURCES };
   S.moonShards = 0;
-  S.wave = 1;
+  S.wave = 0;
   S.phase = 'playing';
   buildStageWorld(nextIdx);
+  saveGameState(true);
+});
+
+document.getElementById('replayVictoryAnimBtn')?.addEventListener('click', () => {
+  sound.click();
+  startVictoryCutscene();
 });
 
 document.getElementById('continueBtn').addEventListener('click', () => {
@@ -2292,14 +2637,10 @@ document.getElementById('continueBtn').addEventListener('click', () => {
   updateTopHUD();
 });
 
-document.getElementById('restartBtn').addEventListener('click', () => {
+document.getElementById('openMenuFromModalBtn')?.addEventListener('click', () => {
   sound.click();
   document.getElementById('victoryModal').classList.add('hidden');
-  S.res = { ...INITIAL_RESOURCES };
-  S.moonShards = 0;
-  S.wave = 1;
-  buildStageWorld(S.stageIndex);
-  startOpeningCutscene();
+  openMainMenu();
 });
 
 window.addEventListener('resize', () => {
@@ -2309,9 +2650,10 @@ window.addEventListener('resize', () => {
 });
 
 // ============================================================================
-// INITIALIZE STAGE 1 + START HIGH-RES 10S OPENING CUTSCENE
+// INITIALIZE STAGE 1 + START HIGH-RES 10S OPENING CUTSCENE + REFRESH SAVE MENU
 // ============================================================================
 buildStageWorld(0);
+refreshMainMenuUI();
 startOpeningCutscene();
 
 let lastTime = performance.now();
@@ -2327,6 +2669,8 @@ function animate(now) {
 
   if (S.phase === 'cutscene') {
     updateOpeningCutscene(dt);
+  } else if (S.phase === 'victory_cutscene') {
+    updateVictoryCutscene(dt);
   } else if (S.phase === 'playing') {
     updateGameplay(dt);
   }
@@ -2349,12 +2693,20 @@ window.__MOONCRAFT__ = {
   spawnZombie,
   finishCutscene,
   startOpeningCutscene,
+  startVictoryCutscene,
+  finishVictoryCutscene,
+  openMainMenu,
+  closeMainMenu,
+  startNewGame,
+  saveGameState,
+  loadSavedGame,
   buildStageWorld,
   addMoonShards,
   advanceCutscene(sec) {
     const steps = Math.ceil(sec / 0.04);
     for (let i = 0; i < steps; i++) {
       if (S.phase === 'cutscene') updateOpeningCutscene(0.04);
+      else if (S.phase === 'victory_cutscene') updateVictoryCutscene(0.04);
     }
     renderer.render(scene, camera);
   },

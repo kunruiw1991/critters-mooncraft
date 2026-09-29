@@ -11,14 +11,16 @@ export const INITIAL_RESOURCES = {
   sun: 75,
   wood: 45,
   stone: 35,
-  crystal: 0
+  crystal: 0,
+  core: 0
 };
 
 export const RESOURCE_META = {
   sun:     { id: 'sun',     symbol: '☀️', color: '#ffd43b' },
   wood:    { id: 'wood',    symbol: '🪵', color: '#51cf66' },
   stone:   { id: 'stone',   symbol: '🧱', color: '#f76707' },
-  crystal: { id: 'crystal', symbol: '💎', color: '#22b8cf' }
+  crystal: { id: 'crystal', symbol: '💎', color: '#22b8cf' },
+  core:    { id: 'core',    symbol: '🔮', color: '#ae3ec9' }
 };
 
 // Moon Sanctuary Forge Recipe: Base cost (escalates +15% per forge so resources always have a high-value sink!)
@@ -246,7 +248,7 @@ export const UNITS = [
     color: '#fcc419',
     accent: '#fff9db',
     // BRICK-FREE! Heavy Sun + Heavy Wood + Diamond Tesla Coil (☀️50 🪵45 💎12, 🧱0)
-    cost: { sun: 50, wood: 45, stone: 0, crystal: 12 },
+    cost: { sun: 50, wood: 45, stone: 0, crystal: 12, core: 0 },
     hp: 320,
     atk: 46,
     fireInterval: 0.88,
@@ -254,86 +256,167 @@ export const UNITS = [
     chainTargets: 4,
     knockback: 0.40,
     antiAir: true
+  },
+
+  // -------------------- TIER 4: ADVANCED APEX BUILDINGS (BUILT WITH RARE 🔮 STAR CORES DROPPED BY TOUGH MONSTERS) --------------------
+  {
+    id: 'starlight_cannon',
+    tier: 4,
+    role: 'attack',
+    isApexBuilding: true,
+    fxIcon: '🛸',
+    color: '#7950f2',
+    accent: '#ffd43b',
+    nameEn: 'Starlight Cannon',
+    nameZh: '星辉巨炮',
+    // Built with Sun + Brick + 2 Rare Star Cores (☀️60 🧱50 🔮2) dropped by Tough Elite Monsters!
+    cost: { sun: 60, wood: 0, stone: 50, crystal: 0, core: 2 },
+    hp: 680,
+    atk: 145,
+    fireInterval: 1.35,
+    range: 7.6,
+    splashRadius: 2.25,
+    armorMelt: 0.90,
+    antiAir: true
+  },
+  {
+    id: 'moon_obelisk',
+    tier: 4,
+    role: 'attack',
+    isApexBuilding: true,
+    fxIcon: '🏛️',
+    color: '#22b8cf',
+    accent: '#fff3bf',
+    nameEn: 'Lunar Obelisk',
+    nameZh: '月神方尖碑',
+    // SUN-FREE Apex Wonder! Built with Wood + Diamond + 3 Rare Star Cores (🪵55 💎16 🔮3)!
+    cost: { sun: 0, wood: 55, stone: 0, crystal: 16, core: 3 },
+    hp: 780,
+    atk: 92,
+    fireInterval: 0.95,
+    range: 6.6,
+    chainTargets: 5,
+    antiAir: true,
+    healRadius: 4.0,
+    healPerSec: 32,
+    hasteRadius: 4.0,
+    hasteMult: 1.35,
+    shardWeaver: true,
+    shardInterval: 4.8,
+    shardYield: 3
   }
 ];
 
-// ==================== 7 DISTINCT ZOMBIE ARCHETYPES ====================
-// Balanced walking speeds on the expanded 18x12 - 22x14 boards so players have plenty of time to react & build!
+// ==================== 11 DISTINCT ZOMBIE & TOUGH LATE-WAVE ELITE ARCHETYPES ====================
+// Tough late-wave monsters (Wave 3+: iron_golem, necromancer, crystal_behemoth, nightmare_boss, abyss_dragon)
+// drop Rare 🔮 Star Cores (`reward.core`) upon defeat to unlock Tier 4 Advanced Apex Buildings!
 export const ZOMBIE_TYPES = {
   walker: {
     id: 'walker',
+    nameEn: 'Walker Zombie',
+    nameZh: '普通僵尸',
     hp: 110,
     speed: 0.42,
     dps: 15,
     breachDmg: 1,
-    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 0 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0, shard: 0 },
     scale: 0.92,
     shirtColor: '#4dabf7',
     skinColor: '#69db7c'
   },
   runner: {
     id: 'runner',
+    nameEn: 'Sprinter Zombie',
+    nameZh: '疾跑僵尸',
     hp: 90,
     speed: 0.68,
     dps: 15,
     breachDmg: 1,
-    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 0 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0, shard: 0 },
     scale: 0.84,
     shirtColor: '#f783ac',
     skinColor: '#8ce99a'
   },
   bucket: {
     id: 'bucket',
+    nameEn: 'Iron Buckethead',
+    nameZh: '铁桶僵尸',
     hp: 260,
     speed: 0.36,
     dps: 22,
     armor: 0.40,
     breachDmg: 1,
-    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0, shard: 1 },
     scale: 1.15,
     shirtColor: '#868e96',
     skinColor: '#51cf66'
   },
   digger: {
     id: 'digger',
+    nameEn: 'Miner Digger',
+    nameZh: '矿工僵尸',
     hp: 180,
     speed: 0.45,
     dps: 24,
     wallBreaker: true,
     breachDmg: 1,
-    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0, shard: 1 },
     scale: 1.04,
     shirtColor: '#f59f00',
     skinColor: '#69db7c'
   },
   creeper: {
     id: 'creeper',
+    nameEn: 'TNT Creeper',
+    nameZh: '苦力怕炸弹怪',
     hp: 155,
     speed: 0.50,
     dps: 18,
     frontBurstDmg: 110,
     splashBurstDmg: 35,
     breachDmg: 2,
-    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0, shard: 1 },
     scale: 1.05,
     shirtColor: '#40c057',
     skinColor: '#37b24d'
   },
   balloon: {
     id: 'balloon',
+    nameEn: 'Sky Balloon',
+    nameZh: '气球僵尸',
     hp: 150,
     speed: 0.46,
     dps: 16,
     flying: true,
     breachDmg: 1,
-    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 1 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0, shard: 1 },
     scale: 0.96,
     shirtColor: '#7950f2',
     skinColor: '#9775fa'
   },
+  // -------------------- TOUGH LATE-WAVE ELITES (DROP RARE 🔮 STAR CORES!) --------------------
+  iron_golem: {
+    id: 'iron_golem',
+    nameEn: 'Iron Juggernaut',
+    nameZh: '铁甲巨像 (掉🔮星核)',
+    isElite: true,
+    hp: 460,
+    speed: 0.30,
+    dps: 28,
+    armor: 0.45,
+    wallBreaker: true,
+    breachDmg: 2,
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, core: 2, shard: 2 },
+    scale: 1.34,
+    shirtColor: '#343a40',
+    skinColor: '#adb5bd'
+  },
   necromancer: {
     id: 'necromancer',
-    hp: 280,
+    nameEn: 'Dark Necromancer',
+    nameZh: '暗影死灵巫师 (掉🔮星核)',
+    isElite: true,
+    hp: 340,
     speed: 0.34,
     dps: 20,
     armor: 0.25,
@@ -341,13 +424,35 @@ export const ZOMBIE_TYPES = {
     healPerSec: 10,
     summonInterval: 10.5,
     breachDmg: 2,
-    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 2 },
-    scale: 1.20,
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, core: 2, shard: 2 },
+    scale: 1.22,
     shirtColor: '#3b1f7a',
     skinColor: '#b197fc'
   },
+  crystal_behemoth: {
+    id: 'crystal_behemoth',
+    nameEn: 'Crystal Behemoth',
+    nameZh: '晶簇巨兽 (掉🔮星核)',
+    isElite: true,
+    hp: 650,
+    speed: 0.28,
+    dps: 30,
+    armor: 0.35,
+    healRadius: 2.5,
+    healPerSec: 12,
+    rangedAtk: 22,
+    rangedRange: 3.2,
+    breachDmg: 2,
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 6, core: 3, shard: 3 },
+    scale: 1.44,
+    shirtColor: '#6741d9',
+    skinColor: '#da77f2'
+  },
   nightmare_boss: {
     id: 'nightmare_boss',
+    nameEn: 'Nightmare Goliath',
+    nameZh: '噩梦巨魔王 (掉🔮星核)',
+    isElite: true,
     hp: 760,
     speed: 0.28,
     dps: 34,
@@ -355,10 +460,30 @@ export const ZOMBIE_TYPES = {
     poppyAuraRadius: 2.2,
     poppyAuraDps: 7,
     breachDmg: 3,
-    reward: { sun: 0, wood: 0, stone: 0, crystal: 0, shard: 4 },
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 8, core: 3, shard: 4 },
     scale: 1.50,
     shirtColor: '#5f3dc4',
     skinColor: '#9775fa'
+  },
+  abyss_dragon: {
+    id: 'abyss_dragon',
+    nameEn: 'Void Mech-Dragon',
+    nameZh: '暗月魔龙王 (掉🔮星核)',
+    isElite: true,
+    hp: 890,
+    speed: 0.26,
+    dps: 36,
+    armor: 0.35,
+    flying: true,
+    rangedAtk: 28,
+    rangedRange: 3.6,
+    poppyAuraRadius: 2.3,
+    poppyAuraDps: 8,
+    breachDmg: 3,
+    reward: { sun: 0, wood: 0, stone: 0, crystal: 12, core: 4, shard: 5 },
+    scale: 1.56,
+    shirtColor: '#240046',
+    skinColor: '#fcc419'
   }
 };
 
@@ -393,7 +518,7 @@ export const STAGES = [
     altarGz: 5.5,
     moonTarget: 30,
     portals: ['E'],
-    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper'],
+    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'iron_golem', 'crystal_behemoth'],
     baseSpawnInterval: 5.2,
     routes: [
       [[17, 2], [13, 2], [13, 9], [8, 9], [8, 4], [4, 4], [4, 5]],
@@ -426,7 +551,7 @@ export const STAGES = [
     altarGz: 5.5,
     moonTarget: 40,
     portals: ['E'],
-    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon'],
+    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon', 'iron_golem', 'crystal_behemoth'],
     baseSpawnInterval: 4.8,
     routes: [
       [[17, 1], [12, 1], [12, 4], [7, 4], [7, 2], [4, 2], [4, 5]],
@@ -459,7 +584,7 @@ export const STAGES = [
     altarGz: 5.5,
     moonTarget: 50,
     portals: ['E', 'W'],
-    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon', 'necromancer'],
+    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon', 'iron_golem', 'necromancer', 'crystal_behemoth'],
     baseSpawnInterval: 4.6,
     routes: [
       [[19, 2], [15, 2], [15, 9], [12, 9], [12, 6], [11, 6]],
@@ -494,7 +619,7 @@ export const STAGES = [
     altarGz: 6.5,
     moonTarget: 65,
     portals: ['E', 'W', 'N'],
-    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon', 'necromancer', 'nightmare_boss'],
+    zombiePool: ['walker', 'runner', 'digger', 'bucket', 'creeper', 'balloon', 'iron_golem', 'necromancer', 'crystal_behemoth', 'nightmare_boss', 'abyss_dragon'],
     baseSpawnInterval: 4.5,
     routes: [
       [[21, 3], [17, 3], [17, 10], [14, 10], [14, 7], [12, 7]],
@@ -536,8 +661,11 @@ export const STAGES = [
       'bucket',
       'creeper',
       'balloon',
+      'iron_golem',
       'necromancer',
-      'nightmare_boss'
+      'crystal_behemoth',
+      'nightmare_boss',
+      'abyss_dragon'
     ],
     baseSpawnInterval: 4.4,
     routes: [
@@ -613,14 +741,15 @@ export function getStageConfig(stageIndex = 0) {
 
 // +18% cost scaling per existing copy of the same unit so players diversify & upgrade rather than spamming!
 export function computeDynamicResourceCosts(def, existingCount = 0) {
-  if (!def || !def.cost) return { sun: 0, wood: 0, stone: 0, crystal: 0 };
+  if (!def || !def.cost) return { sun: 0, wood: 0, stone: 0, crystal: 0, core: 0 };
   const mult = existingCount <= 0 ? 1.0 : Math.pow(1.18, existingCount);
   const c = def.cost;
   return {
     sun: c.sun > 0 ? Math.round(c.sun * mult) : 0,
     wood: c.wood > 0 ? Math.round(c.wood * mult) : 0,
     stone: c.stone > 0 ? Math.round(c.stone * mult) : 0,
-    crystal: c.crystal > 0 ? Math.round(c.crystal * mult) : 0
+    crystal: c.crystal > 0 ? Math.round(c.crystal * mult) : 0,
+    core: c.core > 0 ? Math.max(1, Math.round(c.core * mult)) : 0
   };
 }
 
@@ -629,7 +758,8 @@ export const UPGRADE_COST = {
   sun: 20,
   wood: 25,
   stone: 30,
-  crystal: 0
+  crystal: 0,
+  core: 0
 };
 
 export function computeUpgradeCost() {
@@ -642,7 +772,8 @@ export function canAffordCost(resources, costObj) {
     (resources.sun ?? 0) >= (costObj.sun || 0) &&
     (resources.wood ?? 0) >= (costObj.wood || 0) &&
     (resources.stone ?? 0) >= (costObj.stone || 0) &&
-    (resources.crystal ?? 0) >= (costObj.crystal || 0)
+    (resources.crystal ?? 0) >= (costObj.crystal || 0) &&
+    (resources.core ?? 0) >= (costObj.core || 0)
   );
 }
 
@@ -652,6 +783,7 @@ export function deductCost(resources, costObj) {
   resources.wood = Math.max(0, (resources.wood || 0) - (costObj.wood || 0));
   resources.stone = Math.max(0, (resources.stone || 0) - (costObj.stone || 0));
   resources.crystal = Math.max(0, (resources.crystal || 0) - (costObj.crystal || 0));
+  resources.core = Math.max(0, (resources.core || 0) - (costObj.core || 0));
 }
 
 export function computeBalanceState({

@@ -188,6 +188,16 @@ body.inIntro .sun-glow-orb {
   border-color: #f3f9ff;
 }
 
+.core-capsule {
+  background: linear-gradient(180deg, #ffe8ff 0%, #f783ac 45%, #be4bdb 100%);
+  border-color: #fff0f6;
+  box-shadow:
+    inset 0 4px 6px rgba(255, 255, 255, 0.92),
+    inset 0 -4px 6px rgba(95, 20, 115, 0.25),
+    0 6px 0 rgba(95, 20, 115, 0.28),
+    0 0 14px rgba(247, 131, 172, 0.55);
+}
+
 .heart-capsule {
   background: linear-gradient(180deg, #ffe3ea 0%, #ffb3c6 100%);
   border-color: #fff2f5;
@@ -703,9 +713,9 @@ body.inIntro #bottomDock {
 .ucard {
   position: relative;
   flex: 1 1 0;
-  min-width: 68px;
-  max-width: 84px;
-  height: 100px;
+  min-width: 58px;
+  max-width: 74px;
+  height: 98px;
   padding: 0;
   border: none;
   background: transparent;
@@ -763,6 +773,16 @@ body.inIntro #bottomDock {
     0 0 12px rgba(218, 119, 242, 0.55);
 }
 
+/* Tier 4 Advanced Apex Buildings (Starlight Cannon & Lunar Obelisk — Requires Rare Star Core 🔮!) */
+.ucard.tier-4 .ucard-frame {
+  background: radial-gradient(circle at 50% 30%, #fff9db 0%, #f783ac 48%, #7950f2 100%);
+  border-color: #ffe066;
+  box-shadow:
+    0 0 0 2.5px #fcc419,
+    0 5px 0 #5f3dc4,
+    0 0 16px rgba(247, 131, 172, 0.78);
+}
+
 .ucard.role-utility .ucard-frame {
   background: radial-gradient(circle at 50% 35%, #ebfbee 0%, #51cf66 100%);
   border-color: #b2f2bb;
@@ -794,10 +814,10 @@ body.inIntro #bottomDock {
 }
 
 .ucard img {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   object-fit: cover;
-  border-radius: 13px;
+  border-radius: 12px;
   border: 2px solid rgba(255, 255, 255, 0.92);
   background: #fffdf7;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.16);
@@ -805,8 +825,8 @@ body.inIntro #bottomDock {
 }
 
 .tool-svg-wrap {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -825,23 +845,24 @@ body.inIntro #bottomDock {
   bottom: -4px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
+  font-size: 9.5px;
   line-height: 1;
-  letter-spacing: -1px;
+  letter-spacing: -1.5px;
   filter: drop-shadow(0 1px 2px rgba(60, 30, 5, 0.6));
   pointer-events: none;
+  white-space: nowrap;
 }
 
 .ucard .fx-badge {
   position: absolute;
   top: -4px;
   right: -4px;
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
   border-radius: 50%;
   background: #ffffff;
   border: 2px solid #fcc419;
-  font-size: 11px;
+  font-size: 10.5px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -874,7 +895,7 @@ body.inIntro #bottomDock {
 /* Tactile Cream Cost Pill sitting on the Wooden Shelf Ledge under each Card */
 .ucard .cost-row {
   margin-top: 4px;
-  min-height: 22px;
+  min-height: 21px;
   max-width: 100%;
   padding: 2px 2px;
   border-radius: 999px;
@@ -889,8 +910,8 @@ body.inIntro #bottomDock {
 }
 
 .ucard .cost-pip .svg-ico {
-  width: 8.5px;
-  height: 8.5px;
+  width: 8px;
+  height: 8px;
 }
 
 .cost-pip {
@@ -898,11 +919,11 @@ body.inIntro #bottomDock {
   align-items: center;
   gap: 0.5px;
   font-family: var(--font-round);
-  font-size: 8.5px;
+  font-size: 8px;
   line-height: 1;
   font-weight: 900;
   color: #ffffff;
-  -webkit-text-stroke: 1.8px var(--stroke-choco);
+  -webkit-text-stroke: 1.7px var(--stroke-choco);
   paint-order: stroke fill;
   white-space: nowrap;
 }
@@ -912,13 +933,13 @@ body.inIntro #bottomDock {
 }
 
 /* ============================================================================
-   PURE-ICON VICTORY & STAGE CLEAR CELEBRATION MODAL
+   BILINGUAL MAIN MENU & STAGE CLEAR / MOON REPAIR MODALS (中英双语弹窗与主菜单)
    ============================================================================ */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(43, 55, 95, 0.55);
-  backdrop-filter: blur(7px);
+  background: rgba(25, 18, 56, 0.64);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -933,47 +954,178 @@ body.inIntro #bottomDock {
   background: linear-gradient(180deg, #fffdf7 0%, #f5e6cc 100%);
   border: 5px solid #ffffff;
   outline: 4px solid #e09b5c;
-  border-radius: 38px;
-  padding: 28px 38px;
+  border-radius: 36px;
+  padding: 24px 34px;
+  max-width: min(94vw, 620px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
-  box-shadow: 0 12px 0 #a65c21, 0 24px 50px rgba(0, 0, 0, 0.35);
+  gap: 14px;
+  box-shadow: 0 12px 0 #a65c21, 0 24px 50px rgba(0, 0, 0, 0.42);
+}
+
+.menu-modal-card {
+  width: min(92vw, 500px);
+  padding: 24px 28px;
+  gap: 12px;
+}
+
+.menu-header-emblem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.menu-bilingual-title {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-round);
+  font-weight: 900;
+  font-size: 23px;
+  line-height: 1.25;
+  color: #ffffff;
+  -webkit-text-stroke: 3.8px var(--stroke-choco);
+  paint-order: stroke fill;
+}
+
+.menu-bilingual-title span {
+  font-size: 18px;
+  color: #ffe066;
+}
+
+.menu-save-badge {
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff9db 0%, #ffec99 100%);
+  border: 2.5px solid #fcc419;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--stroke-choco);
+  text-align: center;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.9);
+}
+
+.menu-btn-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-action-btn {
+  width: 100%;
+  padding: 10px 18px;
+  border-radius: 20px;
+  border: 3px solid #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  font-family: var(--font-round);
+  text-align: left;
+  box-shadow: 0 5px 0 rgba(60, 35, 15, 0.26), 0 8px 16px rgba(0, 0, 0, 0.14);
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease;
+}
+
+.menu-action-btn:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.menu-action-btn:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.menu-action-btn:disabled {
+  opacity: 0.48;
+  filter: grayscale(0.45);
+  cursor: not-allowed;
+}
+
+.menu-action-btn .btn-ico {
+  font-size: 28px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+}
+
+.menu-action-btn .btn-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu-action-btn .btn-txt b {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffffff;
+  -webkit-text-stroke: 3px var(--stroke-choco);
+  paint-order: stroke fill;
+}
+
+.menu-action-btn .btn-txt small {
+  font-size: 13px;
+  font-weight: 800;
+  color: #4a2c18;
+}
+
+.new-game-btn {
+  background: linear-gradient(180deg, #8ce99a 0%, #40c057 100%);
+}
+
+.load-game-btn {
+  background: linear-gradient(180deg, #ffe066 0%, #f59f00 100%);
+}
+
+.resume-game-btn {
+  background: linear-gradient(180deg, #74c0fc 0%, #339af0 100%);
+}
+
+.intro-game-btn {
+  background: linear-gradient(180deg, #e599f7 0%, #ae3ec9 100%);
 }
 
 .modal-stars {
-  font-size: 46px;
-  letter-spacing: 8px;
+  font-size: 40px;
+  letter-spacing: 6px;
 }
 
 .modal-hero-row {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
 }
 
 .modal-big-ico {
-  font-size: 56px;
+  font-size: 48px;
 }
 
 .modal-portrait {
-  width: 96px;
-  height: 96px;
+  width: 82px;
+  height: 82px;
   border-radius: 50%;
   border: 4px solid #fcc419;
   background: #fff3bf;
   object-fit: cover;
 }
 
+.modal-title-bilingual {
+  font-family: var(--font-round);
+  font-weight: 900;
+  font-size: 20px;
+  color: #ffffff;
+  -webkit-text-stroke: 3.4px var(--stroke-choco);
+  paint-order: stroke fill;
+  text-align: center;
+}
+
 .modal-stage-badge {
   font-family: var(--font-round);
   font-weight: 900;
-  font-size: 32px;
+  font-size: 22px;
   color: #ffffff;
-  -webkit-text-stroke: 4px var(--stroke-choco);
+  -webkit-text-stroke: 3.5px var(--stroke-choco);
   paint-order: stroke fill;
-  padding: 8px 24px;
+  padding: 6px 20px;
   border-radius: 999px;
   background: linear-gradient(180deg, #fff3bf 0%, #fcc419 100%);
   border: 3px solid #ffffff;
@@ -982,18 +1134,25 @@ body.inIntro #bottomDock {
 
 .modal-btn-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+  gap: 10px;
 }
 
 .big-play-btn {
-  height: 68px;
-  padding: 0 26px;
-  border-radius: 22px;
+  height: 50px;
+  padding: 0 16px;
+  border-radius: 18px;
   border: 3px solid #ffffff;
-  font-size: 32px;
+  font-family: var(--font-round);
+  font-weight: 900;
+  font-size: 15px;
+  color: #ffffff;
+  -webkit-text-stroke: 2.8px var(--stroke-choco);
+  paint-order: stroke fill;
   cursor: pointer;
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.22);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.22);
   transition: transform 0.12s ease;
 }
 
@@ -1013,6 +1172,10 @@ body.inIntro #bottomDock {
   background: linear-gradient(180deg, #74c0fc 0%, #339af0 100%);
 }
 
+.menu-btn {
+  background: linear-gradient(180deg, #e599f7 0%, #9c36b5 100%);
+}
+
 @media (max-width: 1100px) {
   .wood-wing {
     display: none;
@@ -1021,3 +1184,4 @@ body.inIntro #bottomDock {
     width: 110px;
   }
 }
+

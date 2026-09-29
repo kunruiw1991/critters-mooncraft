@@ -59,6 +59,20 @@ export const UI_SVGS = {
   <path d="M39 6 L40.8 10 L45 11.8 L40.8 13.5 L39 17.5 L37.2 13.5 L33 11.8 L37.2 10 Z" fill="#fff9db" stroke="#f59f00" stroke-width="1.2"/>
   </svg>`,
 
+  core: `<svg viewBox="0 0 48 48" class="svg-ico"><defs>
+    <radialGradient id="gStarCore" cx="38%" cy="32%" r="68%">
+      <stop offset="0%" stop-color="#fff9db"/>
+      <stop offset="42%" stop-color="#ffd43b"/>
+      <stop offset="78%" stop-color="#ae3ec9"/>
+      <stop offset="100%" stop-color="#5f3dc4"/>
+    </radialGradient>
+  </defs>
+  <circle cx="24" cy="24" r="19" fill="#da77f2" opacity="0.32"/>
+  <polygon points="24,4 30,16 43,18 33.5,27.5 36,41 24,34.5 12,41 14.5,27.5 5,18 18,16" fill="url(#gStarCore)" stroke="#3b096c" stroke-width="2.8" stroke-linejoin="round"/>
+  <polygon points="24,11 28,19 36,20 30,26 31.5,34 24,30 16.5,34 18,26 12,20 20,19" fill="#fff9db" opacity="0.82"/>
+  <circle cx="24" cy="23" r="4.5" fill="#ffffff"/>
+  </svg>`,
+
   heart: `<svg viewBox="0 0 48 48" class="svg-ico"><defs>
     <radialGradient id="gHeart" cx="35%" cy="28%" r="70%">
       <stop offset="0%" stop-color="#ffccd5"/>
@@ -100,8 +114,43 @@ export const UI_SVGS = {
   </svg>`,
 
   // --------------------------------------------------------------------------
-  // 3. 4 CUSTOM 3D TOY TOOL ILLUSTRATIONS (FOR HOTBAR CARDS)
+  // 3. CUSTOM 3D TOY TOOL & ADVANCED APEX BUILDING ILLUSTRATIONS
   // --------------------------------------------------------------------------
+  bld_cannon: `<svg viewBox="0 0 64 64" class="tool-svg"><defs>
+    <linearGradient id="gCanBase" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff3bf"/>
+      <stop offset="100%" stop-color="#f08c00"/>
+    </linearGradient>
+    <linearGradient id="gCanBarrel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e5dbff"/>
+      <stop offset="55%" stop-color="#7950f2"/>
+      <stop offset="100%" stop-color="#3b096c"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="42" width="44" height="14" rx="5" fill="url(#gCanBase)" stroke="#4a2c11" stroke-width="2.8"/>
+  <circle cx="32" cy="38" r="13" fill="#ffd43b" stroke="#4a2c11" stroke-width="2.8"/>
+  <g transform="rotate(-28 32 34)">
+    <rect x="24" y="10" width="16" height="28" rx="6" fill="url(#gCanBarrel)" stroke="#240046" stroke-width="2.8"/>
+    <ellipse cx="32" cy="11" rx="7" ry="3.5" fill="#fff9db" stroke="#ae3ec9" stroke-width="2"/>
+    <circle cx="32" cy="24" r="4.5" fill="#ffd43b" stroke="#3b096c" stroke-width="1.8"/>
+  </g>
+  <polygon points="49,10 52,16 58,17 53.5,21.5 55,28 49,24.5 43,28 44.5,21.5 40,17 46,16" fill="#ffd43b" stroke="#5f3dc4" stroke-width="1.8"/>
+  </svg>`,
+
+  bld_obelisk: `<svg viewBox="0 0 64 64" class="tool-svg"><defs>
+    <linearGradient id="gObPillar" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e3fafc"/>
+      <stop offset="50%" stop-color="#22b8cf"/>
+      <stop offset="100%" stop-color="#5f3dc4"/>
+    </linearGradient>
+  </defs>
+  <rect x="12" y="46" width="40" height="10" rx="4" fill="#ffd43b" stroke="#4a2c11" stroke-width="2.8"/>
+  <polygon points="32,14 43,46 21,46" fill="url(#gObPillar)" stroke="#183153" stroke-width="2.8" stroke-linejoin="round"/>
+  <polygon points="32,14 32,46 21,46" fill="#99e9f2" opacity="0.55"/>
+  <path d="M38 6 C29 7 24 14 26 21 C28 26 35 28 41 25 C34 24 31 18 33 12 C34 9 36 7 38 6 Z" fill="#ffd43b" stroke="#5c3d2e" stroke-width="2.2"/>
+  <circle cx="32" cy="33" r="4.5" fill="#fff9db" stroke="#ae3ec9" stroke-width="2"/>
+  </svg>`,
+
   tool_upgrade: `<svg viewBox="0 0 64 64" class="tool-svg"><defs>
     <linearGradient id="gUpArrow" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#69db7c"/>
@@ -181,7 +230,9 @@ export const UI_SVGS = {
   ctrl_wave: `<svg viewBox="0 0 32 32" class="ctrl-svg"><polygon points="18,4 8,17 16,17 13,28 24,14 16,14" fill="#ffd43b" stroke="#5c3d2e" stroke-width="2.2" stroke-linejoin="round"/></svg>`,
   ctrl_sandbox: `<svg viewBox="0 0 32 32" class="ctrl-svg"><rect x="6" y="15" width="10" height="10" rx="2" fill="#ff6b6b" stroke="#5c3d2e" stroke-width="2"/><rect x="16" y="15" width="10" height="10" rx="2" fill="#4dabf7" stroke="#5c3d2e" stroke-width="2"/><rect x="11" y="6" width="10" height="10" rx="2" fill="#ffd43b" stroke="#5c3d2e" stroke-width="2"/></svg>`,
   ctrl_music: `<svg viewBox="0 0 32 32" class="ctrl-svg"><path d="M12 22 V8 L24 6 V20" fill="none" stroke="#5c3d2e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="22.5" r="4" fill="#f08c00" stroke="#5c3d2e" stroke-width="2"/><circle cx="21.5" cy="20.5" r="4" fill="#f08c00" stroke="#5c3d2e" stroke-width="2"/></svg>`,
-  ctrl_sfx: `<svg viewBox="0 0 32 32" class="ctrl-svg"><polygon points="6,12 12,12 18,7 18,25 12,20 6,20" fill="#f08c00" stroke="#5c3d2e" stroke-width="2.2" stroke-linejoin="round"/><path d="M22 11 C25 14 25 18 22 21 M25 8 C30 13 30 19 25 24" fill="none" stroke="#5c3d2e" stroke-width="2.4" stroke-linecap="round"/></svg>`
+  ctrl_sfx: `<svg viewBox="0 0 32 32" class="ctrl-svg"><polygon points="6,12 12,12 18,7 18,25 12,20 6,20" fill="#f08c00" stroke="#5c3d2e" stroke-width="2.2" stroke-linejoin="round"/><path d="M22 11 C25 14 25 18 22 21 M25 8 C30 13 30 19 25 24" fill="none" stroke="#5c3d2e" stroke-width="2.4" stroke-linecap="round"/></svg>`,
+  ctrl_save: `<svg viewBox="0 0 32 32" class="ctrl-svg"><rect x="5" y="5" width="22" height="22" rx="4" fill="#339af0" stroke="#183153" stroke-width="2.2"/><rect x="9" y="5" width="12" height="8" rx="1.5" fill="#e7f5ff" stroke="#183153" stroke-width="1.8"/><rect x="8" y="16" width="16" height="11" rx="2" fill="#ffffff" stroke="#183153" stroke-width="1.8"/></svg>`,
+  ctrl_menu: `<svg viewBox="0 0 32 32" class="ctrl-svg"><polygon points="16,4 4,15 8,15 8,27 24,27 24,15 28,15" fill="#ff922b" stroke="#5c3d2e" stroke-width="2.2" stroke-linejoin="round"/><rect x="13" y="18" width="6" height="9" rx="1.5" fill="#fff3bf" stroke="#5c3d2e" stroke-width="1.8"/></svg>`
 };
 
 export function miniResSVG(type) {

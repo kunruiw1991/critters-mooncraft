@@ -882,6 +882,7 @@ const movieState = {
   ctx: null,
   images: [],
   loaded: [false, false, false, false],
+  critterPortraits: {},
   fireflies: [],
   smokePuffs: [],
   shards: [],
@@ -908,6 +909,20 @@ export function initIntroMovieCanvas() {
     img.src = u;
     return img;
   });
+
+  const portraitMap = {
+    SunnyFox: 'icons/sunnyfox.jpg',
+    PoppyDash: 'icons/poppydash.jpg',
+    PickyPiggy: 'icons/picky.jpg',
+    DogDay: 'icons/dogday.jpg',
+    CraftyCorn: 'icons/craftycorn.jpg',
+    BobbyBear: 'icons/bobby.jpg'
+  };
+  for (const [k, src] of Object.entries(portraitMap)) {
+    const pImg = new Image();
+    pImg.src = src;
+    movieState.critterPortraits[k] = pImg;
+  }
 
   // Pre-seed 36 glowing fireflies / starlight motes
   movieState.fireflies = Array.from({ length: 36 }, (_, i) => ({
@@ -1179,4 +1194,319 @@ export function renderIntroMovieFrame(t) {
     ctx.restore();
   }
 }
+
+// ============================================================================
+// 6.0-SECOND STAGE-CLEAR VICTORY MOVIE: CRITTERS REPAIRING THE MOON (萌宠补月动画)
+// ============================================================================
+export function renderVictoryMovieFrame(t, stageIndex = 0) {
+  if (!movieState.canvas) initIntroMovieCanvas();
+  const { canvas, ctx, images } = movieState;
+  if (!canvas || !ctx) return;
+
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.floor(window.innerWidth * dpr);
+  const h = Math.floor(window.innerHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+
+  const pTotal = clamp(t / 6.0, 0, 1);
+  const pGather = clamp(t / 2.0, 0, 1);
+  const pWeld = clamp((t - 1.5) / 2.6, 0, 1);
+  const pCeleb = clamp((t - 4.0) / 2.0, 0, 1);
+
+  // 1. Sky Backdrop: transitions from deep night to warm golden-starlight dawn as the Moon is healed
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+  if (pWeld < 1) {
+    skyGrad.addColorStop(0, '#120b2e');
+    skyGrad.addColorStop(0.55, '#251854');
+    skyGrad.addColorStop(1, '#3b256e');
+  } else {
+    skyGrad.addColorStop(0, '#18285c');
+    skyGrad.addColorStop(0.52, '#304c89');
+    skyGrad.addColorStop(1, '#5e4b8b');
+  }
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Subtle blended storybook background from Act 1 hilltop
+  if (images[0] && images[0].complete) {
+    drawCoverImage(ctx, images[0], w, h, 1.04 + pTotal * 0.04, 0, 0.02, 0, 0, 0.28 + pCeleb * 0.22);
+  }
+
+  // Twinkling starfield
+  for (let i = 0; i < 42; i++) {
+    const sx = ((i * 0.193 + 0.07) % 1) * w;
+    const sy = ((i * 0.137 + 0.03) % 0.62) * h;
+    const tw = 0.4 + 0.6 * Math.sin(t * 5.0 + i * 1.3);
+    ctx.fillStyle = i % 3 === 0 ? '#fff9db' : '#ffd43b';
+    ctx.globalAlpha = tw * 0.85;
+    ctx.beginPath();
+    ctx.arc(sx, sy, (1.5 + (i % 3) * 0.9) * dpr, 0, TAU);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1.0;
+
+  const moonCx = w * 0.5;
+  const moonCy = h * 0.31;
+  const moonR = Math.min(w, h) * 0.155;
+
+  // 2. Cozy Green Storybook Hilltop Silhouette at Bottom
+  ctx.save();
+  const hillGrad = ctx.createLinearGradient(0, h * 0.66, 0, h);
+  hillGrad.addColorStop(0, '#51cf66');
+  hillGrad.addColorStop(0.45, '#37b24d');
+  hillGrad.addColorStop(1, '#2b8a3e');
+  ctx.fillStyle = hillGrad;
+  ctx.beginPath();
+  ctx.ellipse(w * 0.5, h * 0.96, w * 0.68, h * 0.27, 0, Math.PI, TAU);
+  ctx.fill();
+  ctx.restore();
+
+  // 3. Six Hero Critters on the Hilltop Channeling Repair Beams to the Moon!
+  const critterRoster = [
+    { name: 'SunnyFox', emoji: '🦊', color: '#ffd43b', beam: '#ffe066', xFrac: 0.20, yFrac: 0.76 },
+    { name: 'PoppyDash', emoji: '🦨', color: '#51cf66', beam: '#8ce99a', xFrac: 0.32, yFrac: 0.72 },
+    { name: 'PickyPiggy', emoji: '🐷', color: '#ff8787', beam: '#ffc9c9', xFrac: 0.44, yFrac: 0.70 },
+    { name: 'DogDay', emoji: '🐶', color: '#ff922b', beam: '#ffd8a8', xFrac: 0.56, yFrac: 0.70 },
+    { name: 'CraftyCorn', emoji: '🦄', color: '#da77f2', beam: '#eebefa', xFrac: 0.68, yFrac: 0.72 },
+    { name: 'BobbyBear', emoji: '🐻', color: '#74c0fc', beam: '#a5d8ff', xFrac: 0.80, yFrac: 0.76 }
+  ];
+
+  // Draw Starlight Welding Beams from each Critter to the Moon during t = 0.4s .. 4.6s
+  if (t >= 0.35 && t <= 4.85) {
+    const beamAlpha = t < 1.0 ? (t - 0.35) / 0.65 : (t > 4.2 ? 1 - (t - 4.2) / 0.65 : 1.0);
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    for (let i = 0; i < critterRoster.length; i++) {
+      const c = critterRoster[i];
+      const cx = w * c.xFrac;
+      const cy = h * c.yFrac - Math.abs(Math.sin(t * 6 + i)) * 12 * dpr;
+      const targetX = moonCx + Math.cos(i * 1.05 + t * 2.2) * moonR * 0.38 * (1 - pWeld * 0.7);
+      const targetY = moonCy + Math.sin(i * 1.05 + t * 2.2) * moonR * 0.38 * (1 - pWeld * 0.7);
+
+      ctx.strokeStyle = c.beam;
+      ctx.lineWidth = (5.5 + Math.sin(t * 14 + i) * 2.0) * dpr;
+      ctx.shadowColor = c.color;
+      ctx.shadowBlur = 18 * dpr;
+      ctx.globalAlpha = clamp(beamAlpha, 0, 1) * 0.85;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 18 * dpr);
+      const ctrlX = (cx + targetX) * 0.5 + Math.sin(t * 5 + i) * 26 * dpr;
+      const ctrlY = (cy + targetY) * 0.5 - 35 * dpr;
+      ctx.quadraticCurveTo(ctrlX, ctrlY, targetX, targetY);
+      ctx.stroke();
+
+      // Traveling golden starlight shards along the beam
+      for (let s = 0; s < 3; s++) {
+        const u = ((t * 1.35 + s * 0.33 + i * 0.15) % 1);
+        const bx = (1 - u) * (1 - u) * cx + 2 * (1 - u) * u * ctrlX + u * u * targetX;
+        const by = (1 - u) * (1 - u) * (cy - 18 * dpr) + 2 * (1 - u) * u * ctrlY + u * u * targetY;
+        ctx.fillStyle = '#fff9db';
+        ctx.beginPath();
+        ctx.arc(bx, by, 4.5 * dpr, 0, TAU);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  // 4. The Shattered Moon Fragments Re-Assembling & Welding into a Smiling Full Golden Moon!
+  ctx.save();
+  // Outer Golden Lunar Halo (grows as Moon is repaired)
+  const haloR = moonR * (1.55 + pWeld * 0.85 + Math.sin(t * 4) * 0.06);
+  const haloGrad = ctx.createRadialGradient(moonCx, moonCy, moonR * 0.25, moonCx, moonCy, haloR);
+  haloGrad.addColorStop(0, `rgba(255, 249, 219, ${0.45 + pWeld * 0.35})`);
+  haloGrad.addColorStop(0.5, `rgba(255, 212, 59, ${0.22 + pWeld * 0.22})`);
+  haloGrad.addColorStop(1, 'rgba(255, 212, 59, 0)');
+  ctx.fillStyle = haloGrad;
+  ctx.beginPath();
+  ctx.arc(moonCx, moonCy, haloR, 0, TAU);
+  ctx.fill();
+
+  // 6 Wedge Sectors of the Moon that converge from scattered positions to (0, 0) as pWeld -> 1.0!
+  const easeWeld = pWeld < 0.5 ? 4 * pWeld * pWeld * pWeld : 1 - Math.pow(-2 * pWeld + 2, 3) / 2;
+  const sepDist = (1 - easeWeld) * moonR * 0.95;
+  const sectors = 6;
+  for (let s = 0; s < sectors; s++) {
+    const a0 = (s / sectors) * TAU;
+    const a1 = ((s + 1) / sectors) * TAU + 0.03;
+    const midA = (a0 + a1) * 0.5;
+    const ox = Math.cos(midA) * sepDist;
+    const oy = Math.sin(midA) * sepDist;
+    const rotJitter = (1 - easeWeld) * Math.sin(s * 2.1) * 0.24;
+
+    ctx.save();
+    ctx.translate(moonCx + ox, moonCy + oy);
+    ctx.rotate(rotJitter);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, moonR, a0, a1);
+    ctx.closePath();
+
+    const mGrad = ctx.createRadialGradient(-moonR * 0.25, -moonR * 0.25, moonR * 0.1, 0, 0, moonR);
+    mGrad.addColorStop(0, '#fff9db');
+    mGrad.addColorStop(0.55, '#ffe066');
+    mGrad.addColorStop(1, '#f59f00');
+    ctx.fillStyle = mGrad;
+    ctx.fill();
+
+    if (pWeld < 0.96) {
+      ctx.strokeStyle = '#fff3bf';
+      ctx.lineWidth = 2.5 * dpr;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Golden Welding Seam Glow while fragments lock together (t = 1.5s .. 4.1s)
+  if (pWeld > 0.05 && pWeld < 0.98) {
+    ctx.save();
+    ctx.strokeStyle = '#ffffff';
+    ctx.shadowColor = '#ffd43b';
+    ctx.shadowBlur = 16 * dpr;
+    ctx.lineWidth = (1 - Math.abs(pWeld - 0.55) * 1.6) * 5 * dpr;
+    for (let s = 0; s < sectors; s++) {
+      const ang = (s / sectors) * TAU;
+      ctx.beginPath();
+      ctx.moveTo(moonCx, moonCy);
+      ctx.lineTo(moonCx + Math.cos(ang) * moonR, moonCy + Math.sin(ang) * moonR);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Cute Smiling Face on the Repaired Full Moon once pWeld >= 0.75!
+  if (pWeld >= 0.75) {
+    const faceAlpha = clamp((pWeld - 0.75) / 0.22, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = faceAlpha;
+    // Rosy Cheeks
+    ctx.fillStyle = 'rgba(255, 107, 107, 0.48)';
+    ctx.beginPath();
+    ctx.ellipse(moonCx - moonR * 0.42, moonCy + moonR * 0.10, moonR * 0.14, moonR * 0.09, 0, 0, TAU);
+    ctx.ellipse(moonCx + moonR * 0.42, moonCy + moonR * 0.10, moonR * 0.14, moonR * 0.09, 0, 0, TAU);
+    ctx.fill();
+
+    // Happy Curved Eyes (^ ^)
+    ctx.strokeStyle = '#5a3821';
+    ctx.lineWidth = 5 * dpr;
+    ctx.lineCap = 'round';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(moonCx + side * moonR * 0.30, moonCy - moonR * 0.08, moonR * 0.13, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+    }
+
+    // Warm Joyful Smile
+    ctx.beginPath();
+    ctx.arc(moonCx, moonCy + moonR * 0.06, moonR * 0.26, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 5. Draw the 6 Critters Cheering & Jumping on the Hilltop (with Circular Plush Portraits!)
+  for (let i = 0; i < critterRoster.length; i++) {
+    const c = critterRoster[i];
+    const bounce = Math.abs(Math.sin(t * (pCeleb > 0 ? 9.5 : 5.5) + i * 0.9)) * (pCeleb > 0 ? 24 : 10) * dpr;
+    const cx = w * c.xFrac;
+    const cy = h * c.yFrac - bounce;
+    const rad = 32 * dpr;
+
+    ctx.save();
+    // Glowing character medallion body
+    ctx.fillStyle = c.color;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4 * dpr;
+    ctx.shadowColor = c.color;
+    ctx.shadowBlur = 16 * dpr;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+
+    // Circular clipped portrait image (or emoji fallback)
+    const pImg = movieState.critterPortraits?.[c.name];
+    if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad - 3 * dpr, 0, TAU);
+      ctx.clip();
+      ctx.shadowBlur = 0;
+      ctx.drawImage(pImg, cx - rad, cy - rad, rad * 2, rad * 2);
+      ctx.restore();
+    } else {
+      ctx.shadowBlur = 0;
+      ctx.font = `${Math.round(28 * dpr)}px "Fredoka", "Nunito", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(c.emoji, cx, cy + 2 * dpr);
+    }
+
+    // Little wrench/hammer/star above each Critter
+    const toolIco = pCeleb > 0 ? '🎉' : (i % 2 === 0 ? '🔨' : '✨');
+    ctx.shadowBlur = 0;
+    ctx.font = `${Math.round(20 * dpr)}px "Fredoka", "Nunito", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(toolIco, cx + rad * 0.78, cy - rad * 0.82);
+    ctx.restore();
+  }
+
+  // 6. Celebration Fireworks & Bilingual Caption Banner (t >= 3.8s)
+  if (t >= 3.8) {
+    const fwColors = ['#ffd43b', '#ff6b6b', '#69db7c', '#74c0fc', '#da77f2'];
+    for (let f = 0; f < 5; f++) {
+      const fwStart = 3.8 + f * 0.35;
+      if (t < fwStart) continue;
+      const fp = clamp((t - fwStart) / 1.1, 0, 1);
+      const fx = w * (0.16 + f * 0.17);
+      const fy = h * (0.22 + (f % 2) * 0.14);
+      const col = fwColors[f % fwColors.length];
+      ctx.save();
+      ctx.globalAlpha = 1 - fp * 0.85;
+      ctx.fillStyle = col;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 12 * dpr;
+      for (let sp = 0; sp < 12; sp++) {
+        const ang = (sp / 12) * TAU;
+        const dist = fp * 72 * dpr;
+        ctx.beginPath();
+        ctx.arc(fx + Math.cos(ang) * dist, fy + Math.sin(ang) * dist, (4.5 - fp * 2.5) * dpr, 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  // 7. Bilingual Story Caption Pill at Top of Victory Cutscene
+  ctx.save();
+  const pillW = Math.min(w * 0.86, 620 * dpr);
+  const pillH = 54 * dpr;
+  const pillX = (w - pillW) * 0.5;
+  const pillY = 24 * dpr;
+  ctx.fillStyle = 'rgba(255, 251, 240, 0.94)';
+  ctx.strokeStyle = '#fcc419';
+  ctx.lineWidth = 3.5 * dpr;
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillW, pillH, 27 * dpr);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#5a3821';
+  ctx.font = `900 ${Math.round(18 * dpr)}px "Fredoka", "Nunito", "PingFang SC", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  let caption = '🛠️ Critters Gathering Moon Shards · 萌宠收集月之碎片...';
+  if (t >= 1.8 && t < 4.1) {
+    caption = '✨ Critters Repairing the Moon Together! · 萌宠同心协力修补月亮！';
+  } else if (t >= 4.1) {
+    caption = `🌕 Stage ${stageIndex + 1} Moon Repaired! · 第 ${stageIndex + 1} 关萌宠补月大成功！`;
+  }
+  ctx.fillText(caption, w * 0.5, pillY + pillH * 0.5);
+  ctx.restore();
+}
+
 

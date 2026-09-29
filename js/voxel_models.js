@@ -242,12 +242,68 @@ export function buildCritterUnitMesh(def, portraitTex) {
     const coilL = vox(0.14, 0.46, 0.14, 0xffe600, -0.28, 0.52, 0.14, { emissive: 0xffe600, emissiveIntensity: 0.8 });
     const coilR = vox(0.14, 0.46, 0.14, 0xffe600, 0.28, 0.52, 0.14, { emissive: 0xffe600, emissiveIntensity: 0.8 });
     prop.add(coilL, coilR);
+  } else if (def.id === 'starlight_cannon') {
+    // Tier 4 Advanced Apex Building: Starlight Orbital Cannon (星辉巨炮)
+    torso.visible = false;
+    belly.visible = false;
+    head.visible = false;
+    const basePlinth = vox(0.92, 0.20, 0.92, 0xfff3bf, 0, 0.10, 0);
+    const midRing = vox(0.76, 0.24, 0.76, 0x5f3dc4, 0, 0.30, 0, { emissive: 0x3b096c, emissiveIntensity: 0.45 });
+    const goldTrim = vox(0.82, 0.08, 0.82, 0xffd43b, 0, 0.44, 0, { emissive: 0xf59f00, emissiveIntensity: 0.65, metalness: 0.6 });
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.32, 20, 16),
+      new THREE.MeshStandardMaterial({ color: 0x7950f2, emissive: 0x5f3dc4, emissiveIntensity: 0.5, metalness: 0.4, roughness: 0.25 })
+    );
+    dome.position.set(0, 0.56, 0);
+    const barrelL = vox(0.14, 0.16, 0.68, 0xffd43b, -0.16, 0.66, 0.22, { emissive: 0xfcc419, emissiveIntensity: 0.75, metalness: 0.6 });
+    const barrelR = vox(0.14, 0.16, 0.68, 0xffd43b, 0.16, 0.66, 0.22, { emissive: 0xfcc419, emissiveIntensity: 0.75, metalness: 0.6 });
+    const coreBeam = vox(0.18, 0.18, 0.74, 0xda77f2, 0, 0.68, 0.25, { emissive: 0xf72585, emissiveIntensity: 0.95 });
+    barrelL.rotation.x = -0.25;
+    barrelR.rotation.x = -0.25;
+    coreBeam.rotation.x = -0.25;
+    const rotor = new THREE.Group();
+    rotor.position.set(0, 1.02, 0);
+    const starCoreGem = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.18, 0),
+      new THREE.MeshStandardMaterial({ color: 0xffe066, emissive: 0xae3ec9, emissiveIntensity: 0.95, roughness: 0.15 })
+    );
+    rotor.add(starCoreGem);
+    g.userData.rotor = rotor;
+    prop.add(basePlinth, midRing, goldTrim, dome, barrelL, barrelR, coreBeam, rotor);
+  } else if (def.id === 'moon_obelisk') {
+    // Tier 4 Advanced Apex Building: Lunar Sanctuary Obelisk (月神方尖碑)
+    torso.visible = false;
+    belly.visible = false;
+    head.visible = false;
+    const step1 = vox(0.94, 0.16, 0.94, 0xfff3d6, 0, 0.08, 0);
+    const step2 = vox(0.76, 0.16, 0.76, 0xffd43b, 0, 0.24, 0, { emissive: 0xf59f00, emissiveIntensity: 0.4 });
+    const obeliskShaft = new THREE.Mesh(
+      new THREE.ConeGeometry(0.28, 0.96, 4),
+      new THREE.MeshStandardMaterial({ color: 0x22b8cf, emissive: 0x1098ad, emissiveIntensity: 0.65, metalness: 0.35, roughness: 0.2 })
+    );
+    obeliskShaft.position.set(0, 0.76, 0);
+    obeliskShaft.rotation.y = Math.PI / 4;
+    for (const sx of [-0.34, 0.34]) {
+      for (const sz of [-0.34, 0.34]) {
+        prop.add(vox(0.10, 0.42, 0.10, 0xda77f2, sx, 0.36, sz, { emissive: 0xae3ec9, emissiveIntensity: 0.8 }));
+      }
+    }
+    const rotor = new THREE.Group();
+    rotor.position.set(0, 1.30, 0);
+    const crescent = new THREE.Mesh(
+      new THREE.TorusGeometry(0.18, 0.055, 16, 32, Math.PI * 1.45),
+      new THREE.MeshStandardMaterial({ color: 0xfff9db, emissive: 0xffd43b, emissiveIntensity: 0.95, metalness: 0.5, roughness: 0.2 })
+    );
+    crescent.rotation.z = Math.PI * 0.3;
+    rotor.add(crescent);
+    g.userData.rotor = rotor;
+    prop.add(step1, step2, obeliskShaft, rotor);
   }
   g.add(prop);
 
   // Floating 3D Upgrade Stars above the Critter (Lv.1 -> Lv.2 -> Lv.3)
   const starRow = new THREE.Group();
-  starRow.position.set(0, 1.15, 0);
+  starRow.position.set(0, def.isApexBuilding ? 1.52 : 1.15, 0);
   const starMeshes = [];
   for (let i = 0; i < 3; i++) {
     const sm = vox(0.13, 0.13, 0.06, 0xffd43b, (i - 1) * 0.18, 0, 0, {
@@ -407,7 +463,7 @@ export function buildMoonSanctuaryMesh() {
 // ============================================================================
 function createOverheadStatusRow(def) {
   const row = new THREE.Group();
-  const isBoss = def.id === 'nightmare_boss';
+  const isBoss = def.id === 'nightmare_boss' || def.id === 'abyss_dragon' || def.isElite;
   const isHealer = def.id === 'necromancer' || def.id === 'healer_shaman';
   const isTank = def.id === 'bucket' || def.id === 'shield_knight';
   const heartCount = isBoss ? 5 : (isTank || isHealer ? 4 : (def.id === 'runner' ? 1 : (def.id === 'walker' ? 2 : 3)));
@@ -425,9 +481,22 @@ function createOverheadStatusRow(def) {
     hearts.push(h);
   }
 
-  // Non-text 3D Ability Emblem above the hearts
+  // Non-text 3D Ability / Rare Star Core Drop Emblem above the hearts
   let abilityIcon = null;
-  if (def.armor > 0) {
+  if (def.reward?.core > 0 || def.isElite) {
+    // Glowing Purple-Gold Rare Star Core Octahedron Badge above Tough Elite Monsters!
+    abilityIcon = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.14, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0xffd43b,
+        emissive: 0xae3ec9,
+        emissiveIntensity: 0.95,
+        roughness: 0.15
+      })
+    );
+    abilityIcon.position.set(0, 0.21, 0);
+    row.add(abilityIcon);
+  } else if (def.armor > 0) {
     abilityIcon = vox(0.16, 0.16, 0.06, 0x74c0fc, 0, 0.17, 0, {
       emissive: 0x339af0,
       emissiveIntensity: 0.65,
@@ -458,7 +527,7 @@ function createOverheadStatusRow(def) {
 }
 
 // ============================================================================
-// 8 VISUALLY & FUNCTIONALLY DISTINCT 3D VOXEL ZOMBIES
+// 11 VISUALLY & FUNCTIONALLY DISTINCT 3D VOXEL ZOMBIES & TOUGH ELITES
 // ============================================================================
 export function buildVoxelZombie(def) {
   const g = new THREE.Group();
@@ -474,7 +543,7 @@ export function buildVoxelZombie(def) {
   const head = vox(0.34, 0.34, 0.34, skinCol, 0, 0.78, 0);
 
   // Glowing zombie eyes facing toward the Critter base (-X)
-  const eyeColor = def.id === 'nightmare_boss' ? 0xffbe0b : (def.id === 'necromancer' ? 0xda77f2 : 0xff2a55);
+  const eyeColor = (def.id === 'nightmare_boss' || def.id === 'abyss_dragon') ? 0xffbe0b : (def.isElite ? 0xda77f2 : 0xff2a55);
   const eyeL = vox(0.05, 0.06, 0.07, eyeColor, -0.18, 0.80, -0.08, { emissive: eyeColor, emissiveIntensity: 0.95 });
   const eyeR = vox(0.05, 0.06, 0.07, eyeColor, -0.18, 0.80, 0.08, { emissive: eyeColor, emissiveIntensity: 0.95 });
 
@@ -600,9 +669,64 @@ export function buildVoxelZombie(def) {
     g.add(hornL, hornR, core, cape, bossOrbs);
   }
 
+  // 8. IRON GOLEM (铁甲巨像 — Wave 3+ Tough Elite, drops +2 🔮 Star Cores):
+  if (def.id === 'iron_golem') {
+    const pauldronL = vox(0.24, 0.22, 0.26, 0x495057, 0, 0.58, -0.26, { metalness: 0.8, roughness: 0.2 });
+    const pauldronR = vox(0.24, 0.22, 0.26, 0x495057, 0, 0.58, 0.26, { metalness: 0.8, roughness: 0.2 });
+    const coreGem = vox(0.14, 0.20, 0.20, 0x22b8cf, -0.18, 0.46, 0, { emissive: 0x66d9e8, emissiveIntensity: 0.95 });
+    const helmHornL = vox(0.10, 0.24, 0.10, 0xffd43b, 0, 1.02, -0.16, { emissive: 0xf59f00, emissiveIntensity: 0.6 });
+    const helmHornR = vox(0.10, 0.24, 0.10, 0xffd43b, 0, 1.02, 0.16, { emissive: 0xf59f00, emissiveIntensity: 0.6 });
+    pickaxeGroup = new THREE.Group();
+    pickaxeGroup.position.set(-0.32, 0.54, -0.26);
+    const shaft = vox(0.08, 0.54, 0.08, 0x8d5524, 0, 0.18, 0);
+    const hammerHead = vox(0.38, 0.20, 0.22, 0xced4da, 0, 0.44, 0, { metalness: 0.85, emissive: 0x7950f2, emissiveIntensity: 0.35 });
+    pickaxeGroup.add(shaft, hammerHead);
+    g.add(pauldronL, pauldronR, coreGem, helmHornL, helmHornR, pickaxeGroup);
+  }
+
+  // 9. CRYSTAL BEHEMOTH (晶簇巨兽 — Wave 4+ Tough Elite, drops +3 🔮 Star Cores):
+  if (def.id === 'crystal_behemoth') {
+    const spire1 = vox(0.18, 0.52, 0.18, 0xda77f2, 0.12, 0.86, 0, { emissive: 0xae3ec9, emissiveIntensity: 0.9 });
+    const spire2 = vox(0.14, 0.42, 0.14, 0x74c0fc, 0.08, 0.76, -0.20, { emissive: 0x22b8cf, emissiveIntensity: 0.85 });
+    const spire3 = vox(0.14, 0.42, 0.14, 0xffd43b, 0.08, 0.76, 0.20, { emissive: 0xfcc419, emissiveIntensity: 0.85 });
+    spire1.rotation.z = -0.28;
+    spire2.rotation.x = -0.32;
+    spire3.rotation.x = 0.32;
+    shamanRing = new THREE.Group();
+    shamanRing.position.set(0, 0.62, 0);
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2;
+      shamanRing.add(vox(0.14, 0.18, 0.14, 0xffe066, Math.cos(a) * 0.46, 0, Math.sin(a) * 0.46, {
+        emissive: 0xda77f2,
+        emissiveIntensity: 0.95
+      }));
+    }
+    g.add(spire1, spire2, spire3, shamanRing);
+  }
+
+  // 10. ABYSS DRAGON (暗月魔龙王 — Wave 5+ Flying Boss Elite, drops +4 🔮 Star Cores):
+  if (def.id === 'abyss_dragon') {
+    balloonRig = new THREE.Group();
+    const wingL = vox(0.24, 0.44, 0.68, 0x5f3dc4, 0.08, 0.72, -0.46, { emissive: 0x3b096c, emissiveIntensity: 0.65 });
+    const wingR = vox(0.24, 0.44, 0.68, 0x5f3dc4, 0.08, 0.72, 0.46, { emissive: 0x3b096c, emissiveIntensity: 0.65 });
+    const hornL = vox(0.12, 0.38, 0.12, 0xffd43b, -0.06, 1.12, -0.16, { emissive: 0xf59f00, emissiveIntensity: 0.85 });
+    const hornR = vox(0.12, 0.38, 0.12, 0xffd43b, -0.06, 1.12, 0.16, { emissive: 0xf59f00, emissiveIntensity: 0.85 });
+    balloonRig.add(wingL, wingR, hornL, hornR);
+    bossOrbs = new THREE.Group();
+    bossOrbs.position.set(0, 0.74, 0);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      bossOrbs.add(vox(0.14, 0.14, 0.14, 0xda77f2, Math.cos(a) * 0.52, Math.sin(a * 2) * 0.10, Math.sin(a) * 0.52, {
+        emissive: 0xffbe0b,
+        emissiveIntensity: 0.95
+      }));
+    }
+    g.add(balloonRig, bossOrbs);
+  }
+
   // Overhead 3D Heart & Ability Status Bar
   const status = createOverheadStatusRow(def);
-  status.row.position.set(0, def.id === 'balloon' ? 2.30 : 1.26, 0);
+  status.row.position.set(0, def.id === 'balloon' ? 2.30 : (def.isElite ? 1.42 : 1.26), 0);
   g.add(status.row);
 
   g.userData = {
@@ -628,7 +752,7 @@ export function buildVoxelZombie(def) {
       if (shieldMesh) {
         shieldMesh.visible = armor > 0;
       }
-      if (status.abilityIcon && def.armor > 0) {
+      if (status.abilityIcon && def.armor > 0 && !def.isElite) {
         status.abilityIcon.visible = armor > 0;
       }
     }
