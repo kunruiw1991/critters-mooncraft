@@ -649,10 +649,12 @@ export function getEffectiveUnitCost(def) {
   if (def.role === 'terraform') {
     return computeDynamicResourceCosts(def, 0, heat);
   }
-  const existingCount = S.units.filter(u => u.id === def.id).length;
+  const starterCount = (S.stageCfg?.starterUnits || []).filter(s => s.id === def.id).length;
+  const activeCopies = S.units.filter(u => u.id === def.id).length;
+  const existingCount = Math.max(0, activeCopies - starterCount);
   const cost = computeDynamicResourceCosts(def, existingCount, heat);
-  // Anti-softlock safeguard only when the board has 0 units AND bank is critically depleted (< 15 Sun & < 15 Wood)
-  if (S.units.length === 0 && (S.res.sun || 0) < 15 && (S.res.wood || 0) < 15) {
+  // Anti-softlock safeguard only when the board has 0 units AND bank is critically depleted (< 12 Sun & < 15 Wood)
+  if (S.units.length === 0 && (S.res.sun || 0) < 12 && (S.res.wood || 0) < 15) {
     if (existingCount === 0 && def.id === 'sunnyfox') {
       cost.sun = Math.min(cost.sun, Math.max(0, Math.floor(S.res.sun || 0)));
       cost.wood = Math.min(cost.wood, Math.max(0, Math.floor(S.res.wood || 0)));
@@ -1321,7 +1323,7 @@ export function placeUnitOnTile(gx, gz, toolId, free = false) {
   return true;
 }
 
-function removeUnit(u) {
+export function removeUnit(u) {
   unitGroup.remove(u.mesh);
   S.units = S.units.filter(item => item !== u);
   const t = tiles[u.gx]?.[u.gz];
@@ -1342,6 +1344,7 @@ function removeUnit(u) {
       }
     }
   }
+  updateTopHUD();
 }
 
 // ============================================================================

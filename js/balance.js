@@ -48,8 +48,8 @@ export const UNITS = [
     fxIcon: '☀️',
     color: '#f59f00',
     accent: '#fff3bf',
-    // Uses Sun + Wood (☀️25 🪵15, 🧱0) to expand Sun Shrine production
-    cost: { sun: 25, wood: 15, stone: 0, crystal: 0 },
+    // Uses Sun + Wood (☀️12 🪵15, 🧱0 — initial Sun cost halved!) to expand Sun Shrine production
+    cost: { sun: 12, wood: 15, stone: 0, crystal: 0 },
     hp: 220,
     prod: { sun: 5, wood: 0, stone: 0, crystal: 0 },
     prodInterval: 5.2,
