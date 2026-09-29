@@ -911,12 +911,17 @@ export function initIntroMovieCanvas() {
   });
 
   const portraitMap = {
+    CatNap: 'icons/catnap.jpg',
     SunnyFox: 'icons/sunnyfox.jpg',
     PoppyDash: 'icons/poppydash.jpg',
     PickyPiggy: 'icons/picky.jpg',
     DogDay: 'icons/dogday.jpg',
     CraftyCorn: 'icons/craftycorn.jpg',
-    BobbyBear: 'icons/bobby.jpg'
+    BobbyBear: 'icons/bobby.jpg',
+    Bubba: 'icons/bubba.jpg',
+    Kickin: 'icons/kickin.jpg',
+    LunaBat: 'icons/lunabat.jpg',
+    Mikey: 'icons/mikey.jpg'
   };
   for (const [k, src] of Object.entries(portraitMap)) {
     const pImg = new Image();
@@ -1508,5 +1513,829 @@ export function renderVictoryMovieFrame(t, stageIndex = 0) {
   ctx.fillText(caption, w * 0.5, pillY + pillH * 0.5);
   ctx.restore();
 }
+
+// ============================================================================
+// 5-STAGE ALL-CLEAR GRAND FINALE CUTSCENE (10.0s, 60 FPS):
+//   Act 1 (0.0s - 3.4s): Nightmare CatNap Purified into Cute CatNap!
+//   Act 2 (3.4s - 6.6s): Cute CatNap Gently Lifts & Places the Moon Back in the Sky!
+//   Act 3 (6.6s - 10.0s): Critters & Cute CatNap Hold Lanterns on the Moon for Mid-Autumn Festival!
+// ============================================================================
+function drawMidAutumnLantern2D(ctx, hx, hy, scale, sway, labelChar, dpr) {
+  ctx.save();
+  ctx.translate(hx, hy);
+  ctx.rotate(sway);
+
+  const stickLen = 36 * scale * dpr;
+  // Bamboo/wood lantern stick held in paw
+  ctx.strokeStyle = '#d9822b';
+  ctx.lineWidth = 3.2 * scale * dpr;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(18 * scale * dpr, -22 * scale * dpr);
+  ctx.stroke();
+
+  // Hanging golden cord
+  const lx = 18 * scale * dpr;
+  const ly = -22 * scale * dpr + 16 * scale * dpr;
+  ctx.strokeStyle = '#ffd43b';
+  ctx.lineWidth = 2 * scale * dpr;
+  ctx.beginPath();
+  ctx.moveTo(18 * scale * dpr, -22 * scale * dpr);
+  ctx.lineTo(lx, ly - 12 * scale * dpr);
+  ctx.stroke();
+
+  // Warm radial lantern glow
+  const glowR = 34 * scale * dpr;
+  const lg = ctx.createRadialGradient(lx, ly, 2 * dpr, lx, ly, glowR);
+  lg.addColorStop(0, 'rgba(255, 243, 191, 0.92)');
+  lg.addColorStop(0.45, 'rgba(255, 107, 107, 0.48)');
+  lg.addColorStop(1, 'rgba(255, 107, 107, 0)');
+  ctx.fillStyle = lg;
+  ctx.beginPath();
+  ctx.arc(lx, ly, glowR, 0, TAU);
+  ctx.fill();
+
+  // Red paper lantern body
+  const rx = 14 * scale * dpr;
+  const ry = 12 * scale * dpr;
+  const bodyG = ctx.createRadialGradient(lx - 3 * dpr, ly - 3 * dpr, 2 * dpr, lx, ly, rx);
+  bodyG.addColorStop(0, '#ff8787');
+  bodyG.addColorStop(0.45, '#fa5252');
+  bodyG.addColorStop(1, '#c92a2a');
+  ctx.fillStyle = bodyG;
+  ctx.strokeStyle = '#ffd43b';
+  ctx.lineWidth = 2 * scale * dpr;
+  ctx.beginPath();
+  ctx.ellipse(lx, ly, rx, ry, 0, 0, TAU);
+  ctx.fill();
+  ctx.stroke();
+
+  // Golden lantern ribs
+  ctx.strokeStyle = 'rgba(255, 212, 59, 0.65)';
+  ctx.lineWidth = 1.3 * scale * dpr;
+  for (const frac of [-0.5, 0.5]) {
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, rx * Math.abs(frac), ry, 0, 0, TAU);
+    ctx.stroke();
+  }
+
+  // Top & bottom golden caps
+  ctx.fillStyle = '#fcc419';
+  ctx.fillRect(lx - 7 * scale * dpr, ly - ry - 3 * scale * dpr, 14 * scale * dpr, 4 * scale * dpr);
+  ctx.fillRect(lx - 7 * scale * dpr, ly + ry - 1 * scale * dpr, 14 * scale * dpr, 4 * scale * dpr);
+
+  // Swaying golden tassel
+  ctx.strokeStyle = '#ffd43b';
+  ctx.lineWidth = 2.2 * scale * dpr;
+  ctx.beginPath();
+  ctx.moveTo(lx, ly + ry + 3 * scale * dpr);
+  ctx.lineTo(lx + Math.sin(sway * 3) * 4 * dpr, ly + ry + 15 * scale * dpr);
+  ctx.stroke();
+
+  // Festive character on lantern ('月', '福', '中', '秋')
+  if (labelChar) {
+    ctx.fillStyle = '#fff9db';
+    ctx.font = `900 ${Math.round(10 * scale * dpr)}px "Fredoka", "PingFang SC", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labelChar, lx, ly + 1 * dpr);
+  }
+  ctx.restore();
+}
+
+function drawCuteCatNap2D(ctx, cx, cy, scale, t, dpr, pose = 'wave') {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+
+  // Soft purple-gold starlight aura behind Cute CatNap
+  const auraG = ctx.createRadialGradient(0, -10 * dpr, 8 * dpr, 0, -10 * dpr, 95 * dpr);
+  auraG.addColorStop(0, 'rgba(229, 219, 255, 0.75)');
+  auraG.addColorStop(0.55, 'rgba(151, 117, 250, 0.32)');
+  auraG.addColorStop(1, 'rgba(151, 117, 250, 0)');
+  ctx.fillStyle = auraG;
+  ctx.beginPath();
+  ctx.arc(0, -10 * dpr, 95 * dpr, 0, TAU);
+  ctx.fill();
+
+  // S-Curved Plush Tail wagging happily
+  const wag = Math.sin(t * 6.2) * 12 * dpr;
+  ctx.strokeStyle = '#7950f2';
+  ctx.lineWidth = 14 * dpr;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(18 * dpr, 30 * dpr);
+  ctx.bezierCurveTo(56 * dpr, 24 * dpr, 68 * dpr + wag, -18 * dpr, 48 * dpr + wag, -46 * dpr);
+  ctx.stroke();
+
+  // Cute Plush Legs & Paws
+  ctx.fillStyle = '#6741d9';
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(side * 22 * dpr, 46 * dpr, 15 * dpr, 12 * dpr, 0, 0, TAU);
+    ctx.fill();
+  }
+
+  // Plush Purple Torso & Lavender Belly Patch
+  ctx.fillStyle = '#845ef7';
+  ctx.strokeStyle = '#5f3dc4';
+  ctx.lineWidth = 3.5 * dpr;
+  ctx.beginPath();
+  ctx.ellipse(0, 16 * dpr, 36 * dpr, 34 * dpr, 0, 0, TAU);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#e5dbff';
+  ctx.beginPath();
+  ctx.ellipse(0, 18 * dpr, 23 * dpr, 24 * dpr, 0, 0, TAU);
+  ctx.fill();
+
+  // Golden Crescent Moon Charm on Collar
+  ctx.fillStyle = '#ffd43b';
+  ctx.shadowColor = '#fcc419';
+  ctx.shadowBlur = 12 * dpr;
+  ctx.beginPath();
+  ctx.arc(0, 4 * dpr, 10 * dpr, 0.25 * Math.PI, 1.45 * Math.PI);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Plush Arms (either raised holding the Moon in Act 2, or waving/holding lantern in Act 1 & 3)
+  ctx.fillStyle = '#845ef7';
+  ctx.strokeStyle = '#5f3dc4';
+  ctx.lineWidth = 3 * dpr;
+  for (const side of [-1, 1]) {
+    ctx.save();
+    if (pose === 'lift_moon') {
+      ctx.translate(side * 30 * dpr, -6 * dpr);
+      ctx.rotate(side * -0.55);
+      ctx.beginPath();
+      ctx.ellipse(0, -22 * dpr, 11 * dpr, 22 * dpr, 0, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      const waveAng = side === 1 ? -0.45 + Math.sin(t * 7.5) * 0.25 : 0.35;
+      ctx.translate(side * 34 * dpr, 8 * dpr);
+      ctx.rotate(waveAng);
+      ctx.beginPath();
+      ctx.ellipse(0, 12 * dpr, 11 * dpr, 20 * dpr, 0, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Plush Rounded Cat Head
+  ctx.fillStyle = '#845ef7';
+  ctx.strokeStyle = '#5f3dc4';
+  ctx.lineWidth = 3.5 * dpr;
+  ctx.beginPath();
+  ctx.ellipse(0, -30 * dpr, 44 * dpr, 38 * dpr, 0, 0, TAU);
+  ctx.fill();
+  ctx.stroke();
+
+  // Cat Ears (Purple outer + Soft Pink inner)
+  for (const side of [-1, 1]) {
+    ctx.save();
+    ctx.translate(side * 28 * dpr, -58 * dpr);
+    ctx.rotate(side * 0.26);
+    ctx.fillStyle = '#6741d9';
+    ctx.beginPath();
+    ctx.moveTo(-14 * dpr, 12 * dpr);
+    ctx.lineTo(0, -20 * dpr);
+    ctx.lineTo(14 * dpr, 12 * dpr);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#faa2c1';
+    ctx.beginPath();
+    ctx.moveTo(-8 * dpr, 10 * dpr);
+    ctx.lineTo(0, -11 * dpr);
+    ctx.lineTo(8 * dpr, 10 * dpr);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Circular CatNap portrait cameo badge on forehead/chest or adorable plush face
+  // Rosy Cheeks
+  ctx.fillStyle = 'rgba(255, 135, 135, 0.68)';
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(side * 26 * dpr, -22 * dpr, 9.5 * dpr, 6 * dpr, 0, 0, TAU);
+    ctx.fill();
+  }
+
+  // Big Sparkly Anime/Plush Eyes with Twin Catchlights
+  for (const side of [-1, 1]) {
+    const ex = side * 16 * dpr;
+    const ey = -34 * dpr;
+    ctx.fillStyle = '#191229';
+    ctx.beginPath();
+    ctx.ellipse(ex, ey, 9.5 * dpr, 11 * dpr, 0, 0, TAU);
+    ctx.fill();
+
+    // Big white star catchlight
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(ex - 3 * dpr, ey - 3.5 * dpr, 3.8 * dpr, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(ex + 3.2 * dpr, ey + 3 * dpr, 2.0 * dpr, 0, TAU);
+    ctx.fill();
+  }
+
+  // Cute Pink Nose & Happy Cat Smile (:3)
+  ctx.fillStyle = '#faa2c1';
+  ctx.beginPath();
+  ctx.ellipse(0, -24 * dpr, 4.5 * dpr, 3.2 * dpr, 0, 0, TAU);
+  ctx.fill();
+
+  ctx.strokeStyle = '#191229';
+  ctx.lineWidth = 3 * dpr;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(-6.5 * dpr, -19 * dpr, 6.5 * dpr, 0.1 * Math.PI, 0.9 * Math.PI);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(6.5 * dpr, -19 * dpr, 6.5 * dpr, 0.1 * Math.PI, 0.9 * Math.PI);
+  ctx.stroke();
+
+  if (pose === 'lantern') {
+    const sway = Math.sin(t * 4.5) * 0.14;
+    drawMidAutumnLantern2D(ctx, 38 * dpr, 8 * dpr, 1.15, sway, '月', dpr);
+  }
+
+  ctx.restore();
+}
+
+export function renderGrandFinaleMovieFrame(t) {
+  if (!movieState.canvas) initIntroMovieCanvas();
+  const { canvas, ctx } = movieState;
+  if (!canvas || !ctx) return;
+
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = Math.floor(window.innerWidth * dpr);
+  const h = Math.floor(window.innerHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+
+  // Deep Starlit Indigo-to-Royal-Purple Mid-Autumn Night Sky
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+  skyGrad.addColorStop(0, '#090619');
+  skyGrad.addColorStop(0.45, '#1b1145');
+  skyGrad.addColorStop(0.82, '#311b6e');
+  skyGrad.addColorStop(1, '#46238a');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Twinkling Starfield across all 3 acts
+  for (let i = 0; i < 64; i++) {
+    const sx = ((i * 157.3) % 100) * 0.01 * w;
+    const sy = ((i * 89.7) % 68) * 0.01 * h;
+    const twinkle = 0.35 + 0.65 * Math.sin(t * 4.8 + i * 1.1);
+    ctx.fillStyle = i % 4 === 0 ? `rgba(255, 224, 102, ${twinkle})` : `rgba(255, 255, 255, ${twinkle})`;
+    ctx.beginPath();
+    ctx.arc(sx, sy, (1.4 + (i % 3) * 1.0) * dpr, 0, TAU);
+    ctx.fill();
+  }
+
+  // ==========================================================================
+  // ACT 1 (0.0s - 3.4s): Nightmare CatNap Purified into Cute CatNap!
+  // ==========================================================================
+  if (t < 3.4) {
+    const p1 = clamp(t / 3.2, 0, 1);
+    const purifyMorph = clamp((t - 0.85) / 1.55, 0, 1);
+    const cx = w * 0.5;
+    const cy = h * 0.54;
+
+    // Rolling Starlit Meadow Hill at Bottom
+    const hillG = ctx.createLinearGradient(0, h * 0.68, 0, h);
+    hillG.addColorStop(0, '#2b8a3e');
+    hillG.addColorStop(1, '#1b4332');
+    ctx.fillStyle = hillG;
+    ctx.beginPath();
+    ctx.ellipse(w * 0.5, h * 0.96, w * 0.72, h * 0.28, 0, Math.PI, TAU);
+    ctx.fill();
+
+    // Spinning Golden Starlight Purification Magic Circle on the ground
+    ctx.save();
+    ctx.translate(cx, cy + 56 * dpr);
+    ctx.scale(1, 0.35);
+    ctx.rotate(t * 1.8);
+    ctx.strokeStyle = `rgba(255, 212, 59, ${0.45 + 0.4 * Math.sin(t * 6)})`;
+    ctx.lineWidth = 4 * dpr;
+    ctx.shadowColor = '#ffd43b';
+    ctx.shadowBlur = 18 * dpr;
+    ctx.beginPath();
+    ctx.arc(0, 0, 135 * dpr, 0, TAU);
+    ctx.stroke();
+    for (let k = 0; k < 8; k++) {
+      const ang = (k / 8) * TAU;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(ang) * 75 * dpr, Math.sin(ang) * 75 * dpr);
+      ctx.lineTo(Math.cos(ang + 0.4) * 135 * dpr, Math.sin(ang + 0.4) * 135 * dpr);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 1. Dark-Purple Nightmare CatNap Silhouette (fades & shrinks as purifyMorph -> 1)
+    if (purifyMorph < 0.95) {
+      const nAlpha = clamp(1 - purifyMorph * 1.05, 0, 1);
+      const nScale = (1.15 - purifyMorph * 0.35);
+      ctx.save();
+      ctx.globalAlpha = nAlpha;
+      ctx.translate(cx, cy);
+      ctx.scale(nScale, nScale);
+
+      // Dissolving dark nightmare smoke puffs
+      for (let s = 0; s < 10; s++) {
+        const ang = (s / 10) * TAU + t * 1.5;
+        const rad = (65 + purifyMorph * 85) * dpr;
+        ctx.fillStyle = 'rgba(95, 61, 196, 0.38)';
+        ctx.beginPath();
+        ctx.arc(Math.cos(ang) * rad, Math.sin(ang) * rad * 0.7 - 15 * dpr, 28 * dpr, 0, TAU);
+        ctx.fill();
+      }
+
+      // Tall Nightmare CatNap silhouette body & long jagged ears
+      ctx.fillStyle = '#2b1354';
+      ctx.strokeStyle = '#9775fa';
+      ctx.lineWidth = 3 * dpr;
+      ctx.beginPath();
+      ctx.ellipse(0, 10 * dpr, 52 * dpr, 68 * dpr, 0, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, -68 * dpr, 42 * dpr, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(side * 16 * dpr, -98 * dpr);
+        ctx.lineTo(side * 38 * dpr, -148 * dpr);
+        ctx.lineTo(side * 36 * dpr, -88 * dpr);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Glowing white nightmare eyes softening
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(side * 15 * dpr, -72 * dpr, 7 * dpr, 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // 2. Converging Starlight Beams & Golden-Pink Purification Burst
+    if (t >= 0.4) {
+      const beamAlpha = Math.sin(clamp((t - 0.4) / 2.2, 0, 1) * Math.PI);
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const burstG = ctx.createRadialGradient(cx, cy - 15 * dpr, 8 * dpr, cx, cy - 15 * dpr, 220 * dpr);
+      burstG.addColorStop(0, `rgba(255, 249, 219, ${beamAlpha * 0.92})`);
+      burstG.addColorStop(0.4, `rgba(255, 212, 59, ${beamAlpha * 0.58})`);
+      burstG.addColorStop(0.75, `rgba(229, 153, 247, ${beamAlpha * 0.35})`);
+      burstG.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = burstG;
+      ctx.beginPath();
+      ctx.arc(cx, cy - 15 * dpr, 220 * dpr, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 3. Cute CatNap Emerges (purifyMorph > 0.15) with Sparkles & Floating Hearts/Stars!
+    if (purifyMorph > 0.15) {
+      const cAlpha = clamp((purifyMorph - 0.15) / 0.55, 0, 1);
+      const bounce = Math.sin(t * 7.0) * 8 * dpr;
+      ctx.save();
+      ctx.globalAlpha = cAlpha;
+      drawCuteCatNap2D(ctx, cx, cy + 6 * dpr - bounce, 1.32, t, dpr, 'wave');
+
+      // Circular CatNap Portrait Halo Badge beside Cute CatNap
+      const pImg = movieState.critterPortraits?.CatNap;
+      if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+        const bx = cx - 125 * dpr;
+        const by = cy - 55 * dpr + bounce * 0.5;
+        const brad = 34 * dpr;
+        ctx.save();
+        ctx.strokeStyle = '#ffd43b';
+        ctx.lineWidth = 4 * dpr;
+        ctx.shadowColor = '#fcc419';
+        ctx.shadowBlur = 14 * dpr;
+        ctx.beginPath();
+        ctx.arc(bx, by, brad, 0, TAU);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(bx, by, brad - 2 * dpr, 0, TAU);
+        ctx.clip();
+        ctx.drawImage(pImg, bx - brad, by - brad, brad * 2, brad * 2);
+        ctx.restore();
+      }
+
+      // Floating Golden Stars & Pink Hearts around Cute CatNap
+      const icons = ['✨', '💜', '🌙', '🌸', '⭐', '💖'];
+      for (let m = 0; m < 8; m++) {
+        const ang = (m / 8) * TAU + t * 1.4;
+        const rx = Math.cos(ang) * 118 * dpr;
+        const ry = Math.sin(ang) * 78 * dpr - 16 * dpr;
+        ctx.font = `${Math.round(22 * dpr)}px "Fredoka", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(icons[m % icons.length], cx + rx, cy + ry);
+      }
+      ctx.restore();
+    }
+  }
+  // ==========================================================================
+  // ACT 2 (3.4s - 6.6s): Cute CatNap Gently Lifts & Places the Full Moon Back in the Sky!
+  // ==========================================================================
+  else if (t < 6.6) {
+    const p2 = clamp((t - 3.4) / 3.2, 0, 1);
+    const smoothP2 = p2 * p2 * (3 - 2 * p2);
+
+    // Moon rises from y = 0.60*h up to celestial throne at y = 0.25*h
+    const moonCx = w * 0.5;
+    const moonCy = h * (0.58 - smoothP2 * 0.33);
+    const moonR = Math.min(w, h) * (0.17 + smoothP2 * 0.04);
+
+    // Expanding Golden Celestial Aurora Rings as the Moon reaches the sky
+    for (let ring = 0; ring < 3; ring++) {
+      const rProg = (smoothP2 + ring * 0.28) % 1;
+      const ringR = moonR * (1.15 + rProg * 1.65);
+      ctx.save();
+      ctx.strokeStyle = `rgba(255, 224, 102, ${(1 - rProg) * 0.55})`;
+      ctx.lineWidth = 3.5 * dpr;
+      ctx.beginPath();
+      ctx.arc(moonCx, moonCy, ringR, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Radiant Golden Full Moon Corona
+    const coronaG = ctx.createRadialGradient(moonCx, moonCy, moonR * 0.2, moonCx, moonCy, moonR * 2.3);
+    coronaG.addColorStop(0, 'rgba(255, 249, 219, 0.95)');
+    coronaG.addColorStop(0.45, 'rgba(255, 212, 59, 0.45)');
+    coronaG.addColorStop(1, 'rgba(255, 212, 59, 0)');
+    ctx.fillStyle = coronaG;
+    ctx.beginPath();
+    ctx.arc(moonCx, moonCy, moonR * 2.3, 0, TAU);
+    ctx.fill();
+
+    // Sculpted Golden Full Moon Sphere
+    const mGrad = ctx.createRadialGradient(
+      moonCx - moonR * 0.25,
+      moonCy - moonR * 0.25,
+      moonR * 0.1,
+      moonCx,
+      moonCy,
+      moonR
+    );
+    mGrad.addColorStop(0, '#fff9db');
+    mGrad.addColorStop(0.55, '#ffe066');
+    mGrad.addColorStop(1, '#f59f00');
+    ctx.fillStyle = mGrad;
+    ctx.strokeStyle = '#fff3bf';
+    ctx.lineWidth = 4 * dpr;
+    ctx.beginPath();
+    ctx.arc(moonCx, moonCy, moonR, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+
+    // Gentle Happy Face on the Full Moon
+    ctx.fillStyle = 'rgba(255, 107, 107, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(moonCx - moonR * 0.38, moonCy + moonR * 0.08, moonR * 0.12, moonR * 0.08, 0, 0, TAU);
+    ctx.ellipse(moonCx + moonR * 0.38, moonCy + moonR * 0.08, moonR * 0.12, moonR * 0.08, 0, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = '#5a3821';
+    ctx.lineWidth = 4 * dpr;
+    ctx.lineCap = 'round';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(moonCx + side * moonR * 0.28, moonCy - moonR * 0.08, moonR * 0.11, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(moonCx, moonCy + moonR * 0.04, moonR * 0.22, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+
+    // Cute CatNap riding a Golden Starlight Cloud right beneath the Moon, lifting it with both paws!
+    const catY = moonCy + moonR + 54 * dpr + (p2 > 0.78 ? (p2 - 0.78) * 110 * dpr : 0);
+    // Golden Auspicious Cloud (祥云) under Cute CatNap
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 243, 191, 0.92)';
+    ctx.shadowColor = '#ffd43b';
+    ctx.shadowBlur = 16 * dpr;
+    for (const [ox, oy, rx, ry] of [
+      [0, 48, 62, 20],
+      [-42, 52, 36, 16],
+      [42, 52, 36, 16],
+    ]) {
+      ctx.beginPath();
+      ctx.ellipse(moonCx + ox * dpr, catY + oy * dpr, rx * dpr, ry * dpr, 0, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    drawCuteCatNap2D(ctx, moonCx, catY, 1.15, t, dpr, 'lift_moon');
+
+    // Cheering Critters watching from the green hilltop below as the Moon rises
+    const watchers = [
+      { name: 'SunnyFox', x: 0.16, col: '#ff922b', emo: '🦊' },
+      { name: 'PoppyDash', x: 0.28, col: '#20c997', emo: '🦨' },
+      { name: 'PickyPiggy', x: 0.72, col: '#f783ac', emo: '🐷' },
+      { name: 'DogDay', x: 0.84, col: '#fcc419', emo: '🐶' },
+    ];
+    for (let i = 0; i < watchers.length; i++) {
+      const wt = watchers[i];
+      const wx = w * wt.x;
+      const wy = h * 0.86 - Math.abs(Math.sin(t * 7 + i)) * 14 * dpr;
+      const wr = 26 * dpr;
+      ctx.save();
+      ctx.fillStyle = wt.col;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3 * dpr;
+      ctx.beginPath();
+      ctx.arc(wx, wy, wr, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      const pImg = movieState.critterPortraits?.[wt.name];
+      if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+        ctx.beginPath();
+        ctx.arc(wx, wy, wr - 2 * dpr, 0, TAU);
+        ctx.clip();
+        ctx.drawImage(pImg, wx - wr, wy - wr, wr * 2, wr * 2);
+      }
+      ctx.restore();
+    }
+  }
+  // ==========================================================================
+  // ACT 3 (6.6s - 10.0s): Critters & Cute CatNap Celebrate Mid-Autumn Festival
+  //                       with Glowing Lanterns on the Giant Golden Moon!
+  // ==========================================================================
+  else {
+    const p3 = clamp((t - 6.6) / 3.4, 0, 1);
+
+    // 1. 18 Floating Sky Lanterns (孔明灯) drifting upward in the starry night sky
+    for (let k = 0; k < 18; k++) {
+      const lx = ((k * 0.061 + 0.04 + Math.sin(t * 0.8 + k) * 0.015) % 0.94 + 0.03) * w;
+      const baseLy = 0.72 - ((k * 0.13 + (t - 6.6) * 0.065) % 0.66);
+      const ly = baseLy * h;
+      const lScale = (0.55 + (k % 3) * 0.22) * dpr;
+
+      ctx.save();
+      const skyGlow = ctx.createRadialGradient(lx, ly, 2, lx, ly, 24 * lScale);
+      skyGlow.addColorStop(0, 'rgba(255, 243, 191, 0.9)');
+      skyGlow.addColorStop(0.5, 'rgba(255, 146, 43, 0.45)');
+      skyGlow.addColorStop(1, 'rgba(255, 146, 43, 0)');
+      ctx.fillStyle = skyGlow;
+      ctx.beginPath();
+      ctx.arc(lx, ly, 24 * lScale, 0, TAU);
+      ctx.fill();
+
+      ctx.fillStyle = '#ff922b';
+      ctx.strokeStyle = '#ffd43b';
+      ctx.lineWidth = 1.5 * lScale;
+      ctx.beginPath();
+      ctx.roundRect(lx - 8 * lScale, ly - 11 * lScale, 16 * lScale, 20 * lScale, 5 * lScale);
+      ctx.fill();
+      ctx.stroke();
+
+      // Inner candle flame
+      ctx.fillStyle = '#fff9db';
+      ctx.beginPath();
+      ctx.arc(lx, ly + 4 * lScale, 3.5 * lScale, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 2. Festive Fireworks in the upper sky
+    const fwCols = ['#ffd43b', '#ff6b6b', '#69db7c', '#74c0fc', '#f783ac'];
+    for (let f = 0; f < 5; f++) {
+      const cycle = ((t - 6.6 + f * 0.45) % 1.4) / 1.4;
+      const fx = w * (0.14 + f * 0.18);
+      const fy = h * (0.18 + (f % 2) * 0.09);
+      const col = fwCols[f % fwCols.length];
+      ctx.save();
+      ctx.globalAlpha = (1 - cycle) * 0.85;
+      ctx.fillStyle = col;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 12 * dpr;
+      for (let sp = 0; sp < 14; sp++) {
+        const ang = (sp / 14) * TAU;
+        const dist = cycle * 68 * dpr;
+        ctx.beginPath();
+        ctx.arc(fx + Math.cos(ang) * dist, fy + Math.sin(ang) * dist, 3.5 * dpr, 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // 3. Giant Golden Full Moon Surface spanning the lower half of the screen!
+    const moonSurfCx = w * 0.5;
+    const moonSurfCy = h * 1.26;
+    const moonSurfR = Math.min(w * 0.68, h * 0.86);
+
+    const surfGlow = ctx.createRadialGradient(
+      moonSurfCx,
+      moonSurfCy - moonSurfR * 0.5,
+      moonSurfR * 0.2,
+      moonSurfCx,
+      moonSurfCy,
+      moonSurfR * 1.25
+    );
+    surfGlow.addColorStop(0, 'rgba(255, 249, 219, 0.95)');
+    surfGlow.addColorStop(0.7, 'rgba(255, 212, 59, 0.55)');
+    surfGlow.addColorStop(1, 'rgba(255, 212, 59, 0)');
+    ctx.fillStyle = surfGlow;
+    ctx.beginPath();
+    ctx.arc(moonSurfCx, moonSurfCy, moonSurfR * 1.22, 0, TAU);
+    ctx.fill();
+
+    const surfGrad = ctx.createLinearGradient(0, h * 0.44, 0, h);
+    surfGrad.addColorStop(0, '#fff9db');
+    surfGrad.addColorStop(0.35, '#ffec99');
+    surfGrad.addColorStop(1, '#fcc419');
+    ctx.fillStyle = surfGrad;
+    ctx.strokeStyle = '#ffd43b';
+    ctx.lineWidth = 6 * dpr;
+    ctx.beginPath();
+    ctx.arc(moonSurfCx, moonSurfCy, moonSurfR, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.lineTo(w, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Soft Golden Lunar Craters on the Moon Surface
+    for (const [cxFrac, cyFrac, rx, ry] of [
+      [0.24, 0.86, 48, 16],
+      [0.76, 0.85, 54, 18],
+      [0.50, 0.92, 64, 20],
+    ]) {
+      ctx.fillStyle = 'rgba(245, 159, 0, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(w * cxFrac, h * cyFrac, rx * dpr, ry * dpr, 0, 0, TAU);
+      ctx.fill();
+    }
+
+    // 4. Golden Osmanthus Tree (中秋金桂树) on the left crest of the Moon
+    const treeX = w * 0.17;
+    const treeY = h * 0.66;
+    ctx.save();
+    ctx.strokeStyle = '#8c5a32';
+    ctx.lineWidth = 14 * dpr;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(treeX, treeY + 42 * dpr);
+    ctx.quadraticCurveTo(treeX - 8 * dpr, treeY - 12 * dpr, treeX + 14 * dpr, treeY - 58 * dpr);
+    ctx.stroke();
+
+    // Golden-green Osmanthus Canopy & Hanging Lanterns
+    for (const [ox, oy, cr, col] of [
+      [-24, -64, 38, '#40c057'],
+      [22, -72, 42, '#37b24d'],
+      [0, -94, 44, '#51cf66'],
+    ]) {
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.arc(treeX + ox * dpr, treeY + oy * dpr, cr * dpr, 0, TAU);
+      ctx.fill();
+    }
+    // Golden osmanthus blossom clusters on tree
+    ctx.fillStyle = '#ffd43b';
+    for (let b = 0; b < 18; b++) {
+      const bx = treeX + Math.cos(b * 2.1) * 34 * dpr;
+      const by = treeY - 74 * dpr + Math.sin(b * 3.3) * 26 * dpr;
+      ctx.beginPath();
+      ctx.arc(bx, by, 3.5 * dpr, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // 5. Festive Mid-Autumn Mooncake & Jade Rabbit Banquet Table in foreground center!
+    const tblX = w * 0.5;
+    const tblY = h * 0.83;
+    ctx.save();
+    // Red & Gold Banquet Table
+    ctx.fillStyle = '#c92a2a';
+    ctx.strokeStyle = '#ffd43b';
+    ctx.lineWidth = 3.5 * dpr;
+    ctx.beginPath();
+    ctx.roundRect(tblX - 96 * dpr, tblY - 14 * dpr, 192 * dpr, 32 * dpr, 10 * dpr);
+    ctx.fill();
+    ctx.stroke();
+
+    // Golden Platter of Stamped Mooncakes (🥮) + Teapot + Jade Rabbit (🐇)
+    ctx.font = `${Math.round(28 * dpr)}px "Fredoka", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🥮', tblX - 46 * dpr, tblY - 22 * dpr);
+    ctx.fillText('🥮', tblX - 14 * dpr, tblY - 26 * dpr);
+    ctx.fillText('🥮', tblX + 18 * dpr, tblY - 22 * dpr);
+    ctx.fillText('🍵', tblX + 52 * dpr, tblY - 22 * dpr);
+    ctx.font = `${Math.round(32 * dpr)}px "Fredoka", sans-serif`;
+    ctx.fillText('🐇', tblX - 82 * dpr, tblY - 24 * dpr);
+    ctx.restore();
+
+    // 6. Cute CatNap in Center of the Moon Holding a Glowing Mid-Autumn Lantern!
+    const catBounce = Math.abs(Math.sin(t * 6.5)) * 12 * dpr;
+    drawCuteCatNap2D(ctx, w * 0.5, h * 0.60 - catBounce, 1.08, t, dpr, 'lantern');
+
+    // 7. All 8 Smiling Critters on the Moon Holding Swaying Red & Gold Lanterns!
+    const moonCelebrants = [
+      { name: 'SunnyFox',   emoji: '🦊', color: '#ff922b', x: 0.12, y: 0.74, char: '中' },
+      { name: 'PoppyDash',  emoji: '🦨', color: '#20c997', x: 0.22, y: 0.68, char: '秋' },
+      { name: 'PickyPiggy', emoji: '🐷', color: '#f783ac', x: 0.32, y: 0.64, char: '团' },
+      { name: 'BobbyBear',  emoji: '🐻', color: '#f03e3e', x: 0.41, y: 0.62, char: '圆' },
+      { name: 'DogDay',     emoji: '🐶', color: '#fcc419', x: 0.59, y: 0.62, char: '快' },
+      { name: 'CraftyCorn', emoji: '🦄', color: '#74c0fc', x: 0.68, y: 0.64, char: '乐' },
+      { name: 'Bubba',      emoji: '🐘', color: '#4dabf7', x: 0.78, y: 0.68, char: '福' },
+      { name: 'Kickin',     emoji: '🐥', color: '#ffd43b', x: 0.88, y: 0.74, char: '吉' },
+    ];
+
+    for (let i = 0; i < moonCelebrants.length; i++) {
+      const c = moonCelebrants[i];
+      const bounce = Math.abs(Math.sin(t * 7.8 + i * 0.85)) * 15 * dpr;
+      const cx = w * c.x;
+      const cy = h * c.y - bounce;
+      const rad = 28 * dpr;
+
+      ctx.save();
+      // Glowing character portrait medallion
+      ctx.fillStyle = c.color;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3.5 * dpr;
+      ctx.shadowColor = c.color;
+      ctx.shadowBlur = 14 * dpr;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+
+      const pImg = movieState.critterPortraits?.[c.name];
+      if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad - 2.5 * dpr, 0, TAU);
+        ctx.clip();
+        ctx.shadowBlur = 0;
+        ctx.drawImage(pImg, cx - rad, cy - rad, rad * 2, rad * 2);
+        ctx.restore();
+      } else {
+        ctx.shadowBlur = 0;
+        ctx.font = `${Math.round(24 * dpr)}px "Fredoka", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(c.emoji, cx, cy + 2 * dpr);
+      }
+      ctx.restore();
+
+      // Each Critter holds a swaying, glowing Mid-Autumn Lantern (🏮)!
+      const sway = Math.sin(t * 5.2 + i * 0.9) * 0.16;
+      drawMidAutumnLantern2D(ctx, cx + 18 * dpr, cy - 4 * dpr, 0.95, sway, c.char, dpr);
+    }
+  }
+
+  // ==========================================================================
+  // TOP BILINGUAL STORY CAPTION PILL ACROSS ALL 3 ACTS
+  // ==========================================================================
+  ctx.save();
+  const pillW = Math.min(w * 0.92, 860 * dpr);
+  const pillH = 56 * dpr;
+  const pillX = (w - pillW) * 0.5;
+  const pillY = 22 * dpr;
+  ctx.fillStyle = 'rgba(255, 251, 240, 0.95)';
+  ctx.strokeStyle = '#fcc419';
+  ctx.lineWidth = 3.5 * dpr;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+  ctx.shadowBlur = 14 * dpr;
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillW, pillH, 28 * dpr);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#5a3821';
+  ctx.font = `900 ${Math.round(17 * dpr)}px "Fredoka", "Nunito", "PingFang SC", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  let caption = '✨ Act 1: Nightmare CatNap Transforms into Cute CatNap! · 星辉净化！CatNap 变回可爱模样！';
+  if (t >= 3.4 && t < 6.6) {
+    caption = '🌕 Act 2: Cute CatNap Places the Full Moon Back in the Sky! · 可爱 CatNap 把圆月放回夜空！';
+  } else if (t >= 6.6) {
+    caption = '🏮 Happy Mid-Autumn Festival! Critters Celebrate with Lanterns on the Moon! · 萌宠提灯笼在月亮上过中秋节！🥮';
+  }
+  ctx.fillText(caption, w * 0.5, pillY + pillH * 0.5);
+  ctx.restore();
+}
+
 
 

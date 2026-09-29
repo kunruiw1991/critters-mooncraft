@@ -23,7 +23,12 @@ import {
   buildMoonSanctuaryMesh,
   buildVoxelZombie
 } from './voxel_models.js';
-import { initIntroMovieCanvas, renderIntroMovieFrame, renderVictoryMovieFrame } from './cutscene_hd.js';
+import {
+  initIntroMovieCanvas,
+  renderIntroMovieFrame,
+  renderVictoryMovieFrame,
+  renderGrandFinaleMovieFrame
+} from './cutscene_hd.js';
 import { sound } from './audio.js';
 import { UI_SVGS, miniResSVG } from './ui_icons.js';
 
@@ -928,10 +933,11 @@ export function finishCutscene() {
   showBubble('🧟⛩️ ➔ 🛡️⚔️ ➔ 🌕✨', 1.1);
 }
 
-// 6.0-Second Stage-Clear Victory Animation: Critters Repairing the Moon (萌宠同心补月动画)
-export function startVictoryCutscene() {
+// Stage-Clear Victory Animation (Stages 1–4: 6.0s Moon Repair) & Stage-5 All-Clear Grand Finale (10.0s Mid-Autumn Festival!)
+export function startVictoryCutscene(forceGrandFinale = false) {
   S.phase = 'victory_cutscene';
   S.victoryTime = 0;
+  S.isGrandFinale = Boolean(forceGrandFinale || S.stageIndex >= STAGES.length - 1);
   S.clearedStages.add(S.stageIndex);
   updateStageButtons();
   sound.victory();
@@ -940,29 +946,59 @@ export function startVictoryCutscene() {
   document.getElementById('mainMenuModal')?.classList.add('hidden');
   document.body.classList.add('inIntro');
 
-  cineStep1El.textContent = '🛠️🌕';
-  cineStep2El.textContent = '✨🦊🦨🐷';
-  cineStep3El.textContent = '🎉🌕';
-  cineProgressFillEl.style.width = '0%';
-  cineBannerEl.classList.remove('hidden');
+  if (S.isGrandFinale) {
+    cineStep1El.textContent = '✨🐱💜';
+    cineStep2El.textContent = '🐱🤲🌕';
+    cineStep3El.textContent = '🏮🦊🌕🥮';
+    cineProgressFillEl.style.width = '0%';
+    cineBannerEl.classList.remove('hidden');
+    renderGrandFinaleMovieFrame(0);
+  } else {
+    cineStep1El.textContent = '🛠️🌕';
+    cineStep2El.textContent = '✨🦊🦨🐷';
+    cineStep3El.textContent = '🎉🌕';
+    cineProgressFillEl.style.width = '0%';
+    cineBannerEl.classList.remove('hidden');
+    renderVictoryMovieFrame(0, S.stageIndex);
+  }
+}
 
-  renderVictoryMovieFrame(0, S.stageIndex);
+export function startGrandFinaleCutscene() {
+  startVictoryCutscene(true);
 }
 
 function updateVictoryCutscene(dt) {
   S.victoryTime = (S.victoryTime || 0) + dt;
   const t = S.victoryTime;
-  const pct = Math.min(100, (t / 6.0) * 100);
-  cineProgressFillEl.style.width = `${pct}%`;
 
-  cineStep1El.classList.toggle('active', t < 1.8);
-  cineStep2El.classList.toggle('active', t >= 1.8 && t < 4.1);
-  cineStep3El.classList.toggle('active', t >= 4.1);
+  if (S.isGrandFinale) {
+    const duration = 10.0;
+    const pct = Math.min(100, (t / duration) * 100);
+    cineProgressFillEl.style.width = `${pct}%`;
 
-  renderVictoryMovieFrame(t, S.stageIndex);
+    cineStep1El.classList.toggle('active', t < 3.4);
+    cineStep2El.classList.toggle('active', t >= 3.4 && t < 6.6);
+    cineStep3El.classList.toggle('active', t >= 6.6);
 
-  if (t >= 6.0) {
-    finishVictoryCutscene();
+    renderGrandFinaleMovieFrame(t);
+
+    if (t >= duration) {
+      finishVictoryCutscene();
+    }
+  } else {
+    const duration = 6.0;
+    const pct = Math.min(100, (t / duration) * 100);
+    cineProgressFillEl.style.width = `${pct}%`;
+
+    cineStep1El.classList.toggle('active', t < 1.8);
+    cineStep2El.classList.toggle('active', t >= 1.8 && t < 4.1);
+    cineStep3El.classList.toggle('active', t >= 4.1);
+
+    renderVictoryMovieFrame(t, S.stageIndex);
+
+    if (t >= duration) {
+      finishVictoryCutscene();
+    }
   }
 }
 
@@ -979,16 +1015,44 @@ export function finishVictoryCutscene() {
   setMoonRestoreProgress(1.0);
 
   const curIco = `${S.stageIndex + 1}`;
-  const nextIco = S.stageIndex < STAGES.length - 1 ? `${S.stageIndex + 2}` : '🏆';
-  document.querySelector('.modal-stars').textContent = '⭐ ⭐ ⭐';
+  const isFinalStage = Boolean(S.isGrandFinale || S.stageIndex >= STAGES.length - 1);
+  const nextIco = !isFinalStage ? `${S.stageIndex + 2}` : '🏆';
+
+  const starsEl = document.querySelector('.modal-stars');
+  if (starsEl) {
+    starsEl.textContent = isFinalStage ? '🏮 🌕 🥮' : '⭐ ⭐ ⭐';
+  }
   const titleEl = document.getElementById('modalTitleBadge');
   if (titleEl) {
-    titleEl.textContent = '🌕 CRITTERS REPAIRED THE MOON! · 萌宠补月大成功！';
+    titleEl.textContent = isFinalStage
+      ? '🏮 HAPPY MID-AUTUMN FESTIVAL! · 萌宠提灯笼在月亮上欢度中秋节！'
+      : '🌕 CRITTERS REPAIRED THE MOON! · 萌宠补月大成功！';
   }
-  document.getElementById('modalStageBadge').textContent =
-    S.stageIndex < STAGES.length - 1
+  const stageBadgeEl = document.getElementById('modalStageBadge');
+  if (stageBadgeEl) {
+    stageBadgeEl.textContent = !isFinalStage
       ? `STAGE ${curIco} ➔ ${nextIco} · 第 ${curIco} 关通关`
-      : `STAGE ${curIco} 🏆 ALL CLEAR · 全关卡通关！`;
+      : `STAGE ${curIco} 🏆 ALL 5 STAGES CLEAR · 五关全通圆满中秋！`;
+  }
+
+  const nextBtn = document.getElementById('nextStageBtn');
+  if (nextBtn) {
+    nextBtn.textContent = !isFinalStage
+      ? '▶️ Next Stage · 下一关'
+      : '🌟 Play Again · 重新开始';
+  }
+  const replayBtn = document.getElementById('replayVictoryAnimBtn');
+  if (replayBtn) {
+    replayBtn.classList.remove('hidden');
+    replayBtn.textContent = isFinalStage
+      ? '🏮 Finale Anim · 重播中秋动画'
+      : '🎬 Moon Anim · 补月动画';
+  }
+  const contBtn = document.getElementById('continueBtn');
+  if (contBtn) {
+    contBtn.textContent = '🏰 Endless · 继续建造';
+  }
+
   document.getElementById('victoryModal').classList.remove('hidden');
 }
 
@@ -1525,12 +1589,30 @@ function triggerDefeat() {
   S.phase = 'defeat';
   sound.explosion();
   const curIco = `${S.stageIndex + 1}`;
-  document.querySelector('.modal-stars').textContent = '💔 🧟 💔';
+  const starsEl = document.querySelector('.modal-stars');
+  if (starsEl) {
+    starsEl.textContent = '💔 🧟 💔';
+  }
   const titleEl = document.getElementById('modalTitleBadge');
   if (titleEl) {
     titleEl.textContent = '💔 SANCTUARY BREACHED! · 圣殿失守，请再试一次！';
   }
-  document.getElementById('modalStageBadge').textContent = `STAGE ${curIco} 💔 ➔ 🔄 · 第 ${curIco} 关重试`;
+  const stageBadgeEl = document.getElementById('modalStageBadge');
+  if (stageBadgeEl) {
+    stageBadgeEl.textContent = `STAGE ${curIco} 💔 ➔ 🔄 · 第 ${curIco} 关重试`;
+  }
+  const nextBtn = document.getElementById('nextStageBtn');
+  if (nextBtn) {
+    nextBtn.textContent = '🔄 Retry Stage · 重玩本关';
+  }
+  const replayBtn = document.getElementById('replayVictoryAnimBtn');
+  if (replayBtn) {
+    replayBtn.classList.add('hidden');
+  }
+  const contBtn = document.getElementById('continueBtn');
+  if (contBtn) {
+    contBtn.textContent = '🛡️ Continue · 原地继续';
+  }
   document.getElementById('victoryModal').classList.remove('hidden');
 }
 
@@ -2756,7 +2838,14 @@ document.getElementById('nextStageBtn').addEventListener('click', () => {
 
 document.getElementById('replayVictoryAnimBtn')?.addEventListener('click', () => {
   sound.click();
-  startVictoryCutscene();
+  startVictoryCutscene(Boolean(S.isGrandFinale || S.stageIndex >= STAGES.length - 1));
+});
+
+document.getElementById('menuFinaleBtn')?.addEventListener('click', () => {
+  sound.click();
+  document.getElementById('mainMenuModal')?.classList.add('hidden');
+  S.paused = false;
+  startGrandFinaleCutscene();
 });
 
 document.getElementById('continueBtn').addEventListener('click', () => {
@@ -2824,7 +2913,9 @@ window.__MOONCRAFT__ = {
   finishCutscene,
   startOpeningCutscene,
   startVictoryCutscene,
+  startGrandFinaleCutscene,
   finishVictoryCutscene,
+  triggerDefeat,
   openMainMenu,
   closeMainMenu,
   startNewGame,
